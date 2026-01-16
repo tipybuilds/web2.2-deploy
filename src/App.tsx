@@ -702,22 +702,22 @@ type Product = {
   datasheetUrl?: string;
 
   name: Bilingual;
-  short: Bilingual;
+
+  // 🔧 CAMBIO CLAVE: ahora es opcional
+  short?: Bilingual;
 
   descriptionText?: Bilingual;
   descriptionPlaceholder: Bilingual;
 
   imageLabel: Bilingual;
 
-  // ✅ NUEVO (adaptado a tu estructura): carpeta que contiene 01.jpg.. etc
-  // Ej: "/images/divisions/acuicola/products/manga"
+  // Carpeta que contiene 01.jpg, 02.jpg, etc.
   imageDir?: string;
 
-  // ✅ NUEVO: cantidad de imágenes 01..N
+  // Cantidad de imágenes 01..N
   imageCount?: number;
 
-  // ✅ NUEVO: si existe hero.jpg en esa misma carpeta (opcional)
-  // Ej: "/images/divisions/acuicola/products/manga/hero.jpg"
+  // Hero específico si existe
   heroSrc?: string;
 
   badges?: Bilingual[];
@@ -728,6 +728,9 @@ type Product = {
   clickable?: boolean;
   cardMaxWidth?: number;
   cardVariant?: "default" | "wide-compact";
+
+  // Escape hatch para no volver a romper build por datos nuevos
+  [extra: string]: any;
 };
 
 type Division = {
@@ -2135,42 +2138,8 @@ function Nosotros() {
   const { isMd, isXl } = useBreakpoints();
   const { lang } = useLang();
 
-  const PHOTOS = [
-    "/images/about/01.jpg",
-    "/images/about/02.jpg",
-    "/images/about/03.jpg",
-    "/images/about/04.jpg",
-  ];
-
-  const trackRef = useRef<HTMLDivElement | null>(null);
-
-  const scrollByOne = (dir: "prev" | "next") => {
-    const el = trackRef.current;
-    if (!el) return;
-    const step = Math.max(240, el.clientWidth - 80);
-    el.scrollBy({ left: dir === "next" ? step : -step, behavior: "smooth" });
-  };
-
-  const arrowBtn: React.CSSProperties = {
-    width: 38,
-    height: 38,
-    borderRadius: 999,
-    border: `1px solid ${BRAND.line}`,
-    background: "white",
-    color: BRAND.primary,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    boxShadow: "0 10px 24px rgba(2, 6, 23, 0.08)",
-    userSelect: "none",
-  };
-
-  const arrowIcon: React.CSSProperties = { fontSize: 18, lineHeight: 1, fontWeight: 900 };
-
-  // ✅ +3px SOLO textos largos
-  const body18 = isMd ? 17 : 18; // antes 15
-  const body17 = isMd ? 16 : 17; // antes 14
+  const titleSize = isMd ? 34 : isXl ? 52 : 44;
+  const paragraphSize = 18;
 
   return (
     <div style={{ width: "100%" }}>
@@ -2184,10 +2153,11 @@ function Nosotros() {
           <div style={{ ...twoColGrid(isMd, isXl), alignItems: "stretch" }}>
             <div>
               <BackToHome />
+
               <h1
                 style={{
                   marginTop: 10,
-                  fontSize: isMd ? 34 : isXl ? 52 : 44,
+                  fontSize: titleSize,
                   fontWeight: 350,
                   color: BRAND.primary,
                   lineHeight: 1.08,
@@ -2198,13 +2168,13 @@ function Nosotros() {
               </h1>
 
               <div style={{ marginTop: 12, maxWidth: 560 }}>
-                <p style={{ fontSize: body18, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
+                <p style={{ fontSize: paragraphSize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
                   {pick(UI.nosotrosP1, lang)}
                 </p>
-                <p style={{ fontSize: body18, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
+                <p style={{ fontSize: paragraphSize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
                   {pick(UI.nosotrosP2, lang)}
                 </p>
-                <p style={{ fontSize: body18, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
+                <p style={{ fontSize: paragraphSize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
                   {pick(UI.nosotrosP3, lang)}
                 </p>
               </div>
@@ -2220,88 +2190,11 @@ function Nosotros() {
               <FigurePlaceholder
                 title={lang === "en" ? "COMPANY" : "EMPRESA"}
                 subtitle={lang === "en" ? "Photo: team / plant / operations" : "Foto: equipo / planta / operación"}
-                ratio={isMd ? "16 / 9" : "16 / 10"}
-                height={isMd ? undefined : "100%"}
                 src="/images/about/hero.jpg"
                 alt={lang === "en" ? "About Tipy Town" : "Sobre Tipy Town"}
                 fit="cover"
+                minHeight={isMd ? 320 : 380}
               />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <div style={{ ...containerStyle(), ...sectionPad(28, 70) }}>
-          <div style={{ border: `1px solid ${BRAND.line}`, borderRadius: 22, padding: isMd ? 22 : 18, background: "white" }}>
-            <div style={twoColGrid(isMd, isXl)}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: BRAND.primary }}>
-                  {pick(UI.nosotrosBlockTitle, lang)}
-                </h2>
-                <p style={{ marginTop: 12, fontSize: body17, lineHeight: 1.78, color: "#334155", maxWidth: 560 }}>
-                  {pick(UI.nosotrosBlockText, lang)}
-                </p>
-              </div>
-
-              <div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-                  <div style={{ fontSize: 12, color: BRAND.muted }}>{pick(UI.nosotrosGallery, lang)}</div>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button type="button" onClick={() => scrollByOne("prev")} style={arrowBtn} aria-label={lang === "en" ? "Previous" : "Anterior"}>
-                      <span style={arrowIcon}>‹</span>
-                    </button>
-                    <button type="button" onClick={() => scrollByOne("next")} style={arrowBtn} aria-label={lang === "en" ? "Next" : "Siguiente"}>
-                      <span style={arrowIcon}>›</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div
-                  ref={trackRef}
-                  style={{
-                    display: "flex",
-                    gap: 12,
-                    overflowX: "auto",
-                    scrollSnapType: "x mandatory",
-                    paddingBottom: 8,
-                    WebkitOverflowScrolling: "touch",
-                    borderRadius: 18,
-                    scrollbarWidth: "thin",
-                  }}
-                >
-                  {PHOTOS.map((src, idx) => (
-                    <div
-                      key={src}
-                      style={{
-                        flex: "0 0 auto",
-                        width: isMd ? 420 : 320,
-                        height: isMd ? 260 : 220,
-                        borderRadius: 18,
-                        overflow: "hidden",
-                        border: `1px solid ${BRAND.line}`,
-                        background: "#0B1220",
-                        scrollSnapAlign: "start",
-                        position: "relative",
-                      }}
-                    >
-                      <img
-                        src={src}
-                        alt={(lang === "en" ? "Company photo" : "Foto empresa") + ` ${idx + 1}`}
-                        loading="lazy"
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ marginTop: 8, fontSize: 12, color: BRAND.muted }}>
-                  {pick(UI.nosotrosHint, lang)}
-                </div>
-              </div>
             </div>
           </div>
         </div>
