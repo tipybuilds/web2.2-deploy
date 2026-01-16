@@ -341,7 +341,7 @@ const UI = {
     en: "Operational solutions for aquaculture, agriculture, packaging, and logistics.",
   },
   homeCtaSales: { es: "Hablar con ventas", en: "Talk to Sales" },
-  homeCtaDivisions: { es: "Ver divisiones", en: "View Divisions" },
+
 
   divisionsLabel: { es: "", en: "" },
   divisionsHeadline: {
@@ -1506,8 +1506,7 @@ function Home() {
                 <Link to="/contacto" style={{ ...btnPrimaryLg(), minWidth: 220 }}>
                   {pick(UI.homeCtaSales, lang)}
                 </Link>
-                <a href="#divisiones" style={{ ...btnOutlineLg(), minWidth: 220 }}>
-                  {pick(UI.homeCtaDivisions, lang)}
+                
                 </a>
               </div>
 
