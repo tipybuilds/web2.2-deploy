@@ -1018,7 +1018,7 @@ en: "Cabo Mussel is a high-performance technical rope that functions as a substr
             imageLabel: { es: "Foto: cabo mussel / captación y siembra", en: "Photo: Cabo Mussel / collection & seeding" },
 
             imageDir: "/images/divisions/acuicola/products/cabo-mussel",
-            imageCount: 8,
+            imageCount: 5,
 
             badges: [{ es: "Máximo rendimiento", en: "Max performance" }],
           },
@@ -1042,7 +1042,7 @@ en: "Cabo Mussel is a high-performance technical rope that functions as a substr
             imageLabel: { es: "Foto: cabo rafia / bobinas / bodega", en: "Photo: PP rope / coils / warehouse" },
 
             imageDir: "/images/divisions/acuicola/products/cabo-rafia",
-            imageCount: 8,
+            imageCount: 5,
 
             badges: [{ es: "Amarre de cuelgas y colectores", en: "Droppers & collectors tie-off" }],
           },
@@ -1080,7 +1080,7 @@ en: "100% natural and biodegradable cotton fruit netting, developed for brands a
             imageLabel: { es: "Foto: malla biodegradable / fruta / packing", en: "Photo: biodegradable netting / fruit / packing" },
 
             imageDir: "/images/divisions/agro/products/biodegradable",
-            imageCount: 8,
+            imageCount: 5,
 
             badges: [{ es: "100% algodón", en: "100% cotton" }],
           },
@@ -1104,7 +1104,7 @@ It is the right choice for high-volume operations, tight commercial windows, or 
             imageLabel: { es: "Foto: malla PE / operación / packing", en: "Photo: PE netting / operations / packing" },
 
             imageDir: "/images/divisions/agro/products/polietileno",
-            imageCount: 8,
+            imageCount: 5,
 
             badges: [{ es: "PE", en: "PE" }],
           },
@@ -1154,7 +1154,7 @@ Available in standard color, with custom color manufacturing available upon requ
 },
             imageLabel: { es: "Foto: film stretch manual", en: "Photo: hand stretch film" },
             imageDir: "/images/divisions/packaging/products/film-stretch-1,7kgs",
-            imageCount: 9,
+            imageCount: 5,
             badges: [{ es: "Pack 6", en: "6-Pack" }, { es: "1,7 kg c/u", en: "1.7 kg each" }],
           },
           {
@@ -1179,7 +1179,7 @@ Available in standard color, with custom color manufacturing available upon requ
 },
             imageLabel: { es: "Foto: film stretch 3 kg", en: "Photo: 3.0 kg stretch film" },
             imageDir: "/images/divisions/packaging/products/film-stretch-3kgs",
-            imageCount: 9,
+            imageCount: 5,
             badges: [{ es: "Pack 6", en: "6-Pack" }, { es: "3,0 kg c/u", en: "3.0 kg each" }],
           },
         ],
@@ -1209,7 +1209,7 @@ Available in standard color, with custom color manufacturing available upon requ
             imageLabel: { es: "Foto: tracto / rampla / ruta", en: "Photo: tractor unit / trailer / route" },
             
             imageDir: "/images/divisions/transporte/products/capacidad",
-            imageCount: 9,
+            imageCount: 5,
             clickable: false,
             cardMaxWidth: 1500,
             cardVariant: "wide-compact",
