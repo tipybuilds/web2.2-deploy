@@ -109,7 +109,7 @@ const BRAND = {
 };
 
 const HEADER_H = 64;
-const CONTAINER_MAX = 1760;
+const CONTAINER_MAX = 1440;
 
 // WhatsApp
 const WHATSAPP_PHONE_E164 = "+56968160062";
@@ -902,10 +902,12 @@ function AppShell() {
         html, body, #root { height: 100%; width: 100%; }
 
         /* =========================
-           TIPOGRAFÍA GLOBAL (BASE)
-           - NO tocar font-size global acá (si no, se agrandan cards/nav/etc)
+           GLOBAL SCALE (Fix “too zoomed” UI)
+           - This makes 100% browser zoom look like your current 80% feel
+           - No CSS zoom hacks; accessibility-safe
         ========================= */
         html {
+          font-size: 15px; /* ✅ key change: global scale down */
           -webkit-text-size-adjust: 100%;
           text-rendering: optimizeLegibility;
         }
@@ -916,7 +918,7 @@ function AppShell() {
           background: ${BRAND.bg};
           color: ${BRAND.ink};
           font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-          line-height: 1.6;
+          line-height: 1.55; /* leve ajuste para que no se vea “inflado” */
         }
 
         p { margin: 0; }
@@ -956,6 +958,7 @@ function AppShell() {
     </div>
   );
 }
+
 
 /* =========================================================
    DATA
@@ -2138,29 +2141,8 @@ function Nosotros() {
   const { isMd, isXl } = useBreakpoints();
   const { lang } = useLang();
 
-  // Tamaños de texto (evita el error de body18)
-  const body18 = isMd ? 16 : 18;
-
-  // Galería ABOUT: 4 imágenes reales (esto fuerza el render en prod)
-  const ABOUT_GALLERY = useMemo(
-    () => [
-      "/images/about/01.jpg",
-      "/images/about/02.jpg",
-      "/images/about/03.jpg",
-      "/images/about/04.jpg",
-    ],
-    []
-  );
-
-  // Carrusel 2-up: muestra 2 imágenes a la vez
-  const [idx, setIdx] = useState(0);
-  const total = ABOUT_GALLERY.length;
-
-  const prev = () => setIdx((v) => (v - 2 + total) % total);
-  const next = () => setIdx((v) => (v + 2) % total);
-
-  const leftSrc = ABOUT_GALLERY[idx % total];
-  const rightSrc = ABOUT_GALLERY[(idx + 1) % total];
+  const titleSize = isMd ? 34 : isXl ? 52 : 44;
+  const bodySize = isMd ? 16 : 18;
 
   return (
     <div style={{ width: "100%" }}>
@@ -2179,7 +2161,7 @@ function Nosotros() {
               <h1
                 style={{
                   marginTop: 10,
-                  fontSize: isMd ? 34 : isXl ? 52 : 44,
+                  fontSize: titleSize,
                   fontWeight: 350,
                   color: BRAND.primary,
                   lineHeight: 1.08,
@@ -2190,34 +2172,13 @@ function Nosotros() {
               </h1>
 
               <div style={{ marginTop: 12, maxWidth: 560 }}>
-                <p
-                  style={{
-                    fontSize: body18,
-                    lineHeight: 1.78,
-                    color: "#334155",
-                    marginBottom: 12,
-                  }}
-                >
+                <p style={{ fontSize: bodySize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
                   {pick(UI.nosotrosP1, lang)}
                 </p>
-                <p
-                  style={{
-                    fontSize: body18,
-                    lineHeight: 1.78,
-                    color: "#334155",
-                    marginBottom: 12,
-                  }}
-                >
+                <p style={{ fontSize: bodySize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
                   {pick(UI.nosotrosP2, lang)}
                 </p>
-                <p
-                  style={{
-                    fontSize: body18,
-                    lineHeight: 1.78,
-                    color: "#334155",
-                    marginBottom: 12,
-                  }}
-                >
+                <p style={{ fontSize: bodySize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
                   {pick(UI.nosotrosP3, lang)}
                 </p>
               </div>
@@ -2229,14 +2190,11 @@ function Nosotros() {
               </div>
             </div>
 
-            <div style={{ height: isMd ? undefined : "100%", display: "flex" }}>
+            {/* HERO IMAGE (sin ratio prop; usando minHeight) */}
+            <div style={{ display: "flex" }}>
               <FigurePlaceholder
                 title={lang === "en" ? "COMPANY" : "EMPRESA"}
-                subtitle={
-                  lang === "en"
-                    ? "Photo: team / plant / operations"
-                    : "Foto: equipo / planta / operación"
-                }
+                subtitle={lang === "en" ? "Photo: team / plant / operations" : "Foto: equipo / planta / operación"}
                 src="/images/about/hero.jpg"
                 alt={lang === "en" ? "About Tipy Town" : "Sobre Tipy Town"}
                 fit="cover"
@@ -2247,96 +2205,25 @@ function Nosotros() {
         </div>
       </section>
 
-      {/* GALERÍA (2 imágenes, flechas) */}
-      <section style={{ background: BRAND.bg }}>
-        <div style={{ ...containerStyle(), ...sectionPad(28, 26) }}>
-          <div
-            style={{
-              background: BRAND.panel,
-              border: `1px solid ${BRAND.line}`,
-              borderRadius: 18,
-              padding: isMd ? 16 : 18,
-              boxShadow: "0 10px 28px rgba(2,6,23,.06)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                marginBottom: 14,
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    fontSize: isMd ? 18 : 20,
-                    fontWeight: 650,
-                    color: BRAND.primary,
-                    letterSpacing: -0.2,
-                  }}
-                >
-                  {lang === "en"
-                    ? "Operations, infrastructure and control"
-                    : "Operación, infraestructura y control"}
-                </div>
-                <div
-                  style={{
-                    marginTop: 6,
-                    fontSize: isMd ? 14 : 15,
-                    lineHeight: 1.75,
-                    color: BRAND.muted,
-                    maxWidth: 680,
-                  }}
-                >
-                  {lang === "en"
-                    ? "Industrial execution with clear processes, field control and focus on compliance."
-                    : "Equipo industrial orientado a continuidad: procesos claros, control en terreno y foco en cumplir lo acordado."}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={prev} style={btnIcon()}>
-                  ‹
-                </button>
-                <button type="button" onClick={next} style={btnIcon()}>
-                  ›
-                </button>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: isMd ? "1fr" : "1fr 1fr",
-                gap: 14,
-                alignItems: "stretch",
-              }}
-            >
-              <div style={imgCard()}>
-                <img
-                  src={leftSrc}
-                  alt="About gallery 1"
-                  style={imgStyle()}
-                  loading="eager"
-                />
-              </div>
-
-              <div style={imgCard()}>
-                <img
-                  src={rightSrc}
-                  alt="About gallery 2"
-                  style={imgStyle()}
-                  loading="eager"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* CAROUSEL SECTION (la que se te agrandó) */}
+      <ImageCarousel
+        title={lang === "en" ? "Operations, infrastructure and control" : "Operación, infraestructura y control"}
+        text={
+          lang === "en"
+            ? "Industrial team focused on continuity: clear processes, on-site control and delivery discipline."
+            : "Equipo industrial orientado a continuidad: procesos claros, control en terreno y foco en cumplir lo acordado."
+        }
+        images={[
+          { src: "/images/about/01.jpg", alt: "Operations 01" },
+          { src: "/images/about/02.jpg", alt: "Operations 02" },
+          { src: "/images/about/03.jpg", alt: "Operations 03" },
+          { src: "/images/about/04.jpg", alt: "Operations 04" },
+        ]}
+      />
     </div>
   );
+}
+
 
   function btnIcon(): React.CSSProperties {
     return {
@@ -2883,185 +2770,208 @@ function buildHeroCandidates(dirOrFullHeroPath: string) {
   return exts.map((e) => `${base}${e}`);
 }
 
-function ImageCarousel(props:
-  | {
-      // API nueva (cards)
-      images: Array<string | string[]>;
-      alt: string;
-      height?: number;
-      rounded?: number;
-      fit?: "cover" | "contain";
-      showArrows?: boolean;
-    }
-  | {
-      // API antigua (product detail)
-      dir?: string;
-      count?: number;
-      altBase?: string;
-      fit?: "cover" | "contain";
-      radius?: number;
-      height?: number;
-      showArrows?: boolean;
-    }
-) {
-  const fit = (props as any).fit ?? "cover";
-  const height = (props as any).height ?? 240;
-  const rounded = (props as any).rounded ?? (props as any).radius ?? 16;
-  const showArrows = (props as any).showArrows ?? true;
+function ImageCarousel({
+  title,
+  text,
+  images,
+}: {
+  title: string;
+  text: string;
+  images: { src: string; alt: string }[];
+}) {
+  const [i, setI] = React.useState(0);
 
-  // -------------------------
-  // Normalizamos slides en formato:
-  // slides = [ [candidato1, candidato2, ...], [candidato1...], ... ]
-  // -------------------------
-  const slides: string[][] = (() => {
-    // API: images
-    if ((props as any).images) {
-      const raw = (props as any).images as Array<string | string[]>;
-      return raw
-        .map((x) => (Array.isArray(x) ? x : [x]).filter(Boolean))
-        .filter((arr) => arr.length > 0);
-    }
+  // seguridad
+  const safeImages = images?.length ? images : [];
+  const canNav = safeImages.length > 1;
 
-    // API: dir/count
-    const dir = (props as any).dir as string | undefined;
-    const count = Math.max(1, Number((props as any).count ?? 1));
-
-    if (!dir) return [];
-    const safeCount = Math.min(count, 12); // límite razonable
-
-    return Array.from({ length: safeCount }, (_, i) => buildIndexedImageCandidates(dir, i + 1));
-  })();
-
-  const altLabel =
-    ((props as any).alt as string | undefined) ??
-    ((props as any).altBase as string | undefined) ??
-    "Image";
-
-  const [slideIdx, setSlideIdx] = React.useState(0);
-  const [candidateIdx, setCandidateIdx] = React.useState(0);
-  const [hardFail, setHardFail] = React.useState(false);
-
-  const hasMany = slides.length > 1;
-
-  // Si no hay slides, render limpio
-  if (slides.length === 0) {
-    return (
-      <div
-        aria-label={altLabel}
-        style={{
-          height,
-          borderRadius: rounded,
-          background: "rgba(15,23,42,0.04)",
-          border: "1px solid rgba(15,23,42,0.08)",
-        }}
-      />
-    );
-  }
-
-  const candidates = slides[slideIdx] ?? [];
-  const currentSrc = candidates[candidateIdx] ?? candidates[0];
-
-  const resetTo = (newSlide: number) => {
-    setSlideIdx(newSlide);
-    setCandidateIdx(0);
-    setHardFail(false);
+  const next = () => {
+    if (!canNav) return;
+    setI((v) => (v + 1) % safeImages.length);
   };
 
-  const goPrev = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMany) return;
-    const next = (slideIdx - 1 + slides.length) % slides.length;
-    resetTo(next);
+  const prev = () => {
+    if (!canNav) return;
+    setI((v) => (v - 1 + safeImages.length) % safeImages.length);
   };
 
-  const goNext = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMany) return;
-    const next = (slideIdx + 1) % slides.length;
-    resetTo(next);
-  };
+  // === layout: control duro de altura para que NO se estire ===
+  const CARD_H_DESKTOP = 320; // “pequeño” como tu referencia
+  const CARD_H_MOBILE = 220;
 
-  const arrowStyle: React.CSSProperties = {
-    position: "absolute",
-    top: "50%",
-    transform: "translateY(-50%)",
+  return (
+    <section
+      style={{
+        width: "100%",
+        background: "#F3F4F6",
+        borderTop: `1px solid ${BRAND.lineSoft}`,
+        borderBottom: `1px solid ${BRAND.lineSoft}`,
+      }}
+    >
+      <div style={{ ...containerStyle(), ...sectionPad(28, 22) }}>
+        <div
+          style={{
+            background: BRAND.panel,
+            border: `1px solid ${BRAND.lineSoft}`,
+            borderRadius: 22,
+            padding: 18,
+            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)",
+          }}
+        >
+          {/* HEADER: título + flechas alineadas */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              marginBottom: 10,
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 650,
+                  color: BRAND.primary,
+                  lineHeight: 1.15,
+                  marginBottom: 6,
+                }}
+              >
+                {title}
+              </div>
+              <div style={{ color: BRAND.muted, fontSize: 14, lineHeight: 1.6, maxWidth: 720 }}>
+                {text}
+              </div>
+            </div>
+
+            {/* botones: tamaño fijo y centrados */}
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button
+                type="button"
+                onClick={prev}
+                aria-label="Previous"
+                disabled={!canNav}
+                style={carouselNavBtn(!canNav)}
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={next}
+                aria-label="Next"
+                disabled={!canNav}
+                style={carouselNavBtn(!canNav)}
+              >
+                ›
+              </button>
+            </div>
+          </div>
+
+          {/* CONTENIDO: 2 cards, altura fija */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 14,
+              alignItems: "stretch",
+            }}
+          >
+            {/* Imagen 1 */}
+            <div style={carouselImageCard(CARD_H_DESKTOP, CARD_H_MOBILE)}>
+              {safeImages[0] ? (
+                <img
+                  src={safeImages[0].src}
+                  alt={safeImages[0].alt}
+                  loading="lazy"
+                  decoding="async"
+                  style={carouselImgStyle()}
+                />
+              ) : (
+                <div style={carouselFallback()} />
+              )}
+            </div>
+
+            {/* Imagen 2 = la imagen “rotatoria” */}
+            <div style={carouselImageCard(CARD_H_DESKTOP, CARD_H_MOBILE)}>
+              {safeImages[i] ? (
+                <img
+                  key={safeImages[i].src}
+                  src={safeImages[i].src}
+                  alt={safeImages[i].alt}
+                  loading="lazy"
+                  decoding="async"
+                  style={carouselImgStyle()}
+                />
+              ) : (
+                <div style={carouselFallback()} />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* responsive simple */}
+      <style>{`
+        @media (max-width: 900px) {
+          section > div > div > div[style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+    </section>
+  );
+}
+
+/** Ctrl+F: carouselNavBtn */
+function carouselNavBtn(disabled: boolean): React.CSSProperties {
+  return {
     width: 44,
     height: 44,
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.35)",
-    background: "rgba(255,255,255,0.35)",
-    backdropFilter: "blur(6px)",
-    WebkitBackdropFilter: "blur(6px)",
+    border: `1px solid ${BRAND.lineSoft}`,
+    background: disabled ? "#F8FAFC" : "#FFFFFF",
+    color: disabled ? "#94A3B8" : BRAND.primary,
+    cursor: disabled ? "not-allowed" : "pointer",
     display: "grid",
-    placeItems: "center",     // ✅ centra perfecto
-    padding: 0,               // ✅ evita desplazamientos
-    cursor: "pointer",
+    placeItems: "center",
+    fontSize: 22,
+    lineHeight: 1,
+    boxShadow: "0 6px 14px rgba(15, 23, 42, 0.08)",
     userSelect: "none",
   };
-
-  return (
-    <div
-      aria-label={altLabel}
-      style={{
-        position: "relative",
-        height,
-        borderRadius: rounded,
-        overflow: "hidden",
-        background: "rgba(15,23,42,0.04)",
-        border: "1px solid rgba(15,23,42,0.08)",
-      }}
-    >
-      {/* Si falló todo, bloque limpio (sin icono roto, sin texto) */}
-      {!hardFail && currentSrc ? (
-        <img
-          key={`${slideIdx}-${candidateIdx}-${currentSrc}`}
-          src={currentSrc}
-          alt="" // IMPORTANTÍSIMO: evita que el navegador muestre texto si falla
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: fit,
-            display: "block",
-          }}
-          onError={() => {
-            // 1) probar siguiente candidato (misma slide)
-            if (candidateIdx + 1 < candidates.length) {
-              setCandidateIdx((t) => t + 1);
-              return;
-            }
-
-            // 2) pasar a siguiente slide si existe
-            if (slides.length > 1) {
-              const next = (slideIdx + 1) % slides.length;
-              setSlideIdx(next);
-              setCandidateIdx(0);
-              return;
-            }
-
-            // 3) falló todo: no mostrar imagen rota
-            setHardFail(true);
-          }}
-        />
-      ) : null}
-
-      {showArrows && hasMany && (
-        <>
-          <button type="button" aria-label="Anterior" onClick={goPrev} style={{ ...arrowStyle, left: 12 }}>
-            ‹
-          </button>
-          <button type="button" aria-label="Siguiente" onClick={goNext} style={{ ...arrowStyle, right: 12 }}>
-            ›
-          </button>
-        </>
-      )}
-    </div>
-  );
 }
+
+/** Ctrl+F: carouselImageCard */
+function carouselImageCard(desktopH: number, mobileH: number): React.CSSProperties {
+  return {
+    borderRadius: 18,
+    overflow: "hidden",
+    border: `1px solid ${BRAND.lineSoft}`,
+    background: "#0B1220",
+    height: desktopH,
+  };
+}
+
+/** Ctrl+F: carouselImgStyle */
+function carouselImgStyle(): React.CSSProperties {
+  return {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+  };
+}
+
+/** Ctrl+F: carouselFallback */
+function carouselFallback(): React.CSSProperties {
+  return {
+    width: "100%",
+    height: "100%",
+    background: "linear-gradient(135deg, #0B1220 0%, #111827 60%, #0B1220 100%)",
+  };
+}
+
 
 function ImageLightbox({
   open,
