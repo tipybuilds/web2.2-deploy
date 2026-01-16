@@ -341,7 +341,7 @@ const UI = {
     en: "Operational solutions for aquaculture, agriculture, packaging, and logistics.",
   },
   homeCtaSales: { es: "Hablar con ventas", en: "Talk to Sales" },
-
+  
 
   divisionsLabel: { es: "", en: "" },
   divisionsHeadline: {
@@ -1507,7 +1507,7 @@ function Home() {
                   {pick(UI.homeCtaSales, lang)}
                 </Link>
                 
-                </a>
+            
               </div>
 
               <div
