@@ -886,6 +886,11 @@ export default function App() {
 }
 
 function AppShell() {
+  // ✅ Control global tipo “zoom navegador”
+  // 0.80 = como el zoom 80% en Chrome
+  // 0.85–0.90 = más conservador
+  const UI_SCALE = 0.80;
+
   return (
     <div
       style={{
@@ -901,13 +906,7 @@ function AppShell() {
         *, *::before, *::after { box-sizing: border-box; }
         html, body, #root { height: 100%; width: 100%; }
 
-        /* =========================
-           GLOBAL SCALE (Fix “too zoomed” UI)
-           - This makes 100% browser zoom look like your current 80% feel
-           - No CSS zoom hacks; accessibility-safe
-        ========================= */
         html {
-          font-size: 15px; /* ✅ key change: global scale down */
           -webkit-text-size-adjust: 100%;
           text-rendering: optimizeLegibility;
         }
@@ -918,14 +917,26 @@ function AppShell() {
           background: ${BRAND.bg};
           color: ${BRAND.ink};
           font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-          line-height: 1.55; /* leve ajuste para que no se vea “inflado” */
+          line-height: 1.6;
+
+          /* ✅ Global UI scale (Chrome/Safari/Edge) */
+          zoom: ${UI_SCALE};
+
+          /* ✅ Compensación del “zoom” para que no quede margen raro */
+          zoom-origin: top center;
         }
 
+        /* ✅ Mantén assets fluidos */
         p { margin: 0; }
         a { color: inherit; }
         button, input, textarea, select { font: inherit; }
-
         img, video, canvas, svg { max-width: 100%; height: auto; }
+
+        /* ✅ En mobile NO aplicamos scale (si quieres, lo podemos dejar igual)
+           Esto evita que en pantallas chicas quede demasiado pequeño */
+        @media (max-width: 720px) {
+          body { zoom: 1; }
+        }
       `}</style>
 
       <SiteHeader />
@@ -2172,13 +2183,34 @@ function Nosotros() {
               </h1>
 
               <div style={{ marginTop: 12, maxWidth: 560 }}>
-                <p style={{ fontSize: bodySize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
+                <p
+                  style={{
+                    fontSize: bodySize,
+                    lineHeight: 1.78,
+                    color: "#334155",
+                    marginBottom: 12,
+                  }}
+                >
                   {pick(UI.nosotrosP1, lang)}
                 </p>
-                <p style={{ fontSize: bodySize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
+                <p
+                  style={{
+                    fontSize: bodySize,
+                    lineHeight: 1.78,
+                    color: "#334155",
+                    marginBottom: 12,
+                  }}
+                >
                   {pick(UI.nosotrosP2, lang)}
                 </p>
-                <p style={{ fontSize: bodySize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
+                <p
+                  style={{
+                    fontSize: bodySize,
+                    lineHeight: 1.78,
+                    color: "#334155",
+                    marginBottom: 12,
+                  }}
+                >
                   {pick(UI.nosotrosP3, lang)}
                 </p>
               </div>
@@ -2190,11 +2222,15 @@ function Nosotros() {
               </div>
             </div>
 
-            {/* HERO IMAGE (sin ratio prop; usando minHeight) */}
+            {/* HERO IMAGE */}
             <div style={{ display: "flex" }}>
               <FigurePlaceholder
                 title={lang === "en" ? "COMPANY" : "EMPRESA"}
-                subtitle={lang === "en" ? "Photo: team / plant / operations" : "Foto: equipo / planta / operación"}
+                subtitle={
+                  lang === "en"
+                    ? "Photo: team / plant / operations"
+                    : "Foto: equipo / planta / operación"
+                }
                 src="/images/about/hero.jpg"
                 alt={lang === "en" ? "About Tipy Town" : "Sobre Tipy Town"}
                 fit="cover"
@@ -2205,9 +2241,13 @@ function Nosotros() {
         </div>
       </section>
 
-      {/* CAROUSEL SECTION (la que se te agrandó) */}
-      <ImageCarousel
-        title={lang === "en" ? "Operations, infrastructure and control" : "Operación, infraestructura y control"}
+      {/* CAROUSEL SECTION */}
+      <AboutCarousel
+        title={
+          lang === "en"
+            ? "Operations, infrastructure and control"
+            : "Operación, infraestructura y control"
+        }
         text={
           lang === "en"
             ? "Industrial team focused on continuity: clear processes, on-site control and delivery discipline."
@@ -2225,41 +2265,8 @@ function Nosotros() {
 }
 
 
-  function btnIcon(): React.CSSProperties {
-    return {
-      width: 42,
-      height: 42,
-      borderRadius: 999,
-      border: `1px solid ${BRAND.line}`,
-      background: BRAND.panel,
-      color: BRAND.primary,
-      fontSize: 22,
-      lineHeight: "42px",
-      textAlign: "center",
-      cursor: "pointer",
-      boxShadow: "0 10px 22px rgba(2,6,23,.06)",
-    };
-  }
 
-  function imgCard(): React.CSSProperties {
-    return {
-      borderRadius: 16,
-      overflow: "hidden",
-      border: `1px solid ${BRAND.line}`,
-      background: "#fff",
-      minHeight: isMd ? 220 : 260,
-    };
-  }
-
-  function imgStyle(): React.CSSProperties {
-    return {
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      display: "block",
-    };
-  }
-}
+  
 
 
 function Contacto() {
@@ -2770,7 +2777,220 @@ function buildHeroCandidates(dirOrFullHeroPath: string) {
   return exts.map((e) => `${base}${e}`);
 }
 
+/** Ctrl+F: ImageCarousel (PRODUCTS)
+ * Carousel para productos y cards.
+ * Soporta:
+ * - images: (string | string[])[]  -> cada slide puede ser un src o lista de candidatos
+ * - images: string[][]            -> (también calza porque es string[] por slide)
+ * Props esperadas por tus usos: alt, height, rounded, fit, showArrows
+ */
 function ImageCarousel({
+  images,
+  alt,
+  height = 420,
+  rounded = 18,
+  fit = "cover",
+  showArrows = true,
+}: {
+  images: Array<string | string[]>;
+  alt: string;
+  height?: number;
+  rounded?: number;
+  fit?: "cover" | "contain";
+  showArrows?: boolean;
+}) {
+  const safeSlides = (images || [])
+    .map((s) => (Array.isArray(s) ? s.filter(Boolean) : s ? [s] : []))
+    .filter((arr) => arr.length > 0);
+
+  const total = safeSlides.length;
+  const canNav = showArrows && total > 1;
+
+  const [idx, setIdx] = React.useState(0);
+
+  // Para fallback de candidatos dentro del slide actual
+  const [candIdx, setCandIdx] = React.useState(0);
+
+  // Lightbox
+  const [lightboxOpen, setLightboxOpen] = React.useState(false);
+
+  // Mantener idx válido cuando cambian imágenes
+  React.useEffect(() => {
+    setIdx(0);
+    setCandIdx(0);
+    setLightboxOpen(false);
+  }, [safeSlides.map((s) => s.join("|")).join("||")]);
+
+  // Reset de candidato cuando cambia el slide
+  React.useEffect(() => {
+    setCandIdx(0);
+  }, [idx]);
+
+  const prev = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!canNav) return;
+    setIdx((v) => (v - 1 + total) % total);
+  };
+
+  const next = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!canNav) return;
+    setIdx((v) => (v + 1) % total);
+  };
+
+  const openLightbox = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => setLightboxOpen(false);
+
+  const candidates = total ? safeSlides[idx] : [];
+  const currentSrc = candidates[candIdx];
+
+  const frame: React.CSSProperties = {
+    width: "100%",
+    height,
+    borderRadius: rounded,
+    overflow: "hidden",
+    border: `1px solid ${BRAND.line}`,
+    background: "#0B1220",
+    position: "relative",
+  };
+
+  const imgStyle: React.CSSProperties = {
+    width: "100%",
+    height: "100%",
+    objectFit: fit,
+    display: "block",
+    cursor: "zoom-in",
+  };
+
+  const navBtn = (disabled: boolean): React.CSSProperties => ({
+    width: 42,
+    height: 42,
+    borderRadius: 999,
+    border: `1px solid ${BRAND.line}`,
+    background: disabled ? "rgba(255,255,255,0.60)" : "white",
+    color: disabled ? "#94A3B8" : BRAND.primary,
+    cursor: disabled ? "not-allowed" : "pointer",
+    display: "grid",
+    placeItems: "center",
+    fontSize: 22,
+    lineHeight: 1,
+    boxShadow: "0 10px 22px rgba(2,6,23,.10)",
+    userSelect: "none",
+  });
+
+  if (!total) {
+    return (
+      <div style={{ ...frame, display: "grid", placeItems: "center", color: "rgba(226,232,240,0.85)" }}>
+        <div style={{ padding: 14, textAlign: "center", fontSize: 13, lineHeight: 1.5 }}>
+          No se encontraron imágenes.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div style={frame}>
+        {/* Imagen */}
+        {currentSrc ? (
+          <img
+            key={`${idx}-${candIdx}-${currentSrc}`}
+            src={currentSrc}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            style={imgStyle}
+            onClick={openLightbox}
+            onError={() => {
+              // Fallback: probar siguiente candidato del MISMO slide
+              if (candIdx + 1 < candidates.length) setCandIdx((p) => p + 1);
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(135deg, #0B1220 0%, #111827 60%, #0B1220 100%)",
+            }}
+          />
+        )}
+
+        {/* Overlay suave */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(180deg, rgba(2,6,23,0.04) 0%, rgba(2,6,23,0.20) 100%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Flechas (NO disparan Link padre) */}
+        {canNav ? (
+          <>
+            <button
+              type="button"
+              aria-label="Previous"
+              onClick={prev}
+              style={{ ...navBtn(false), position: "absolute", top: "50%", left: 12, transform: "translateY(-50%)" }}
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              aria-label="Next"
+              onClick={next}
+              style={{ ...navBtn(false), position: "absolute", top: "50%", right: 12, transform: "translateY(-50%)" }}
+            >
+              ›
+            </button>
+          </>
+        ) : null}
+
+        {/* Contador */}
+        {total > 1 ? (
+          <div
+            style={{
+              position: "absolute",
+              left: 12,
+              bottom: 12,
+              padding: "6px 10px",
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.86)",
+              border: `1px solid rgba(15,23,42,0.12)`,
+              fontSize: 12,
+              fontWeight: 800,
+              color: "rgba(15,23,42,0.80)",
+              userSelect: "none",
+            }}
+          >
+            {idx + 1}/{total}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Lightbox */}
+      <ImageLightbox open={lightboxOpen} src={currentSrc} alt={alt} onClose={closeLightbox} />
+    </>
+  );
+}
+
+
+function AboutCarousel({
   title,
   text,
   images,
