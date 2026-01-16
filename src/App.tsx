@@ -109,7 +109,7 @@ const BRAND = {
 };
 
 const HEADER_H = 64;
-const CONTAINER_MAX = 1440;
+const CONTAINER_MAX = 2048;
 
 // WhatsApp
 const WHATSAPP_PHONE_E164 = "+56968160062";
