@@ -1018,7 +1018,7 @@ en: "Cabo Mussel is a high-performance technical rope that functions as a substr
             imageLabel: { es: "Foto: cabo mussel / captación y siembra", en: "Photo: Cabo Mussel / collection & seeding" },
 
             imageDir: "/images/divisions/acuicola/products/cabo-mussel",
-            imageCount: 1,
+            imageCount: 8,
 
             badges: [{ es: "Máximo rendimiento", en: "Max performance" }],
           },
@@ -1042,7 +1042,7 @@ en: "Cabo Mussel is a high-performance technical rope that functions as a substr
             imageLabel: { es: "Foto: cabo rafia / bobinas / bodega", en: "Photo: PP rope / coils / warehouse" },
 
             imageDir: "/images/divisions/acuicola/products/cabo-rafia",
-            imageCount: 1,
+            imageCount: 8,
 
             badges: [{ es: "Amarre de cuelgas y colectores", en: "Droppers & collectors tie-off" }],
           },
@@ -1080,7 +1080,7 @@ en: "100% natural and biodegradable cotton fruit netting, developed for brands a
             imageLabel: { es: "Foto: malla biodegradable / fruta / packing", en: "Photo: biodegradable netting / fruit / packing" },
 
             imageDir: "/images/divisions/agro/products/biodegradable",
-            imageCount: 1,
+            imageCount: 8,
 
             badges: [{ es: "100% algodón", en: "100% cotton" }],
           },
@@ -1104,7 +1104,7 @@ It is the right choice for high-volume operations, tight commercial windows, or 
             imageLabel: { es: "Foto: malla PE / operación / packing", en: "Photo: PE netting / operations / packing" },
 
             imageDir: "/images/divisions/agro/products/polietileno",
-            imageCount: 1,
+            imageCount: 8,
 
             badges: [{ es: "PE", en: "PE" }],
           },
@@ -1154,7 +1154,7 @@ Available in standard color, with custom color manufacturing available upon requ
 },
             imageLabel: { es: "Foto: film stretch manual", en: "Photo: hand stretch film" },
             imageDir: "/images/divisions/packaging/products/film-stretch-1,7kgs",
-            imageCount: 1,
+            imageCount: 9,
             badges: [{ es: "Pack 6", en: "6-Pack" }, { es: "1,7 kg c/u", en: "1.7 kg each" }],
           },
           {
@@ -1179,7 +1179,7 @@ Available in standard color, with custom color manufacturing available upon requ
 },
             imageLabel: { es: "Foto: film stretch 3 kg", en: "Photo: 3.0 kg stretch film" },
             imageDir: "/images/divisions/packaging/products/film-stretch-3kgs",
-            imageCount: 1,
+            imageCount: 9,
             badges: [{ es: "Pack 6", en: "6-Pack" }, { es: "3,0 kg c/u", en: "3.0 kg each" }],
           },
         ],
@@ -1209,7 +1209,7 @@ Available in standard color, with custom color manufacturing available upon requ
             imageLabel: { es: "Foto: tracto / rampla / ruta", en: "Photo: tractor unit / trailer / route" },
             
             imageDir: "/images/divisions/transporte/products/capacidad",
-            imageCount: 1,
+            imageCount: 9,
             clickable: false,
             cardMaxWidth: 1500,
             cardVariant: "wide-compact",
@@ -2138,11 +2138,33 @@ function Nosotros() {
   const { isMd, isXl } = useBreakpoints();
   const { lang } = useLang();
 
-  const titleSize = isMd ? 34 : isXl ? 52 : 44;
-  const paragraphSize = 18;
+  // Tamaños de texto (evita el error de body18)
+  const body18 = isMd ? 16 : 18;
+
+  // Galería ABOUT: 4 imágenes reales (esto fuerza el render en prod)
+  const ABOUT_GALLERY = useMemo(
+    () => [
+      "/images/about/01.jpg",
+      "/images/about/02.jpg",
+      "/images/about/03.jpg",
+      "/images/about/04.jpg",
+    ],
+    []
+  );
+
+  // Carrusel 2-up: muestra 2 imágenes a la vez
+  const [idx, setIdx] = useState(0);
+  const total = ABOUT_GALLERY.length;
+
+  const prev = () => setIdx((v) => (v - 2 + total) % total);
+  const next = () => setIdx((v) => (v + 2) % total);
+
+  const leftSrc = ABOUT_GALLERY[idx % total];
+  const rightSrc = ABOUT_GALLERY[(idx + 1) % total];
 
   return (
     <div style={{ width: "100%" }}>
+      {/* HERO */}
       <section
         style={{
           borderBottom: `1px solid ${BRAND.line}`,
@@ -2157,7 +2179,7 @@ function Nosotros() {
               <h1
                 style={{
                   marginTop: 10,
-                  fontSize: titleSize,
+                  fontSize: isMd ? 34 : isXl ? 52 : 44,
                   fontWeight: 350,
                   color: BRAND.primary,
                   lineHeight: 1.08,
@@ -2168,13 +2190,34 @@ function Nosotros() {
               </h1>
 
               <div style={{ marginTop: 12, maxWidth: 560 }}>
-                <p style={{ fontSize: paragraphSize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
+                <p
+                  style={{
+                    fontSize: body18,
+                    lineHeight: 1.78,
+                    color: "#334155",
+                    marginBottom: 12,
+                  }}
+                >
                   {pick(UI.nosotrosP1, lang)}
                 </p>
-                <p style={{ fontSize: paragraphSize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
+                <p
+                  style={{
+                    fontSize: body18,
+                    lineHeight: 1.78,
+                    color: "#334155",
+                    marginBottom: 12,
+                  }}
+                >
                   {pick(UI.nosotrosP2, lang)}
                 </p>
-                <p style={{ fontSize: paragraphSize, lineHeight: 1.78, color: "#334155", marginBottom: 12 }}>
+                <p
+                  style={{
+                    fontSize: body18,
+                    lineHeight: 1.78,
+                    color: "#334155",
+                    marginBottom: 12,
+                  }}
+                >
                   {pick(UI.nosotrosP3, lang)}
                 </p>
               </div>
@@ -2189,7 +2232,11 @@ function Nosotros() {
             <div style={{ height: isMd ? undefined : "100%", display: "flex" }}>
               <FigurePlaceholder
                 title={lang === "en" ? "COMPANY" : "EMPRESA"}
-                subtitle={lang === "en" ? "Photo: team / plant / operations" : "Foto: equipo / planta / operación"}
+                subtitle={
+                  lang === "en"
+                    ? "Photo: team / plant / operations"
+                    : "Foto: equipo / planta / operación"
+                }
                 src="/images/about/hero.jpg"
                 alt={lang === "en" ? "About Tipy Town" : "Sobre Tipy Town"}
                 fit="cover"
@@ -2199,9 +2246,134 @@ function Nosotros() {
           </div>
         </div>
       </section>
+
+      {/* GALERÍA (2 imágenes, flechas) */}
+      <section style={{ background: BRAND.bg }}>
+        <div style={{ ...containerStyle(), ...sectionPad(28, 26) }}>
+          <div
+            style={{
+              background: BRAND.panel,
+              border: `1px solid ${BRAND.line}`,
+              borderRadius: 18,
+              padding: isMd ? 16 : 18,
+              boxShadow: "0 10px 28px rgba(2,6,23,.06)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                marginBottom: 14,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: isMd ? 18 : 20,
+                    fontWeight: 650,
+                    color: BRAND.primary,
+                    letterSpacing: -0.2,
+                  }}
+                >
+                  {lang === "en"
+                    ? "Operations, infrastructure and control"
+                    : "Operación, infraestructura y control"}
+                </div>
+                <div
+                  style={{
+                    marginTop: 6,
+                    fontSize: isMd ? 14 : 15,
+                    lineHeight: 1.75,
+                    color: BRAND.muted,
+                    maxWidth: 680,
+                  }}
+                >
+                  {lang === "en"
+                    ? "Industrial execution with clear processes, field control and focus on compliance."
+                    : "Equipo industrial orientado a continuidad: procesos claros, control en terreno y foco en cumplir lo acordado."}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button type="button" onClick={prev} style={btnIcon()}>
+                  ‹
+                </button>
+                <button type="button" onClick={next} style={btnIcon()}>
+                  ›
+                </button>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMd ? "1fr" : "1fr 1fr",
+                gap: 14,
+                alignItems: "stretch",
+              }}
+            >
+              <div style={imgCard()}>
+                <img
+                  src={leftSrc}
+                  alt="About gallery 1"
+                  style={imgStyle()}
+                  loading="eager"
+                />
+              </div>
+
+              <div style={imgCard()}>
+                <img
+                  src={rightSrc}
+                  alt="About gallery 2"
+                  style={imgStyle()}
+                  loading="eager"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
+
+  function btnIcon(): React.CSSProperties {
+    return {
+      width: 42,
+      height: 42,
+      borderRadius: 999,
+      border: `1px solid ${BRAND.line}`,
+      background: BRAND.panel,
+      color: BRAND.primary,
+      fontSize: 22,
+      lineHeight: "42px",
+      textAlign: "center",
+      cursor: "pointer",
+      boxShadow: "0 10px 22px rgba(2,6,23,.06)",
+    };
+  }
+
+  function imgCard(): React.CSSProperties {
+    return {
+      borderRadius: 16,
+      overflow: "hidden",
+      border: `1px solid ${BRAND.line}`,
+      background: "#fff",
+      minHeight: isMd ? 220 : 260,
+    };
+  }
+
+  function imgStyle(): React.CSSProperties {
+    return {
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      display: "block",
+    };
+  }
 }
+
 
 function Contacto() {
   const { lang } = useLang();
