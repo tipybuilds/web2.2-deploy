@@ -2078,9 +2078,24 @@ function ProductCard({
     return buildProductImageCandidates(dir, 1);
   })();
 
+  // ✅ SOLO para transporte: candidatos múltiples
+  const allImageCandidates: string[][] = (() => {
+    if (divisionKey !== "transporte") return []; // ✅ SOLO transporte
+    
+    const dir = product.imageDir;
+    const count = Math.max(1, Number(product.imageCount ?? 1));
+    if (!dir) return [];
+    
+    const candidates = [];
+    for (let i = 1; i <= count; i++) {
+      candidates.push(buildProductImageCandidates(dir, i));
+    }
+    return candidates;
+  })();
+
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
-  // Texto “leyenda” para wide-compact (Transporte)
+  // Texto "leyenda" para wide-compact
   const longTextRaw =
     (product.descriptionText ? pick(product.descriptionText, lang) : "") ||
     pick(product.descriptionPlaceholder, lang);
@@ -2088,7 +2103,7 @@ function ProductCard({
   const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
 
   // ==========================
-  // VARIANTE: WIDE-COMPACT
+  // VARIANTE: WIDE-COMPACT (SOLO TRANSPORTE CON IMÁGENES ADICIONALES)
   // ==========================
   if (product.cardVariant === "wide-compact") {
     const H = isMd ? 240 : 320;
@@ -2101,6 +2116,11 @@ function ProductCard({
       boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
       maxWidth: maxW,
       marginInline: product.cardMaxWidth ? "auto" : undefined,
+      display: "flex",
+      flexDirection: divisionKey === "transporte" ? "column" : "row", // ✅ SOLO transporte usa column
+    };
+
+    const topSectionStyle: React.CSSProperties = {
       display: "grid",
       gridTemplateColumns: isMd ? "1fr" : "minmax(0, 0.95fr) minmax(0, 1.05fr)",
       alignItems: "stretch",
@@ -2131,112 +2151,136 @@ function ProductCard({
       gap: 12,
     };
 
+    const fullWidthImageStyle: React.CSSProperties = {
+      width: "100%",
+      height: isMd ? 200 : 260,
+      borderTop: `1px solid ${BRAND.line}`,
+      background: "#0B1220",
+    };
+
     const content = (
       <div style={wideCardStyle}>
-        {/* LEFT (leyenda) */}
-        <div style={leftStyle}>
-          <div style={headerRow}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
-                {title}
+        {/* SECCIÓN SUPERIOR: texto + primera imagen */}
+        <div style={topSectionStyle}>
+          {/* LEFT (leyenda) */}
+          <div style={leftStyle}>
+            <div style={headerRow}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
+                  {title}
+                </div>
+
+                {subtitle ? (
+                  <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
+                    {subtitle}
+                  </div>
+                ) : null}
               </div>
 
-              {subtitle ? (
-                <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
-                  {subtitle}
+              {isClickable ? (
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
+                    display: "grid",
+                    placeItems: "center",
+                    border: `1px solid ${BRAND.line}`,
+                    color: "rgba(15, 23, 42, 0.75)",
+                    flex: "0 0 auto",
+                    fontWeight: 900,
+                  }}
+                >
+                  →
                 </div>
               ) : null}
             </div>
 
-            {isClickable ? (
+            {tag ? (
               <div
-                aria-hidden="true"
                 style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 12,
-                  display: "grid",
-                  placeItems: "center",
-                  border: `1px solid ${BRAND.line}`,
-                  color: "rgba(15, 23, 42, 0.75)",
-                  flex: "0 0 auto",
-                  fontWeight: 900,
+                  alignSelf: "flex-start",
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                  background: "rgba(35, 137, 201, 0.12)",
+                  border: "1px solid rgba(35, 137, 201, 0.18)",
+                  color: "rgba(15, 23, 42, 0.82)",
+                  fontWeight: 800,
+                  fontSize: 13,
                 }}
               >
-                →
+                {tag}
+              </div>
+            ) : null}
+
+            {legend ? (
+              <div
+                style={{
+                  color: "#334155",
+                  fontSize: 15,
+                  lineHeight: 1.75,
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical" as any,
+                  WebkitLineClamp: 5 as any,
+                  overflow: "hidden",
+                }}
+              >
+                {legend}
+              </div>
+            ) : null}
+
+            {isClickable ? (
+              <div style={{ marginTop: "auto", paddingTop: 6 }}>
+                <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
+                  {lang === "en" ? "See details" : "Ver detalle"}
+                </span>
               </div>
             ) : null}
           </div>
 
-          {tag ? (
-            <div
-              style={{
-                alignSelf: "flex-start",
-                padding: "6px 10px",
-                borderRadius: 999,
-                background: "rgba(35, 137, 201, 0.12)",
-                border: "1px solid rgba(35, 137, 201, 0.18)",
-                color: "rgba(15, 23, 42, 0.82)",
-                fontWeight: 800,
-                fontSize: 13,
-              }}
-            >
-              {tag}
-            </div>
-          ) : null}
-
-          {legend ? (
-            <div
-              style={{
-                color: "#334155",
-                fontSize: 15,
-                lineHeight: 1.75,
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical" as any,
-                WebkitLineClamp: 5 as any,
-                overflow: "hidden",
-              }}
-            >
-              {legend}
-            </div>
-          ) : null}
-
-          {isClickable ? (
-            <div style={{ marginTop: "auto", paddingTop: 6 }}>
-              <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
-                {lang === "en" ? "See details" : "Ver detalle"}
-              </span>
-            </div>
-          ) : null}
+          {/* RIGHT (primera imagen) */}
+          <div style={rightStyle}>
+            {cardImageCandidates.length ? (
+              <ProductCardImage
+                candidates={cardImageCandidates}
+                alt={title}
+                height={H}
+                rounded={0}
+                fit="cover"
+                borderless
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: H,
+                  display: "grid",
+                  placeItems: "center",
+                  color: "rgba(226,232,240,0.75)",
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                Sin imagen
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* RIGHT (imagen edge-to-edge) */}
-        <div style={rightStyle}>
-          {cardImageCandidates.length ? (
+        {/* ✅ SOLO TRANSPORTE: imágenes adicionales de ancho completo */}
+        {divisionKey === "transporte" && allImageCandidates.slice(1).map((candidates, index) => (
+          <div key={index + 1} style={fullWidthImageStyle}>
             <ProductCardImage
-              candidates={cardImageCandidates}
-              alt={title}
-              height={H}
+              candidates={candidates}
+              alt={`${title} - imagen ${index + 2}`}
+              height={isMd ? 200 : 260}
               rounded={0}
               fit="cover"
               borderless
             />
-          ) : (
-            <div
-              style={{
-                width: "100%",
-                height: H,
-                display: "grid",
-                placeItems: "center",
-                color: "rgba(226,232,240,0.75)",
-                fontWeight: 800,
-                fontSize: 13,
-              }}
-            >
-              Sin imagen
-            </div>
-          )}
-        </div>
+          </div>
+        ))}
       </div>
     );
 
@@ -2248,6 +2292,7 @@ function ProductCard({
       </Link>
     );
   }
+
 
   // ==========================
   // DEFAULT CARD (grid normal)
