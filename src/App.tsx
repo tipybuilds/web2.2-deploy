@@ -2152,20 +2152,20 @@ function ProductCard({
     };
 
     // ✅ Banner (01.jpg) ancho completo SOLO transporte - ALTURAS REDUCIDAS
-    const bannerStyle: React.CSSProperties = {
-      width: "100%",
-      height: isMd ? 140 : 180, // ✅ CAMBIO: reducido de 220:320 a 140:180
-      background: "#0B1220",
-      borderBottom: `1px solid ${BRAND.line}`,
-    };
+const bannerStyle: React.CSSProperties = {
+  width: "100%",
+  height: isMd ? 140 : 180, // ✅ CAMBIO: reducido de 220:320
+  background: "#0B1220",
+  borderBottom: `1px solid ${BRAND.line}`,
+};
 
-    // ✅ Imágenes adicionales ancho completo (02.jpg, 03.jpg...) SOLO transporte - ALTURAS REDUCIDAS
-    const fullWidthImageStyle: React.CSSProperties = {
-      width: "100%",
-      height: isMd ? 120 : 160, // ✅ CAMBIO: reducido de 200:260 a 120:160
-      borderTop: `1px solid ${BRAND.line}`,
-      background: "#0B1220",
-    };
+// ✅ Imágenes adicionales ancho completo SOLO transporte - ALTURAS REDUCIDAS  
+const fullWidthImageStyle: React.CSSProperties = {
+  width: "100%",
+  height: isMd ? 120 : 160, // ✅ CAMBIO: reducido de 200:260
+  borderTop: `1px solid ${BRAND.line}`,
+  background: "#0B1220",
+};
 
     const bannerCandidates: string[] = isTransporte
       ? (allImageCandidates[0] ?? cardImageCandidates)
@@ -3541,7 +3541,7 @@ function AboutCarousel({
     setI((v) => (v - 1 + safeImages.length) % safeImages.length);
   };
 
-  const H = isMd ? 240 : 320;
+  const H = isMd ? 140 : 180; // ✅ CAMBIO: reducido de 240:320 a 140:180
   const current = safeImages[i] || safeImages[0];
 
   return (
@@ -3620,7 +3620,7 @@ function AboutCarousel({
               borderLeft: !isMd ? `1px solid ${BRAND.lineSoft}` : undefined,
               borderTop: isMd ? `1px solid ${BRAND.lineSoft}` : undefined,
               background: "#0B1220",
-              height: H,
+              height: H, // ✅ CAMBIO: usa la altura reducida
               position: "relative",
               overflow: "hidden",
             }}
@@ -3655,6 +3655,7 @@ function AboutCarousel({
 }
 
 
+
 /** Ctrl+F: carouselNavBtn */
 function carouselNavBtn(disabled: boolean): React.CSSProperties {
   return {
@@ -3675,13 +3676,14 @@ function carouselNavBtn(disabled: boolean): React.CSSProperties {
 }
 
 /** Ctrl+F: carouselImageCard */
+/** Ctrl+F: carouselImageCard */
 function carouselImageCard(desktopH: number, mobileH: number): React.CSSProperties {
   return {
     borderRadius: 18,
     overflow: "hidden",
     border: `1px solid ${BRAND.lineSoft}`,
     background: "#0B1220",
-    height: desktopH,
+    height: desktopH, // ✅ usar las alturas reducidas cuando se llame
   };
 }
 
