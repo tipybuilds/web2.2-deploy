@@ -142,6 +142,44 @@ const LangCtx = createContext<{ lang: Lang; toggleLang: () => void } | null>(
   null
 );
 
+// Ctrl+F: LangProvider
+type Lang = "es" | "en";
+
+const LangContext = createContext<{
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  toggleLang: () => void;
+} | null>(null);
+
+function LangProvider({ children }: { children: React.ReactNode }) {
+  const [lang, setLang] = useState<Lang>(() => {
+    try {
+      const saved = localStorage.getItem("lang");
+      if (saved === "es" || saved === "en") return saved;
+    } catch {}
+    return "es";
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("lang", lang);
+    } catch {}
+  }, [lang]);
+
+  const toggleLang = () => setLang((p) => (p === "es" ? "en" : "es"));
+
+  const value = useMemo(() => ({ lang, setLang, toggleLang }), [lang]);
+
+  return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
+}
+
+function useLang() {
+  const ctx = useContext(LangContext);
+  if (!ctx) throw new Error("useLang must be used within LangProvider");
+  return ctx;
+}
+
+
 function PageShell({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -167,20 +205,45 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Ctrl+F: function ProductGallery
 // Ctrl+F: function ProductGallery(
-function ProductGallery({
-  images,
-  alt,
-  height, // opcional: si viene, se respeta tal cual (override)
-}: {
-  images: string[];
-  alt: string;
-  height?: number | string;
-}) {
+type ProductGalleryProps =
+  | {
+      publicFolder: string;
+      alt: string;
+      maxNumbered?: number;
+      includeHero?: boolean;
+      height?: number | string;
+      images?: never;
+    }
+  | {
+      images: string[];
+      alt: string;
+      height?: number | string;
+      publicFolder?: never;
+      maxNumbered?: never;
+      includeHero?: never;
+    };
+
+function ProductGallery(props: ProductGalleryProps) {
   const { isMd } = useBreakpoints();
 
-  const safeImages = (images || []).filter(Boolean);
+  const alt = props.alt;
+  const height = props.height;
+
+  // Resolver imágenes desde publicFolder (tu API actual) o directo desde images
+  const images = useMemo(() => {
+    if ("images" in props) {
+      return (props.images || []).filter(Boolean);
+    }
+    // IMPORTANTE: esto asume que YA EXISTE tu helper resolveProductGalleryImages
+    // Ctrl+F: resolveProductGalleryImages (debe estar en App.tsx)
+    return resolveProductGalleryImages(props.publicFolder, {
+      maxNumbered: props.maxNumbered ?? 12,
+      includeHero: props.includeHero ?? true,
+    }).filter(Boolean);
+  }, [props]);
+
+  const safeImages = images;
   const [idx, setIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
@@ -188,21 +251,30 @@ function ProductGallery({
   const [syncedHeightPx, setSyncedHeightPx] = useState<number | null>(null);
 
   const hasMany = safeImages.length > 1;
-  const currentSrc = safeImages[Math.min(idx, Math.max(0, safeImages.length - 1))] || "";
+  const currentIdx = Math.min(idx, Math.max(0, safeImages.length - 1));
+  const currentSrc = safeImages[currentIdx] || "";
+
+  useEffect(() => {
+    // si cambia el set de imágenes, evitar idx fuera de rango
+    setIdx((p) => {
+      const max = Math.max(0, safeImages.length - 1);
+      return Math.min(p, max);
+    });
+  }, [safeImages.length]);
 
   const prev = () => {
     if (!safeImages.length) return;
     setIdx((p) => (p - 1 + safeImages.length) % safeImages.length);
   };
+
   const next = () => {
     if (!safeImages.length) return;
     setIdx((p) => (p + 1) % safeImages.length);
   };
 
-  // ====== CLAVE: sincronizar altura con la columna de texto (hermano anterior) ======
+  // ====== CLAVE: altura sincronizada con el bloque de texto (hermano anterior) ======
   useEffect(() => {
     if (height != null) {
-      // Si el padre pasa height, no forzamos nada
       setSyncedHeightPx(null);
       return;
     }
@@ -210,11 +282,9 @@ function ProductGallery({
     const wrapEl = wrapRef.current;
     if (!wrapEl) return;
 
-    // Caso típico: en el hero 2 columnas, el texto va primero y la galería después.
-    // Por eso tomamos el "previousElementSibling".
+    // En tu layout: texto (izq) primero, galería (der) después
     let textEl = wrapEl.previousElementSibling as HTMLElement | null;
 
-    // Fallback si por algún motivo no existe: tomar el primer hijo del parent que no sea el wrap.
     if (!textEl && wrapEl.parentElement) {
       const kids = Array.from(wrapEl.parentElement.children) as HTMLElement[];
       textEl = kids.find((k) => k !== wrapEl) || null;
@@ -225,11 +295,9 @@ function ProductGallery({
     const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 
     const compute = () => {
-      // Alto visible del bloque de texto
       const h = textEl!.getBoundingClientRect().height;
 
-      // Evitar extremos: mínimo utilizable + máximo razonable en desktop
-      // (sin usar vh como “driver” del layout).
+      // mínimos/máximos para no romper visualmente
       const minH = isMd ? 320 : 260;
       const maxH = isMd ? 720 : 560;
 
@@ -241,7 +309,6 @@ function ProductGallery({
     const ro = new ResizeObserver(() => compute());
     ro.observe(textEl);
 
-    // También recalcular si cambian fuentes/layout (resize)
     const onResize = () => compute();
     window.addEventListener("resize", onResize);
 
@@ -251,10 +318,6 @@ function ProductGallery({
     };
   }, [height, isMd]);
 
-  // Altura final:
-  // 1) si viene height => se respeta
-  // 2) si logramos medir texto => usamos ese alto
-  // 3) fallback razonable (no gigante)
   const wrapH: string | number =
     height != null
       ? typeof height === "number"
@@ -289,13 +352,13 @@ function ProductGallery({
       ref={wrapRef}
       style={{
         width: "100%",
-        height: wrapH,                 // <- se ajusta al texto
+        height: wrapH,
         borderRadius: 18,
         overflow: "hidden",
         background: BRAND.panel,
         border: `1px solid ${BRAND.line}`,
         position: "relative",
-        alignSelf: "flex-start",       // <- evita estiramientos raros del grid
+        alignSelf: "flex-start",
       }}
     >
       {/* Imagen */}
@@ -320,7 +383,7 @@ function ProductGallery({
               width: "100%",
               height: "100%",
               display: "block",
-              objectFit: "cover", // mismo look “foto” de antes
+              objectFit: "cover",
             }}
           />
         ) : (
@@ -328,7 +391,7 @@ function ProductGallery({
         )}
       </button>
 
-      {/* Flechas (formato anterior: overlay izquierda/derecha) */}
+      {/* Flechas */}
       {hasMany && (
         <>
           <button
@@ -355,7 +418,7 @@ function ProductGallery({
             <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>›</span>
           </button>
 
-          {/* Indicadores */}
+          {/* Dots */}
           <div
             style={{
               position: "absolute",
@@ -376,7 +439,7 @@ function ProductGallery({
                   width: 7,
                   height: 7,
                   borderRadius: 999,
-                  background: i === idx ? BRAND.primary : "rgba(15,23,42,0.25)",
+                  background: i === currentIdx ? BRAND.primary : "rgba(15,23,42,0.25)",
                 }}
               />
             ))}
@@ -384,8 +447,7 @@ function ProductGallery({
         </>
       )}
 
-      {/* Lightbox (usa tu componente existente si ya lo tienes; si no existe, elimínalo) */}
-      {"ImageLightbox" in (globalThis as any) ? null : null}
+      {/* Lightbox (si ya existe en tu App.tsx) */}
       <ImageLightbox
         open={lightboxOpen}
         src={currentSrc}
@@ -395,6 +457,7 @@ function ProductGallery({
     </div>
   );
 }
+
 
 
 function useLang() {
