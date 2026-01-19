@@ -483,12 +483,7 @@ function buildDivisionHeroSrc(divisionKey: string) {
   return `/images/divisions/${divisionKey}/hero.jpg`;
 }
 
-/**
- * ImageCarousel:
- * - Flechas internas con stopPropagation + preventDefault (para no activar el Link padre)
- * - No muestra “leyendas” ni texto alternativo visible
- * - Si una imagen falla, no rompe la UI (queda el bloque)
- */
+
 
 
 
@@ -1691,22 +1686,29 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
               </div>
             </div>
 
-            <div style={{ alignSelf: "stretch", minHeight: 0, display: "flex" }}>
-              <div style={{ flex: "1 1 auto", minHeight: 0 }}>
-                <ImageCarousel
-                  images={slides}
-                  alt={title}
-                  height={isMd ? 320 : 520}
-                  rounded={22}
-                  fit="cover"
-                  showArrows={slides.length > 1}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+           <div style={{ marginTop: 2 }}>
+  {Array.isArray(images) && images.length ? (
+    <ProductCardImage candidates={images[0]} alt={title} height={210} rounded={16} fit="cover" />
+  ) : (
+    <div
+      style={{
+        width: "100%",
+        height: 210,
+        borderRadius: 16,
+        border: `1px dashed ${BRAND.line}`,
+        background: "rgba(15, 23, 42, 0.03)",
+        display: "grid",
+        placeItems: "center",
+        color: "rgba(15, 23, 42, 0.55)",
+        fontWeight: 800,
+        fontSize: 13,
+      }}
+    >
+      Sin imagen
     </div>
+  )}
+</div>
+
   );
 }
 
