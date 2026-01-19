@@ -1846,11 +1846,24 @@ function ProductCard({
   const isClickable = product.clickable !== false;
   const to = `/${divisionKey}/${product.key}`;
 
-  // --- Card image: ONLY first numbered image (01.*), NEVER hero ---
+  // ================================
+  // CARD IMAGE (SOLO 01.*, NUNCA HERO)
+  // ================================
   const cardImageCandidates: string[] = (() => {
     const dir = product.imageDir;
     if (!dir) return [];
-    return buildCardFirstImageCandidates(dir);
+
+    const base = dir.replace(/\/+$/, "");
+    return [
+      `${base}/01.jpg`,
+      `${base}/01.jpeg`,
+      `${base}/01.png`,
+      `${base}/01.webp`,
+      `${base}/1.jpg`,
+      `${base}/1.jpeg`,
+      `${base}/1.png`,
+      `${base}/1.webp`,
+    ];
   })();
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
@@ -1879,9 +1892,17 @@ function ProductCard({
 
   const content = (
     <div style={cardStyle}>
+      {/* ================= HEADER ================= */}
       <div style={headerRow}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.2, color: BRAND.ink }}>
+          <div
+            style={{
+              fontWeight: 900,
+              fontSize: 16,
+              lineHeight: 1.2,
+              color: BRAND.ink,
+            }}
+          >
             {title}
           </div>
 
@@ -1923,6 +1944,7 @@ function ProductCard({
         ) : null}
       </div>
 
+      {/* ================= TAG ================= */}
       {tag ? (
         <div
           style={{
@@ -1940,7 +1962,7 @@ function ProductCard({
         </div>
       ) : null}
 
-      {/* ✅ Card: single static image. No arrows, no bubbles, no expansion */}
+      {/* ================= IMAGE ================= */}
       <div style={{ marginTop: 2 }}>
         {cardImageCandidates.length ? (
           <ProductCardImage
@@ -1972,19 +1994,7 @@ function ProductCard({
     </div>
   );
 
-  if (!isClickable) {
-    return <div style={{ height: "100%" }}>{content}</div>;
-  }
-
-  return (
-    <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-      {content}
-    </Link>
-  );
-}
-
-
-  // Wrapper: Link solo si es clickeable
+  // ================= WRAPPER =================
   if (!isClickable) {
     return <div style={{ height: "100%" }}>{content}</div>;
   }
