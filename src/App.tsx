@@ -1026,12 +1026,32 @@ export default function App() {
 }
 
 function AppShell() {
-  // ✅ PREMISA OFICIAL — NUNCA OLVIDAR
+  // ✅ PREMISA OFICIAL — escala global 80%
   const UI_SCALE = 0.8;
-  const INV_SCALE = 1 / UI_SCALE; // 1.25
 
-  // ✅ Clave: el viewport (100vh visible) equivale a (100vh / scale) dentro del wrapper escalado
+  // ✅ Para que el contenido escalado “ocupe” 100vh visible
   const SCALED_VH = `calc(100vh / ${UI_SCALE})`;
+  const SCALED_W = `calc(100% / ${UI_SCALE})`;
+
+  // ✅ Fix global (evita scroll horizontal y márgenes raros del body)
+  React.useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+
+    const prevHtmlOverflowX = html.style.overflowX;
+    const prevBodyOverflowX = body.style.overflowX;
+    const prevBodyMargin = body.style.margin;
+
+    html.style.overflowX = "hidden";
+    body.style.overflowX = "hidden";
+    body.style.margin = "0";
+
+    return () => {
+      html.style.overflowX = prevHtmlOverflowX;
+      body.style.overflowX = prevBodyOverflowX;
+      body.style.margin = prevBodyMargin;
+    };
+  }, []);
 
   return (
     <div
@@ -1043,17 +1063,18 @@ function AppShell() {
         overflowX: "hidden",
       }}
     >
-      {/* Wrapper de escala global */}
+      {/* ✅ Wrapper escalado correctamente centrado */}
       <div
         style={{
-          transform: `scale(${UI_SCALE})`,
-          transformOrigin: "top center",
-          width: `${INV_SCALE * 100}%`, // 125%
+          position: "relative",
+          left: "50%",
+          width: SCALED_W, // 125% cuando scale=0.8
           minHeight: SCALED_VH,
-          marginInline: "auto",
+          transform: `translateX(-50%) scale(${UI_SCALE})`,
+          transformOrigin: "top left",
         }}
       >
-        {/* ✅ IMPORTANTE: este contenedor también debe medir SCALED_VH (no 100vh) */}
+        {/* Layout vertical: header + main + footer */}
         <div
           style={{
             minHeight: SCALED_VH,
@@ -1061,10 +1082,8 @@ function AppShell() {
             flexDirection: "column",
           }}
         >
-          {/* HEADER */}
           <SiteHeader />
 
-          {/* MAIN */}
           <main
             style={{
               width: "100%",
@@ -1095,7 +1114,6 @@ function AppShell() {
             </Routes>
           </main>
 
-          {/* FOOTER — SIEMPRE ABAJO */}
           <footer
             style={{
               marginTop: "auto",
@@ -1160,6 +1178,7 @@ function AppShell() {
     </div>
   );
 }
+
 
 
 
