@@ -162,11 +162,15 @@ function ProductGallery({
   // ✅ Lightbox (expansible)
   const [open, setOpen] = React.useState(false);
 
+  // ✅ Medimos la proporción real de la imagen (para que el frame se vea armónico)
+  const [aspect, setAspect] = React.useState<number | null>(null);
+
   React.useEffect(() => {
     let alive = true;
     setLoading(true);
     setIdx(0);
     setOpen(false);
+    setAspect(null);
 
     resolveProductGalleryImages(publicFolder, {
       maxNumbered,
@@ -201,6 +205,34 @@ function ProductGallery({
   const next = React.useCallback(() => {
     setIdx((v) => (total ? (v + 1) % total : 0));
   }, [total]);
+
+  // ✅ Cada vez que cambia la imagen activa, recalculamos aspect ratio real
+  React.useEffect(() => {
+    const src = imgs[idx];
+    if (!src) {
+      setAspect(null);
+      return;
+    }
+
+    let cancelled = false;
+    const im = new Image();
+    im.onload = () => {
+      if (cancelled) return;
+      const w = im.naturalWidth || 0;
+      const h = im.naturalHeight || 0;
+      if (w > 0 && h > 0) setAspect(w / h);
+      else setAspect(null);
+    };
+    im.onerror = () => {
+      if (cancelled) return;
+      setAspect(null);
+    };
+    im.src = src;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [imgs, idx]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -274,13 +306,23 @@ function ProductGallery({
     cursor: "not-allowed",
   };
 
+  /**
+   * ✅ FIX 1: Frame armónico y grande
+   * - Usamos `aspectRatio` real (cuando existe) para que NO se vea “chico” ni raro.
+   * - Limitamos con maxH para mantener consistencia visual con el layout.
+   * - La imagen en la página usa `cover` para verse alineada y contundente.
+   */
   const mediaFrameStyle: React.CSSProperties = {
     width: "100%",
-    height: maxH,
-    display: "grid",
-    placeItems: "center",
     background: "rgba(15, 23, 42, 0.03)",
     overflow: "hidden",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    // frame armónico según imagen, fallback 16/9
+    aspectRatio: aspect ? `${aspect}` : "16 / 9",
+    // mantiene “tamaño premium” sin romper la grilla
+    maxHeight: maxH,
   };
 
   if (loading) {
@@ -336,7 +378,7 @@ function ProductGallery({
           </div>
         </div>
 
-        {/* ✅ Zoom-out: contain (no recorta / no “zoom in”) */}
+        {/* ✅ Vista en página: armónica y más grande */}
         <div style={mediaFrameStyle}>
           <img
             src={imgs[idx]}
@@ -347,7 +389,7 @@ function ProductGallery({
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "contain",
+              objectFit: "cover", // ✅ llena el frame (alineado y “premium”)
               display: "block",
               cursor: "zoom-in",
             }}
@@ -355,6 +397,7 @@ function ProductGallery({
         </div>
       </div>
 
+      {/* ✅ FIX 2: Lightbox realmente expansible y adaptable al tamaño/aspect original */}
       {open ? (
         <div
           role="dialog"
@@ -373,12 +416,15 @@ function ProductGallery({
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "min(1100px, 96vw)",
+              width: "min(96vw, 1600px)",
+              height: "min(92vh, 920px)",
               borderRadius: 16,
               overflow: "hidden",
               background: "#0b1220",
               border: "1px solid rgba(255,255,255,0.10)",
               boxShadow: "0 30px 90px rgba(0,0,0,0.45)",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             <div
@@ -390,6 +436,7 @@ function ProductGallery({
                 padding: 10,
                 background: "rgba(255,255,255,0.06)",
                 borderBottom: "1px solid rgba(255,255,255,0.10)",
+                flex: "0 0 auto",
               }}
             >
               <div style={{ color: "rgba(255,255,255,0.78)", fontWeight: 900, fontSize: 13 }}>
@@ -411,20 +458,24 @@ function ProductGallery({
 
             <div
               style={{
-                width: "100%",
-                height: "min(74vh, 780px)",
-                display: "grid",
-                placeItems: "center",
+                flex: "1 1 auto",
+                minHeight: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 background: "#0b1220",
+                padding: 12,
               }}
             >
               <img
                 src={imgs[idx]}
                 alt={alt}
                 style={{
+                  width: "auto",
+                  height: "auto",
                   maxWidth: "100%",
                   maxHeight: "100%",
-                  objectFit: "contain",
+                  objectFit: "contain", // ✅ respeta proporción real en expansión
                   display: "block",
                 }}
               />
