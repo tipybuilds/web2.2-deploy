@@ -2213,7 +2213,7 @@ function ProductCard({
     return buildProductImageCandidates(dir, 1);
   })();
 
-  // ✅ SOLO transporte: múltiples imágenes (01.jpg, 02.jpg, 03.jpg...)
+  // ✅ SOLO para transporte: candidatos múltiples (01.jpg, 02.jpg, 03.jpg...)
   const allImageCandidates: string[][] = (() => {
     if (divisionKey !== "transporte") return [];
     const dir = product.imageDir;
@@ -2234,11 +2234,59 @@ function ProductCard({
 
   const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
 
+  // =========================================================
+  // ✅ FIX: detectar qué imagen realmente carga (evita slots negros)
+  // =========================================================
+  const [loaded, setLoaded] = React.useState<Record<string, boolean>>({});
+  const markLoaded = React.useCallback((key: string) => {
+    setLoaded((p) => (p[key] ? p : { ...p, [key]: true }));
+  }, []);
+
+  function PreloadFirstWorking({
+    candidates,
+    id,
+  }: {
+    candidates: string[];
+    id: string;
+  }) {
+    // intenta en orden y marca "loaded" en el primer src que carga
+    React.useEffect(() => {
+      let alive = true;
+      if (!candidates?.length) return;
+
+      let idx = 0;
+      const tryNext = () => {
+        if (!alive) return;
+        if (idx >= candidates.length) return;
+
+        const src = candidates[idx++];
+        const img = new Image();
+        img.onload = () => {
+          if (!alive) return;
+          markLoaded(id);
+        };
+        img.onerror = () => {
+          if (!alive) return;
+          tryNext();
+        };
+        img.src = src;
+      };
+
+      tryNext();
+      return () => {
+        alive = false;
+      };
+    }, [candidates, id, markLoaded]);
+
+    return null;
+  }
+
   // ==========================
   // VARIANTE: WIDE-COMPACT
   // ==========================
   if (product.cardVariant === "wide-compact") {
     const H = isMd ? 240 : 320;
+
     const isTransporte = divisionKey === "transporte";
 
     const wideCardStyle: React.CSSProperties = {
@@ -2284,22 +2332,23 @@ function ProductCard({
       gap: 12,
     };
 
-    // ✅ Banner panorámico (menos alto) SOLO transporte
-    const bannerStyle: React.CSSProperties = {
+    // ✅ Banner full width (pero SIN slot si no carga)
+    const bannerWrap: React.CSSProperties = {
       width: "100%",
+      // “largo, no alto”
+      aspectRatio: "21 / 7",
+      maxHeight: isMd ? 220 : 260,
       background: "#0B1220",
       borderBottom: `1px solid ${BRAND.line}`,
-      aspectRatio: isMd ? "16 / 9" : "21 / 7",
-      maxHeight: isMd ? 220 : 260,
     };
 
-    // ✅ Imágenes adicionales SOLO transporte (02+, también panorámicas)
-    const fullWidthImageStyle: React.CSSProperties = {
+    // ✅ Imágenes adicionales full width (pero SIN slot si no cargan)
+    const extraWrap: React.CSSProperties = {
       width: "100%",
-      background: "#0B1220",
-      borderTop: `1px solid ${BRAND.line}`,
-      aspectRatio: isMd ? "16 / 9" : "21 / 7",
+      aspectRatio: "21 / 8",
       maxHeight: isMd ? 200 : 240,
+      borderTop: `1px solid ${BRAND.line}`,
+      background: "#0B1220",
     };
 
     const bannerCandidates: string[] = isTransporte
@@ -2308,40 +2357,33 @@ function ProductCard({
 
     const content = (
       <div style={wideCardStyle}>
-        {/* ✅ SOLO TRANSPORTE: banner 01.jpg full width y bajo */}
+        {/* ✅ PRELOAD (no se ve). Sirve para decidir si renderizar o no */}
         {isTransporte ? (
-          <div style={bannerStyle}>
-            {bannerCandidates.length ? (
-              <ProductCardImage
-                candidates={bannerCandidates}
-                alt={`${title} - banner`}
-                rounded={0}
-                fit="cover"
-                borderless
-              />
-            ) : (
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "rgba(226,232,240,0.75)",
-                  fontWeight: 800,
-                  fontSize: 13,
-                }}
-              >
-                Sin imagen
-              </div>
-            )}
+          <>
+            <PreloadFirstWorking candidates={bannerCandidates} id="t-banner" />
+            {allImageCandidates.slice(1).map((c, i) => (
+              <PreloadFirstWorking key={i} candidates={c} id={`t-extra-${i}`} />
+            ))}
+          </>
+        ) : null}
+
+        {/* ✅ SOLO TRANSPORTE: banner SOLO si cargó */}
+        {isTransporte && loaded["t-banner"] ? (
+          <div style={bannerWrap}>
+            <ProductCardImage
+              candidates={bannerCandidates}
+              alt={`${title} - banner`}
+              height={isMd ? 220 : 260}
+              rounded={0}
+              fit="cover"
+              borderless
+            />
           </div>
         ) : null}
 
-        {/* TOP:
-            - Transporte: solo texto (porque el banner ya tomó la imagen)
-            - Resto: texto + imagen a la derecha (como antes) */}
+        {/* TOP */}
         {isTransporte ? (
-          <div style={{ ...leftStyle }}>
+          <div style={{ ...leftStyle, borderBottom: `1px solid ${BRAND.line}` }}>
             <div style={headerRow}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
@@ -2495,7 +2537,7 @@ function ProductCard({
               ) : null}
             </div>
 
-            {/* RIGHT (imagen como estaba antes) */}
+            {/* RIGHT */}
             <div style={rightStyle}>
               {cardImageCandidates.length ? (
                 <ProductCardImage
@@ -2525,19 +2567,24 @@ function ProductCard({
           </div>
         )}
 
-        {/* ✅ SOLO TRANSPORTE: imágenes 02+ full width (si existen) */}
+        {/* ✅ SOLO TRANSPORTE: extras SOLO si cargaron */}
         {isTransporte
-          ? allImageCandidates.slice(1).map((candidates, index) => (
-              <div key={index + 2} style={fullWidthImageStyle}>
-                <ProductCardImage
-                  candidates={candidates}
-                  alt={`${title} - imagen ${index + 2}`}
-                  rounded={0}
-                  fit="cover"
-                  borderless
-                />
-              </div>
-            ))
+          ? allImageCandidates.slice(1).map((candidates, index) => {
+              const id = `t-extra-${index}`;
+              if (!loaded[id]) return null;
+              return (
+                <div key={index + 2} style={extraWrap}>
+                  <ProductCardImage
+                    candidates={candidates}
+                    alt={`${title} - imagen ${index + 2}`}
+                    height={isMd ? 200 : 240}
+                    rounded={0}
+                    fit="cover"
+                    borderless
+                  />
+                </div>
+              );
+            })
           : null}
       </div>
     );
@@ -2552,7 +2599,7 @@ function ProductCard({
   }
 
   // ==========================
-  // DEFAULT CARD (grid normal) – RESTAURADO CON IMAGEN
+  // DEFAULT CARD (grid normal)
   // ==========================
   const cardStyle: React.CSSProperties = {
     background: "white",
@@ -2674,7 +2721,6 @@ function ProductCard({
     </Link>
   );
 }
-
 function Nosotros() {
   const { isMd, isXl } = useBreakpoints();
   const { lang } = useLang();
