@@ -3660,11 +3660,11 @@ function AboutCarousel({
           <div style={grid}>
             {/* LEFT */}
             <div style={left}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: BRAND.primary, lineHeight: 1.2 }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: BRAND.primary, lineHeight: 1.2 }}>
                 {title}
               </div>
 
-              <div style={{ color: "#334155", fontSize: 15, lineHeight: 1.7, maxWidth: 640 }}>
+              <div style={{ color: "#334155", fontSize: 17, lineHeight: 1.7, maxWidth: 640 }}>
                 {text}
               </div>
 
@@ -3701,7 +3701,7 @@ function AboutCarousel({
                       placeItems: "center",
                       color: "rgba(226,232,240,0.75)",
                       fontWeight: 800,
-                      fontSize: 13,
+                      fontSize: 15,
                     }}
                   >
                     Sin imagen
