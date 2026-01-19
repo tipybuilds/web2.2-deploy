@@ -17,13 +17,85 @@ import {
 } from "react-router-dom";
 
 /* =========================================================
-   CONFIG
+   CONFIG (FIX: BRAND / useLang / LangProvider / WhatsApp consts)
+========================================================= */
+const UI_SCALE = 0.8; // ✅ premisa oficial: “zoom out” equivalente a 80%
+
+const BRAND = {
+  primary: "#343E75",
+  secondary: "#2389C9",
+  surface: "#D2E4EE",
+  ink: "#0B1220",
+  muted: "#64748b",
+  bg: "#F3F4F6",
+  panel: "#FFFFFF",
+  line: "rgba(15, 23, 42, 0.08)",
+  lineSoft: "rgba(15, 23, 42, 0.08)",
+};
+
+const HEADER_H = 64;
+const CONTAINER_MAX = 1760;
+const CONTAINER_MAX_SCALED = Math.round(CONTAINER_MAX / UI_SCALE);
+
+// Contact / WhatsApp
+const WHATSAPP_PHONE_E164 = "+56968160062";
+const SALES_EMAIL = "ventas@tipytown.cl";
+
+// External links (ajusta si quieres)
+const MERCADOLIBRE_FILM_URL = "https://www.mercadolibre.cl/";
+const MITILICULTURA_MAPS_URL = "https://www.google.com/maps";
+
+/* =========================================================
+   LANG
+========================================================= */
+type Lang = "es" | "en";
+type Bilingual = { es: string; en: string };
+
+const LangCtx = createContext<{
+  lang: Lang;
+  setLang: React.Dispatch<React.SetStateAction<Lang>>;
+  toggleLang: () => void;
+} | null>(null);
+
+// Ctrl+F: function LangProvider
+function LangProvider({ children }: { children: React.ReactNode }) {
+  const [lang, setLang] = useState<Lang>(() => {
+    const saved =
+      typeof window !== "undefined" ? window.localStorage.getItem("lang") : null;
+    return saved === "en" || saved === "es" ? saved : "es";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("lang", lang);
+  }, [lang]);
+
+  const toggleLang = () => setLang((p) => (p === "en" ? "es" : "en"));
+
+  const value = useMemo(() => ({ lang, setLang, toggleLang }), [lang]);
+
+  return <LangCtx.Provider value={value}>{children}</LangCtx.Provider>;
+}
+
+// Ctrl+F: function useLang
+function useLang() {
+  const ctx = useContext(LangCtx);
+  if (!ctx) throw new Error("useLang must be used within LangProvider");
+  return ctx;
+}
+
+function pick(b: Bilingual, lang: Lang) {
+  return lang === "en" ? b.en : b.es;
+}
+
+/* =========================================================
+   GALLERY RESOLVER (sync, NO Promise)
 ========================================================= */
 // Ctrl+F: resolveProductGalleryImages
 type ResolveGalleryOptions = {
-  maxNumbered?: number;       // cuántas fotos numeradas buscar (01..max)
-  includeHero?: boolean;      // incluir hero.jpg al inicio
-  extensions?: string[];      // extensiones soportadas
+  maxNumbered?: number; // cuántas fotos numeradas buscar (01..max)
+  includeHero?: boolean; // incluir hero.jpg al inicio
+  extensions?: string[]; // extensiones soportadas
 };
 
 function resolveProductGalleryImages(
@@ -42,7 +114,7 @@ function resolveProductGalleryImages(
   const exts = extensions.map((e) => e.toLowerCase());
   const globPattern = `${folder}/*.{${exts.join(",")}}`;
 
-  // ✅ EAGER + as:url => sincronico (NO Promise)
+  // ✅ EAGER + as:url => sincrónico
   const modules = import.meta.glob(globPattern, {
     eager: true,
     as: "url",
@@ -50,14 +122,14 @@ function resolveProductGalleryImages(
 
   const out: string[] = [];
 
-  const pick = (filename: string) => {
+  const pickFile = (filename: string) => {
     const full = `${folder}/${filename}`;
     return modules[full] || "";
   };
 
   if (includeHero) {
     for (const ext of exts) {
-      const hit = pick(`hero.${ext}`);
+      const hit = pickFile(`hero.${ext}`);
       if (hit) {
         out.push(hit);
         break;
@@ -69,7 +141,7 @@ function resolveProductGalleryImages(
     const nn = String(n).padStart(2, "0");
     let found = "";
     for (const ext of exts) {
-      const hit = pick(`${nn}.${ext}`);
+      const hit = pickFile(`${nn}.${ext}`);
       if (hit) {
         found = hit;
         break;
@@ -78,36 +150,247 @@ function resolveProductGalleryImages(
     if (found) out.push(found);
   }
 
-  // dedupe manteniendo orden
   return Array.from(new Set(out)).filter(Boolean);
 }
 
+/* =========================================================
+   UI STRINGS
+========================================================= */
+const UI = {
+  brandTagline: {
+    es: "Soluciones productivas para acuicultura, agro, packaging y logística.",
+    en: "Operational solutions for aquaculture, agriculture, packaging, and logistics.",
+  },
+  homeCtaSales: { es: "Hablar con ventas", en: "Talk to Sales" },
 
-function PageShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        minHeight: "100vh",          // ✅ obliga layout a altura completa
-        display: "flex",
-        flexDirection: "column",
-        background: BRAND.bg,
-      }}
-    >
-      {/* Header (si ya lo renderizas fuera, elimina esta sección) */}
-      {/* <SiteHeader /> */}
+  divisionsLabel: { es: "", en: "" },
+  divisionsHeadline: {
+    es: "Capacidades enfocadas en continuidad operacional",
+    en: "Capabilities built for operational continuity",
+  },
 
-      <main style={{ flex: "1 1 auto" }}>
-        {children}
-      </main>
+  stat1Title: { es: "+50 años de experiencia", en: "50+ years of experience" },
+  stat1Desc: {
+    es: "Industria, operación y consistencia.",
+    en: "Industry, operations, and consistency.",
+  },
+  stat2Title: { es: "Fabricación en Chile", en: "Made in Chile" },
+  stat2Desc: {
+    es: "Control de proceso y especificación clara.",
+    en: "Process control and clear specification.",
+  },
+  stat3Title: { es: "Logística integrada", en: "Integrated logistics" },
+  stat3Desc: {
+    es: "Respuesta rápida y foco operativo.",
+    en: "Fast response and operational focus.",
+  },
 
-      {/* ✅ footer siempre abajo */}
-      <div style={{ marginTop: "auto" }}>
-        <SiteFooter />
-      </div>
-    </div>
-  );
+  navAcuicola: { es: "Acuícola", en: "Aquaculture" },
+  navAgro: { es: "Agro", en: "Agriculture" },
+  navPackaging: { es: "Packaging", en: "Packaging" },
+  navTransporte: { es: "Transporte", en: "Logistics" },
+  navCalidad: { es: "Calidad", en: "Quality" },
+  navNosotros: { es: "Nosotros", en: "About" },
+
+  btnWhatsApp: { es: "WhatsApp", en: "WhatsApp" },
+  btnContacto: { es: "Contacto", en: "Contact" },
+  btnContactar: { es: "Contactar", en: "Contact" },
+  btnComprarML: { es: "Comprar en Mercado Libre", en: "Buy on Mercado Libre" },
+  btnVisitanos: { es: "Visítanos", en: "Visit us" },
+
+  nosotrosTitle: { es: "Nosotros", en: "About" },
+  nosotrosP1: {
+    es: "Somos un partner operativo para industrias que no pueden fallar.",
+    en: "We are an operational partner for industries that cannot afford to fail.",
+  },
+  nosotrosP2: {
+    es: "Trabajamos con foco en continuidad, claridad y cumplimiento.",
+    en: "We operate with a focus on continuity, clarity, and execution.",
+  },
+  nosotrosP3: {
+    es: "Calidad en materiales, procesos y entregas. Los detalles hacen la diferencia.",
+    en: "Quality in materials, processes, and deliveries. Details make the difference.",
+  },
+  nosotrosBtn: { es: "Hablemos", en: "Let’s talk" },
+
+  contactoTitle: { es: "Contacto", en: "Contact" },
+  contactoIntro: {
+    es: "Envíanos tu requerimiento indicando división, producto, volumen estimado y destino. Respondemos con una propuesta clara y concreta.",
+    en: "Send your request including division, product, estimated volume, and destination. We respond with a clear, concrete proposal.",
+  },
+  contactoWABoxTitle: { es: "WhatsApp directo", en: "Direct WhatsApp" },
+  contactoWABoxText: {
+    es: "Para cotización rápida, escríbenos directamente.",
+    en: "For a quick quote, message us directly.",
+  },
+  contactoWATemplate: { es: "Mensaje sugerido", en: "Suggested message" },
+  contactoWAOpen: { es: "Abrir WhatsApp", en: "Open WhatsApp" },
+
+  contactoSalesBoxTitle: { es: "Ventas", en: "Sales" },
+  contactoSalesBoxText: {
+    es: "Contacto directo para proyectos, volúmenes y acuerdos comerciales.",
+    en: "Direct contact for projects, volumes, and commercial agreements.",
+  },
+
+  notFoundTitle: { es: "Página no encontrada", en: "Page not found" },
+  notFoundText: { es: "La ruta no existe.", en: "That route doesn’t exist." },
+  notFoundBtn: { es: "Ir al inicio", en: "Go home" },
+};
+
+function buildWhatsAppPrefill(lang: Lang) {
+  return lang === "en"
+    ? "Hi, I’d like to request a quote from Tipy Town.\nDivision:\nProduct:\nEstimated volume:\nDestination:"
+    : "Hola, quiero cotizar un producto de Tipy Town.\nDivisión:\nProducto:\nVolumen estimado:\nDestino:";
 }
 
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+const BP = { sm: 720, md: 980, lg: 1200 };
+
+function useMediaQuery(query: string) {
+  const get = () =>
+    typeof window !== "undefined" ? window.matchMedia(query).matches : false;
+
+  const [matches, setMatches] = useState(get);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia(query);
+    const onChange = () => setMatches(mql.matches);
+
+    if ("addEventListener" in mql) mql.addEventListener("change", onChange);
+    else (mql as any).addListener(onChange);
+
+    setMatches(mql.matches);
+
+    return () => {
+      if ("removeEventListener" in mql) mql.removeEventListener("change", onChange);
+      else (mql as any).removeListener(onChange);
+    };
+  }, [query]);
+
+  return matches;
+}
+
+function useBreakpoints() {
+  const isSm = useMediaQuery(`(max-width: ${BP.sm}px)`);
+  const isMd = useMediaQuery(`(max-width: ${BP.md}px)`);
+  const isLg = useMediaQuery(`(max-width: ${BP.lg}px)`);
+  const isXl = useMediaQuery(`(min-width: 1600px)`);
+  return { isSm, isMd, isLg, isXl };
+}
+
+function containerStyle(): React.CSSProperties {
+  return {
+    width: "100%",
+    maxWidth: CONTAINER_MAX_SCALED,
+    marginInline: "auto",
+    paddingInline: "clamp(16px, 3vw, 48px)",
+    boxSizing: "border-box",
+  };
+}
+
+function sectionPad(top = 54, bottom = 52): React.CSSProperties {
+  return {
+    paddingTop: `clamp(18px, 3vw, ${top}px)`,
+    paddingBottom: `clamp(18px, 3vw, ${bottom}px)`,
+  };
+}
+
+function twoColGrid(isMd: boolean, isXl: boolean): React.CSSProperties {
+  return {
+    display: "grid",
+    gridTemplateColumns: isMd ? "1fr" : "minmax(0, 1fr) minmax(0, 1fr)",
+    gap: isMd ? 18 : isXl ? 56 : 40,
+    alignItems: "start",
+  };
+}
+
+function responsiveAutoGrid(minColPx: number): React.CSSProperties {
+  return {
+    display: "grid",
+    gridTemplateColumns: `repeat(auto-fit, minmax(${minColPx}px, 1fr))`,
+    gap: 18,
+    alignItems: "stretch",
+  };
+}
+
+/* =========================================================
+   TEXT HELPERS
+========================================================= */
+function toParagraphs(text: string): string[] {
+  const raw = String(text || "").trim();
+  if (!raw) return [];
+
+  if (/\n\s*\n/.test(raw)) {
+    return raw
+      .split(/\n\s*\n/g)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  const sentences = raw
+    .split(/(?<=[.!?])\s+/g)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (sentences.length <= 2) return [raw];
+
+  const out: string[] = [];
+  for (let i = 0; i < sentences.length; i += 2) {
+    out.push([sentences[i], sentences[i + 1]].filter(Boolean).join(" "));
+  }
+  return out;
+}
+
+/* =========================================================
+   TYPES
+========================================================= */
+type Product = {
+  key: string;
+  datasheetUrl?: string;
+
+  name: Bilingual;
+  short?: Bilingual;
+
+  descriptionText?: Bilingual;
+  descriptionPlaceholder: Bilingual;
+
+  imageLabel: Bilingual;
+  imageDir?: string;
+  imageCount?: number;
+  heroSrc?: string;
+
+  badges?: Bilingual[];
+
+  primaryAction?: { label: Bilingual; href?: string; to?: string };
+  secondaryAction?: { label: Bilingual; href?: string; to?: string };
+
+  clickable?: boolean;
+  cardMaxWidth?: number;
+  cardVariant?: "default" | "wide-compact";
+
+  [extra: string]: any;
+};
+
+type Division = {
+  key: "acuicola" | "agro" | "packaging" | "transporte";
+  navLabel: Bilingual;
+  pageTitle: Bilingual;
+  intro: Bilingual;
+
+  heroImageLabel: Bilingual;
+  heroImageSrc?: string;
+
+  productsTitle: Bilingual;
+  products: Product[];
+  layout?: "grid3" | "grid2" | "single";
+};
+
+/* =========================================================
+   PRODUCT GALLERY (FIX: flechas + tamaño fit al texto)
+========================================================= */
 // Ctrl+F: function ProductGallery(
 type ProductGalleryProps =
   | {
@@ -174,7 +457,7 @@ function ProductGallery(props: ProductGalleryProps) {
     setIdx((p) => (p + 1) % images.length);
   };
 
-  // ✅ Altura: calza con la columna de texto (fit al texto), con clamp para que NO se dispare
+  // ✅ Altura: calza con la columna de texto, con clamp para no explotar
   useEffect(() => {
     if (forcedHeight != null) {
       setSyncedHeightPx(null);
@@ -184,21 +467,26 @@ function ProductGallery(props: ProductGalleryProps) {
     const wrapEl = wrapRef.current;
     if (!wrapEl) return;
 
-    const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
+    const clamp = (n: number, a: number, b: number) =>
+      Math.max(a, Math.min(b, n));
 
     const findTextColumn = () => {
       let el: HTMLElement | null = wrapEl;
 
-      // sube hasta encontrar un parent con >=2 hijos (el grid 2-col)
       for (let k = 0; k < 12 && el; k++) {
         const p = el.parentElement as HTMLElement | null;
         if (!p) break;
 
         if (p.children && p.children.length >= 2) {
-          const first = p.children[0] as HTMLElement | undefined;  // texto
+          const first = p.children[0] as HTMLElement | undefined; // texto
           const second = p.children[1] as HTMLElement | undefined; // galería
 
-          if (second && second.contains(wrapEl) && first && !first.contains(wrapEl)) {
+          if (
+            second &&
+            second.contains(wrapEl) &&
+            first &&
+            !first.contains(wrapEl)
+          ) {
             return first;
           }
         }
@@ -214,11 +502,8 @@ function ProductGallery(props: ProductGalleryProps) {
 
     const compute = () => {
       const h = textEl.getBoundingClientRect().height;
-
-      // límites razonables para que quede como “antes”, pero ajustado al texto
       const minH = isMd ? 300 : 240;
       const maxH = isMd ? 680 : 560;
-
       setSyncedHeightPx(clamp(Math.round(h), minH, maxH));
     };
 
@@ -242,10 +527,10 @@ function ProductGallery(props: ProductGalleryProps) {
         ? `${forcedHeight}px`
         : forcedHeight
       : syncedHeightPx != null
-        ? `${syncedHeightPx}px`
-        : isMd
-          ? "420px"
-          : "340px";
+      ? `${syncedHeightPx}px`
+      : isMd
+      ? "420px"
+      : "340px";
 
   const arrowBtnBase: React.CSSProperties = {
     position: "absolute",
@@ -300,7 +585,6 @@ function ProductGallery(props: ProductGalleryProps) {
               width: "100%",
               height: "100%",
               display: "block",
-              // ✅ mantiene el “formato de antes”: NO “contain” gigante
               objectFit: "cover",
             }}
           />
@@ -311,7 +595,6 @@ function ProductGallery(props: ProductGalleryProps) {
 
       {hasMany && (
         <>
-          {/* flecha IZQ */}
           <button
             type="button"
             onClick={(e) => {
@@ -321,10 +604,11 @@ function ProductGallery(props: ProductGalleryProps) {
             style={{ ...arrowBtnBase, left: 14 }}
             aria-label="Anterior"
           >
-            <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>‹</span>
+            <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>
+              ‹
+            </span>
           </button>
 
-          {/* flecha DER */}
           <button
             type="button"
             onClick={(e) => {
@@ -334,10 +618,11 @@ function ProductGallery(props: ProductGalleryProps) {
             style={{ ...arrowBtnBase, right: 14 }}
             aria-label="Siguiente"
           >
-            <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>›</span>
+            <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>
+              ›
+            </span>
           </button>
 
-          {/* dots */}
           <div
             style={{
               position: "absolute",
@@ -358,7 +643,8 @@ function ProductGallery(props: ProductGalleryProps) {
                   width: 7,
                   height: 7,
                   borderRadius: 999,
-                  background: i === currentIdx ? BRAND.primary : "rgba(15,23,42,0.25)",
+                  background:
+                    i === currentIdx ? BRAND.primary : "rgba(15,23,42,0.25)",
                 }}
               />
             ))}
@@ -376,565 +662,15 @@ function ProductGallery(props: ProductGalleryProps) {
   );
 }
 
-
-
-function pick(b: Bilingual, lang: Lang) {
-  return lang === "en" ? b.en : b.es;
-}
-
-const UI = {
-  brandTagline: {
-    es: "Soluciones productivas para acuicultura, agro, packaging y logística.",
-    en: "Operational solutions for aquaculture, agriculture, packaging, and logistics.",
-  },
-  homeCtaSales: { es: "Hablar con ventas", en: "Talk to Sales" },
-  
-
-  divisionsLabel: { es: "", en: "" },
-  divisionsHeadline: {
-    es: "Capacidades enfocadas en continuidad operacional",
-    en: "Capabilities built for operational continuity",
-  },
-
-  stat1Title: { es: "+50 años de experiencia", en: "50+ years of experience" },
-  stat1Desc: { es: "Industria, operación y consistencia.", en: "Industry, operations, and consistency." },
-  stat2Title: { es: "Fabricación en Chile", en: "Made in Chile" },
-  stat2Desc: { es: "Control de proceso y especificación clara.", en: "Process control and clear specification." },
-  stat3Title: { es: "Logística integrada", en: "Integrated logistics" },
-  stat3Desc: { es: "Respuesta rápida y foco operativo.", en: "Fast response and operational focus." },
-
-  navAcuicola: { es: "Acuícola", en: "Aquaculture" },
-  navAgro: { es: "Agro", en: "Agriculture" },
-  navPackaging: { es: "Packaging", en: "Packaging" },
-  navTransporte: { es: "Transporte", en: "Logistics" },
-  navCalidad: { es: "Calidad", en: "Quality" },
-  navNosotros: { es: "Nosotros", en: "About" },
-
-  btnWhatsApp: { es: "WhatsApp", en: "WhatsApp" },
-  btnContacto: { es: "Contacto", en: "Contact" },
-  btnContactar: { es: "Contactar", en: "Contact" },
-  btnComprarML: { es: "Comprar en Mercado Libre", en: "Buy on Mercado Libre" },
-  btnVisitanos: { es: "Visítanos", en: "Visit us" },
-
-  calidadTitle1: { es: "Calidad verificable.", en: "Verifiable quality." },
-  calidadTitle2: { es: "Control y evidencia.", en: "Control and evidence." },
-  calidadIntro: {
-    es: "Estándares, control y documentación. Certificados, fichas técnicas y respaldos se publican por producto.",
-    en: "Standards, control, and documentation. Certificates, datasheets, and supporting evidence are published per product.",
-  },
-  calidadBtn: { es: "Solicitar información", en: "Request information" },
-  calidadPrincipios: { es: "Principios", en: "Principles" },
-  calidadPrincipiosText: {
-    es: "La calidad se ejecuta en operación y se respalda con evidencia. Esto reduce fricción comercial y aumenta confianza.",
-    en: "Quality is executed in operations and backed by evidence. This reduces commercial friction and increases trust.",
-  },
-  calidadProceso: { es: "Proceso de calidad", en: "Quality process" },
-  calidadProcesoText: {
-    es: "Flujo simple, auditable y diseñado para continuidad operacional.",
-    en: "A simple, auditable flow designed for operational continuity.",
-  },
-
-  nosotrosTitle: { es: "Nosotros", en: "About" },
-
-  nosotrosP1: {
-    es: "Somos un partner operativo para industrias que no pueden fallar.",
-    en: "We are an operational partner for industries that cannot afford to fail.",
-  },
-  
-  nosotrosP2: {
-    es: "Trabajamos con foco en continuidad, claridad y cumplimiento.",
-    en: "We operate with a focus on continuity, clarity, and execution.",
-  },
-  
-  nosotrosP3: {
-    es: "Calidad en materiales, procesos y entregas. Los detalles hacen la diferencia.",
-    en: "Quality in materials, processes, and deliveries. Details make the difference.",
-  
-
-  },
-  nosotrosBtn: { es: "Hablemos", en: "Let’s talk" },
-  nosotrosBlockTitle: { es: "Operación, infraestructura y control", en: "Operations, infrastructure, and control" },
-  nosotrosBlockText: {
-    es: "Somos un equipo industrial orientado a continuidad: operamos con procesos claros, control en terreno y foco en cumplir lo acordado. Trabajamos con tecnología de punta, obsesionados con la calidad y los buenos resultados.",
-    en: "We are an industrial team built for continuity: clear processes, field control, and a commitment to deliver what’s agreed. We back it with verifiable evidence.",
-  },
-  nosotrosGallery: { es: "", en: "" },
-  nosotrosHint: { es: "", en: "" },
-
-  contactoTitle: { es: "Contacto", en: "Contact" },
-  contactoIntro: {
-    es: "Envíanos tu requerimiento indicando división, producto, volumen estimado y destino. Respondemos con una propuesta clara y concreta.",
-    en: "Send your request including division, product, estimated volume, and destination. We respond with a clear, concrete proposal.",
-  },
-  contactoWABoxTitle: { es: "WhatsApp directo", en: "Direct WhatsApp" },
-  contactoWABoxText: { es: "Para cotización rápida, escríbenos directamente.", en: "For a quick quote, message us directly." },
-  contactoWATemplate: { es: "Mensaje sugerido", en: "Suggested message" },
-  contactoWAOpen: { es: "Abrir WhatsApp", en: "Open WhatsApp" },
-
-  contactoSalesBoxTitle: { es: "Ventas", en: "Sales" },
-  contactoSalesBoxText: {
-    es: "Contacto directo para proyectos, volúmenes y acuerdos comerciales.",
-    en: "Direct contact for projects, volumes, and commercial agreements.",
-  },
-  contactoEmailBtn: { es: "Escribir email", en: "Write email" },
-
-  modalEmailTitle: { es: "Escribir email", en: "Write email" },
-
-  formName: { es: "Nombre *", en: "Name *" },
-  formCompany: { es: "Empresa", en: "Company" },
-  formEmail: { es: "Email *", en: "Email *" },
-  formPhone: { es: "Teléfono", en: "Phone" },
-  formDivision: { es: "División", en: "Division" },
-  formProduct: { es: "Producto", en: "Product" },
-  formVolume: { es: "Volumen estimado", en: "Estimated volume" },
-  formDestination: { es: "Destino", en: "Destination" },
-  formMessage: { es: "Mensaje *", en: "Message *" },
-
-  formSelect: { es: "Seleccionar", en: "Select" },
-  formCancel: { es: "Cancelar", en: "Cancel" },
-  formSend: { es: "Enviar email", en: "Send email" },
-
-  mailtoHint: {
-    es: "Esto abre tu cliente de correo con el mensaje prellenado (mailto). Si después quieres envío real desde web (sin cliente), se agrega backend.",
-    en: "This opens your email client with a prefilled message (mailto). If you want in-app sending later (no email client), we can add a backend.",
-  },
-
-  notFoundTitle: { es: "Página no encontrada", en: "Page not found" },
-  notFoundText: { es: "La ruta no existe.", en: "That route doesn’t exist." },
-  notFoundBtn: { es: "Ir al inicio", en: "Go home" },
-};
-
-function buildWhatsAppPrefill(lang: Lang) {
-  return lang === "en"
-    ? "Hi, I’d like to request a quote from Tipy Town.\nDivision:\nProduct:\nEstimated volume:\nDestination:"
-    : "Hola, quiero cotizar un producto de Tipy Town.\nDivisión:\nProducto:\nVolumen estimado:\nDestino:";
-}
-
 /* =========================================================
-   IMAGES: conventions for /public
-   - Product hero:  /images/divisions/{division}/products/{slug}/hero.jpg
-   - Product gallery: /images/divisions/{division}/products/{slug}/01.jpg, 02.jpg, ...
-   - Division hero (optional): /images/divisions/{division}/hero.jpg
+   ROUTE UX
 ========================================================= */
-
-function buildProductHeroSrc(divisionKey: string, productSlug: string) {
-  return `/images/divisions/${divisionKey}/products/${productSlug}/hero.jpg`;
-}
-
-function buildProductGallerySrcs(divisionKey: string, productSlug: string, maxCount: number) {
-  const base = `/images/divisions/${divisionKey}/products/${productSlug}`;
-  return Array.from({ length: maxCount }, (_, i) => `${base}/${String(i + 1).padStart(2, "0")}.jpg`);
-}
-
-function buildDivisionHeroSrc(divisionKey: string) {
-  return `/images/divisions/${divisionKey}/hero.jpg`;
-}
-
-
-
-
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-const BP = { sm: 720, md: 980, lg: 1200 };
-
-function useMediaQuery(query: string) {
-  const get = () =>
-    typeof window !== "undefined" ? window.matchMedia(query).matches : false;
-
-  const [matches, setMatches] = useState(get);
-
+function ScrollToTopOnRouteChange() {
+  const loc = useLocation();
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mql = window.matchMedia(query);
-    const onChange = () => setMatches(mql.matches);
-
-    if ("addEventListener" in mql) mql.addEventListener("change", onChange);
-    else (mql as any).addListener(onChange);
-
-    setMatches(mql.matches);
-
-    return () => {
-      if ("removeEventListener" in mql) mql.removeEventListener("change", onChange);
-      else (mql as any).removeListener(onChange);
-    };
-  }, [query]);
-
-  return matches;
-}
-
-function useBreakpoints() {
-  const isSm = useMediaQuery(`(max-width: ${BP.sm}px)`);
-  const isMd = useMediaQuery(`(max-width: ${BP.md}px)`);
-  const isLg = useMediaQuery(`(max-width: ${BP.lg}px)`);
-  const isXl = useMediaQuery(`(min-width: 1600px)`);
-  return { isSm, isMd, isLg, isXl };
-}
-
-function containerStyle(): React.CSSProperties {
-  return {
-    width: "100%",
-   maxWidth: CONTAINER_MAX_SCALED,
-    marginInline: "auto",
-    paddingInline: "clamp(16px, 3vw, 48px)",
-    boxSizing: "border-box",
-  };
-}
-
-function sectionPad(top = 54, bottom = 52): React.CSSProperties {
-  return {
-    paddingTop: `clamp(18px, 3vw, ${top}px)`,
-    paddingBottom: `clamp(18px, 3vw, ${bottom}px)`,
-  };
-}
-
-function twoColGrid(isMd: boolean, isXl: boolean): React.CSSProperties {
-  return {
-    display: "grid",
-    gridTemplateColumns: isMd ? "1fr" : "minmax(0, 1fr) minmax(0, 1fr)",
-    gap: isMd ? 18 : isXl ? 56 : 40,
-    alignItems: "start",
-  };
-}
-
-function responsiveAutoGrid(minColPx: number): React.CSSProperties {
-  return {
-    display: "grid",
-    gridTemplateColumns: `repeat(auto-fit, minmax(${minColPx}px, 1fr))`,
-    gap: 18,
-    alignItems: "stretch",
-  };
-}
-
-/* =========================================================
-   TEXT HELPERS (PÁRRAFOS)
-========================================================= */
-
-function buildCardFirstImageCandidates(dir: string) {
-  // Normaliza: sin trailing slash
-  const base = (dir || "").replace(/\/+$/, "");
-
-  if (!base) return [];
-
-  // Cards: SOLO 01 (y fallback 1), sin hero jamás.
-  // Orden: primero lo más probable en tu repo.
-  const names = [
-    "01.jpg",
-    "01.jpeg",
-    "01.png",
-    "01.webp",
-    "1.jpg",
-    "1.jpeg",
-    "1.png",
-    "1.webp",
-  ];
-
-  return names.map((n) => `${base}/${n}`);
-}
-
-
-function toParagraphs(text: string): string[] {
-  const raw = String(text || "").trim();
-  if (!raw) return [];
-
-  // Si ya viene con párrafos separados, respeta.
-  if (/\n\s*\n/.test(raw)) {
-    return raw
-      .split(/\n\s*\n/g)
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-
-  // Si viene como bloque, intenta separar cada ~2 frases.
-  const sentences = raw
-    .split(/(?<=[.!?])\s+/g)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  if (sentences.length <= 2) return [raw];
-
-  const out: string[] = [];
-  for (let i = 0; i < sentences.length; i += 2) {
-    out.push([sentences[i], sentences[i + 1]].filter(Boolean).join(" "));
-  }
-  return out;
-}
-
-function ModalBasic({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      onMouseDown={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 200,
-        background: "rgba(2,6,23,0.55)",
-        display: "grid",
-        placeItems: "center",
-        padding: 18,
-      }}
-    >
-      <div
-        onMouseDown={(e) => e.stopPropagation()}
-        style={{
-          width: "min(720px, 100%)",
-          background: "white",
-          borderRadius: 20,
-          border: `1px solid ${BRAND.line}`,
-          boxShadow: "0 24px 80px rgba(2,6,23,0.35)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            padding: 16,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottom: `1px solid ${BRAND.line}`,
-            background: "#F8FAFC",
-          }}
-        >
-          <strong>{title}</strong>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              border: `1px solid ${BRAND.line}`,
-              background: "white",
-              cursor: "pointer",
-              fontWeight: 900,
-            }}
-          >
-            ×
-          </button>
-        </div>
-
-        <div style={{ padding: 16 }}>{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function inputBase(): React.CSSProperties {
-  return {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 14,
-    border: `1px solid ${BRAND.line}`,
-    fontSize: 14,
-  };
-}
-
-function labelBase(): React.CSSProperties {
-  return {
-    fontSize: 12,
-    fontWeight: 900,
-    marginBottom: 6,
-    color: BRAND.muted,
-  };
-}
-
-/* =========================================================
-   TYPES
-========================================================= */
-type Product = {
-  key: string;
-  datasheetUrl?: string;
-
-  name: Bilingual;
-
-  // 🔧 CAMBIO CLAVE: ahora es opcional
-  short?: Bilingual;
-
-  descriptionText?: Bilingual;
-  descriptionPlaceholder: Bilingual;
-
-  imageLabel: Bilingual;
-
-  // Carpeta que contiene 01.jpg, 02.jpg, etc.
-  imageDir?: string;
-
-  // Cantidad de imágenes 01..N
-  imageCount?: number;
-
-  // Hero específico si existe
-  heroSrc?: string;
-
-  badges?: Bilingual[];
-
-  primaryAction?: { label: Bilingual; href?: string; to?: string };
-  secondaryAction?: { label: Bilingual; href?: string; to?: string };
-
-  clickable?: boolean;
-  cardMaxWidth?: number;
-  cardVariant?: "default" | "wide-compact";
-
-  // Escape hatch para no volver a romper build por datos nuevos
-  [extra: string]: any;
-};
-
-type Division = {
-  key: "acuicola" | "agro" | "packaging" | "transporte";
-  navLabel: Bilingual;
-  pageTitle: Bilingual;
-  intro: Bilingual;
-
-  heroImageLabel: Bilingual;
-
-  // ✅ NUEVO: hero real
-  heroImageSrc?: string;
-
-  productsTitle: Bilingual;
-  products: Product[];
-  layout?: "grid3" | "grid2" | "single";
-};
-
-/* =========================================================
-   SCROLL CHECK (Calidad)
-========================================================= */
-function useInViewOnce(options?: IntersectionObserverInit) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [seen, setSeen] = useState(false);
-
-  useEffect(() => {
-    if (seen) return;
-    const el = ref.current;
-    if (!el) return;
-
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry?.isIntersecting) setSeen(true);
-      },
-      { threshold: 0.35, ...options }
-    );
-
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [seen, options]);
-
-  return { ref, seen };
-}
-
-function GreenCheck({ show }: { show: boolean }) {
-  const prefersReduced = useMediaQuery("(prefers-reduced-motion: reduce)");
-  const transition = prefersReduced
-    ? "none"
-    : "opacity 220ms ease, transform 220ms ease, background 220ms ease";
-
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        width: 34,
-        height: 34,
-        borderRadius: 12,
-        border: `1px solid ${BRAND.line}`,
-        background: show ? "rgba(22,163,74,0.10)" : "white",
-        display: "grid",
-        placeItems: "center",
-        transform: show ? "scale(1)" : "scale(0.88)",
-        opacity: show ? 1 : 0,
-        transition,
-        flex: "0 0 auto",
-      }}
-    >
-      <span
-        style={{
-          fontSize: 18,
-          fontWeight: 900,
-          color: "#16a34a",
-          transform: show ? "translateY(0)" : "translateY(2px)",
-          transition: prefersReduced ? "none" : "transform 220ms ease",
-        }}
-      >
-        ✓
-      </span>
-    </div>
-  );
-}
-
-function QualityStepRow({
-  step,
-}: {
-  step: { n: string; t: Bilingual; d: Bilingual };
-}) {
-  const { ref, seen } = useInViewOnce();
-  const { lang } = useLang();
-  const { isMd } = useBreakpoints();
-
-  const stepTitleSize = isMd ? 16 : 17; // antes 14
-  const stepDescSize = isMd ? 16 : 17;  // antes 14
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        border: `1px solid ${BRAND.line}`,
-        borderRadius: 18,
-        padding: 14,
-        background: "white",
-        display: "flex",
-        gap: 12,
-        alignItems: "flex-start",
-        justifyContent: "space-between",
-      }}
-    >
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-start", minWidth: 0 }}>
-        <div
-          style={{
-            minWidth: 44,
-            height: 44,
-            borderRadius: 14,
-            background: BRAND.primary,
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 900,
-            fontSize: 13,
-          }}
-        >
-          {step.n}
-        </div>
-
-        <div style={{ paddingTop: 2, minWidth: 0 }}>
-          <div style={{ fontSize: stepTitleSize, fontWeight: 900, color: BRAND.primary }}>
-            {pick(step.t, lang)}
-          </div>
-
-          <div style={{ marginTop: 6, fontSize: stepDescSize, lineHeight: 1.75, color: "#334155" }}>
-            {pick(step.d, lang)}
-          </div>
-        </div>
-      </div>
-
-      <GreenCheck show={seen} />
-    </div>
-  );
+    window.scrollTo({ top: 0, behavior: "instant" as any });
+  }, [loc.pathname]);
+  return null;
 }
 
 /* =========================================================
@@ -949,11 +685,6 @@ export default function App() {
 }
 
 function AppShell() {
-  // ✅ Control global tipo “zoom navegador”
-  // 0.80 = como el zoom 80% en Chrome
-  // 0.85–0.90 = más conservador
-  const UI_SCALE = 0.80;
-
   return (
     <div
       style={{
@@ -982,21 +713,16 @@ function AppShell() {
           font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
           line-height: 1.6;
 
-          /* ✅ Global UI scale (Chrome/Safari/Edge) */
+          /* ✅ Global UI scale */
           zoom: ${UI_SCALE};
-
-          /* ✅ Compensación del “zoom” para que no quede margen raro */
           zoom-origin: top center;
         }
 
-        /* ✅ Mantén assets fluidos */
         p { margin: 0; }
         a { color: inherit; }
         button, input, textarea, select { font: inherit; }
         img, video, canvas, svg { max-width: 100%; height: auto; }
 
-        /* ✅ En mobile NO aplicamos scale (si quieres, lo podemos dejar igual)
-           Esto evita que en pantallas chicas quede demasiado pequeño */
         @media (max-width: 720px) {
           body { zoom: 1; }
         }
@@ -1032,7 +758,6 @@ function AppShell() {
     </div>
   );
 }
-
 
 
 /* =========================================================
