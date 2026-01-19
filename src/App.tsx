@@ -109,7 +109,15 @@ const BRAND = {
 };
 
 const HEADER_H = 64;
+
+// ✅ PREMISA OFICIAL UI
+const UI_SCALE = 0.8;
+
+// ✅ Este es el ancho visual que tú quieres ver en pantalla
 const CONTAINER_MAX = 2048;
+
+// ✅ Compensación: como todo está escalado, el maxWidth real debe ser mayor
+const CONTAINER_MAX_SCALED = Math.round(CONTAINER_MAX / UI_SCALE);
 
 // WhatsApp
 const WHATSAPP_PHONE_E164 = "+56968160062";
@@ -652,7 +660,7 @@ function useBreakpoints() {
 function containerStyle(): React.CSSProperties {
   return {
     width: "100%",
-    maxWidth: CONTAINER_MAX,
+   maxWidth: CONTAINER_MAX_SCALED,
     marginInline: "auto",
     paddingInline: "clamp(16px, 3vw, 48px)",
     boxSizing: "border-box",
@@ -1144,7 +1152,7 @@ function AppShell() {
             >
               <div
                 style={{
-                  maxWidth: CONTAINER_MAX,
+                  maxWidth: CONTAINER_MAX_SCALED,
                   margin: "0 auto",
                   padding: "18px 20px",
                   display: "flex",
