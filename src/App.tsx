@@ -1029,11 +1029,9 @@ function AppShell() {
   // ✅ PREMISA OFICIAL — escala global 80%
   const UI_SCALE = 0.8;
 
-  // ✅ Para que el contenido escalado “ocupe” 100vh visible
-  const SCALED_VH = `calc(100vh / ${UI_SCALE})`;
-  const SCALED_W = `calc(100% / ${UI_SCALE})`;
+  const scaledW = `calc(100% / ${UI_SCALE})`;
+  const scaledH = `calc(100vh / ${UI_SCALE})`;
 
-  // ✅ Fix global (evita scroll horizontal y márgenes raros del body)
   React.useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
@@ -1063,116 +1061,139 @@ function AppShell() {
         overflowX: "hidden",
       }}
     >
-      {/* ✅ Wrapper escalado correctamente centrado */}
+      {/* Wrapper A: centra, sin transforms */}
       <div
         style={{
-          position: "relative",
-          left: "50%",
-          width: SCALED_W, // 125% cuando scale=0.8
-          minHeight: SCALED_VH,
-          transform: `translateX(-50%) scale(${UI_SCALE})`,
-          transformOrigin: "top left",
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          overflowX: "hidden",
         }}
       >
-        {/* Layout vertical: header + main + footer */}
+        {/* Wrapper B: lienzo “inflado” que luego se escala */}
         <div
           style={{
-            minHeight: SCALED_VH,
-            display: "flex",
-            flexDirection: "column",
+            width: scaledW, // 125% cuando scale=0.8
+            minHeight: scaledH,
+            transform: `scale(${UI_SCALE})`,
+            transformOrigin: "top center", // clave para que no se vaya a un lado
           }}
         >
-          <SiteHeader />
-
-          <main
+          <div
             style={{
-              width: "100%",
-              flex: "1 1 auto",
+              minHeight: scaledH,
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            <ScrollToTopOnRouteChange />
+            <SiteHeader />
 
-            <Routes>
-              <Route path="/" element={<Home />} />
+            <main style={{ width: "100%", flex: "1 1 auto" }}>
+              <ScrollToTopOnRouteChange />
 
-              <Route path="/acuicola" element={<DivisionOverview divisionKey="acuicola" />} />
-              <Route path="/acuicola/:productKey" element={<ProductDetail divisionKey="acuicola" />} />
+              <Routes>
+                <Route path="/" element={<Home />} />
 
-              <Route path="/agro" element={<DivisionOverview divisionKey="agro" />} />
-              <Route path="/agro/:productKey" element={<ProductDetail divisionKey="agro" />} />
+                <Route
+                  path="/acuicola"
+                  element={<DivisionOverview divisionKey="acuicola" />}
+                />
+                <Route
+                  path="/acuicola/:productKey"
+                  element={<ProductDetail divisionKey="acuicola" />}
+                />
 
-              <Route path="/packaging" element={<DivisionOverview divisionKey="packaging" />} />
-              <Route path="/packaging/:productKey" element={<ProductDetail divisionKey="packaging" />} />
+                <Route
+                  path="/agro"
+                  element={<DivisionOverview divisionKey="agro" />}
+                />
+                <Route
+                  path="/agro/:productKey"
+                  element={<ProductDetail divisionKey="agro" />}
+                />
 
-              <Route path="/transporte" element={<DivisionOverview divisionKey="transporte" />} />
+                <Route
+                  path="/packaging"
+                  element={<DivisionOverview divisionKey="packaging" />}
+                />
+                <Route
+                  path="/packaging/:productKey"
+                  element={<ProductDetail divisionKey="packaging" />}
+                />
 
-              <Route path="/calidad" element={<Calidad />} />
-              <Route path="/nosotros" element={<Nosotros />} />
-              <Route path="/contacto" element={<Contacto />} />
+                <Route
+                  path="/transporte"
+                  element={<DivisionOverview divisionKey="transporte" />}
+                />
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
+                <Route path="/calidad" element={<Calidad />} />
+                <Route path="/nosotros" element={<Nosotros />} />
+                <Route path="/contacto" element={<Contacto />} />
 
-          <footer
-            style={{
-              marginTop: "auto",
-              flex: "0 0 auto",
-              borderTop: `1px solid ${BRAND.lineSoft}`,
-              background: BRAND.panel,
-            }}
-          >
-            <div
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+
+            <footer
               style={{
-                maxWidth: CONTAINER_MAX,
-                margin: "0 auto",
-                padding: "18px 20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
+                marginTop: "auto",
+                flex: "0 0 auto",
+                borderTop: `1px solid ${BRAND.lineSoft}`,
+                background: BRAND.panel,
               }}
             >
-              <div style={{ fontSize: 12, color: BRAND.muted }}>
-                © {new Date().getFullYear()} Tipy Town.
-              </div>
+              <div
+                style={{
+                  maxWidth: CONTAINER_MAX,
+                  margin: "0 auto",
+                  padding: "18px 20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                }}
+              >
+                <div style={{ fontSize: 12, color: BRAND.muted }}>
+                  © {new Date().getFullYear()} Tipy Town.
+                </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <a
-                  href="/contacto"
-                  style={{
-                    fontSize: 12,
-                    color: BRAND.primary,
-                    textDecoration: "none",
-                    fontWeight: 600,
-                  }}
-                >
-                  Contacto
-                </a>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <a
+                    href="/contacto"
+                    style={{
+                      fontSize: 12,
+                      color: BRAND.primary,
+                      textDecoration: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Contacto
+                  </a>
 
-                <a
-                  href="https://www.linkedin.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: 8,
-                    border: `1px solid ${BRAND.lineSoft}`,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textDecoration: "none",
-                    color: BRAND.primary,
-                    background: "#fff",
-                  }}
-                  aria-label="LinkedIn"
-                >
-                  in
-                </a>
+                  <a
+                    href="https://www.linkedin.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 8,
+                      border: `1px solid ${BRAND.lineSoft}`,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textDecoration: "none",
+                      color: BRAND.primary,
+                      background: "#fff",
+                    }}
+                    aria-label="LinkedIn"
+                  >
+                    in
+                  </a>
+                </div>
               </div>
-            </div>
-          </footer>
+            </footer>
+          </div>
         </div>
       </div>
     </div>
