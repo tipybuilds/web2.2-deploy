@@ -172,22 +172,22 @@ function ProductGallery({
   alt,
   maxNumbered = 6,
   includeHero = false,
-  layout = "fixed", // "fixed" | "stretch"
-  fixedMaxH = 420,
-  fixedMinH = 260,
+  maxH = 420,
 }: {
   publicFolder: string;
   alt: string;
   maxNumbered?: number;
   includeHero?: boolean;
-  layout?: "fixed" | "stretch";
-  fixedMaxH?: number;
-  fixedMinH?: number;
+  maxH?: number;
 }) {
   const [imgs, setImgs] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [idx, setIdx] = React.useState(0);
+
+  // ✅ Lightbox (expansible)
   const [open, setOpen] = React.useState(false);
+
+  // ✅ Medimos la proporción real de la imagen (para que el frame se vea armónico)
   const [aspect, setAspect] = React.useState<number | null>(null);
 
   React.useEffect(() => {
@@ -231,6 +231,7 @@ function ProductGallery({
     setIdx((v) => (total ? (v + 1) % total : 0));
   }, [total]);
 
+  // ✅ Cada vez que cambia la imagen activa, recalculamos aspect ratio real
   React.useEffect(() => {
     const src = imgs[idx];
     if (!src) {
@@ -242,12 +243,14 @@ function ProductGallery({
     const im = new Image();
     im.onload = () => {
       if (cancelled) return;
-      if (im.naturalWidth && im.naturalHeight) {
-        setAspect(im.naturalWidth / im.naturalHeight);
-      }
+      const w = im.naturalWidth || 0;
+      const h = im.naturalHeight || 0;
+      if (w > 0 && h > 0) setAspect(w / h);
+      else setAspect(null);
     };
     im.onerror = () => {
-      if (!cancelled) setAspect(null);
+      if (cancelled) return;
+      setAspect(null);
     };
     im.src = src;
 
@@ -271,14 +274,11 @@ function ProductGallery({
 
   const shellStyle: React.CSSProperties = {
     width: "100%",
-    display: "flex",
-    flexDirection: "column",
     border: `1px solid ${BRAND.line}`,
     borderRadius: 16,
     background: "#fff",
     overflow: "hidden",
     boxShadow: "0 10px 26px rgba(2, 6, 23, 0.06)",
-    height: layout === "stretch" ? "100%" : "auto",
   };
 
   const topBarStyle: React.CSSProperties = {
@@ -290,7 +290,16 @@ function ProductGallery({
     borderBottom: `1px solid ${BRAND.line}`,
     background: "rgba(255,255,255,0.92)",
     backdropFilter: "blur(6px)",
-    flex: "0 0 auto",
+  };
+
+  const chipStyle: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 900,
+    color: "rgba(15, 23, 42, 0.72)",
+    background: "rgba(15, 23, 42, 0.06)",
+    border: `1px solid ${BRAND.line}`,
+    borderRadius: 999,
+    padding: "6px 10px",
   };
 
   const btnBase: React.CSSProperties = {
@@ -304,6 +313,7 @@ function ProductGallery({
     alignItems: "center",
     gap: 8,
     userSelect: "none",
+    WebkitUserSelect: "none",
   };
 
   const btnActive: React.CSSProperties = {
@@ -311,6 +321,7 @@ function ProductGallery({
     background: BRAND.primary,
     color: "#fff",
     cursor: "pointer",
+    boxShadow: "0 8px 18px rgba(52, 62, 117, 0.25)",
   };
 
   const btnDisabled: React.CSSProperties = {
@@ -320,80 +331,183 @@ function ProductGallery({
     cursor: "not-allowed",
   };
 
-  // ✅ CLAVE: estilos resueltos fuera del objeto → NO TS1117
-  const mediaFrameStyle: React.CSSProperties =
-    layout === "stretch"
-      ? {
-          width: "100%",
-          flex: "1 1 auto",
-          minHeight: 0,
-          background: "rgba(15, 23, 42, 0.03)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-        }
-      : {
-          width: "100%",
-          aspectRatio: aspect ? `${aspect}` : "16 / 9",
-          minHeight: fixedMinH,
-          maxHeight: fixedMaxH,
-          background: "rgba(15, 23, 42, 0.03)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-        };
+  /**
+   * ✅ FIX 1: Frame armónico y grande
+   * - Usamos `aspectRatio` real (cuando existe) para que NO se vea “chico” ni raro.
+   * - Limitamos con maxH para mantener consistencia visual con el layout.
+   * - La imagen en la página usa `cover` para verse alineada y contundente.
+   */
+  const mediaFrameStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(15, 23, 42, 0.03)",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    // frame armónico según imagen, fallback 16/9
+    aspectRatio: aspect ? `${aspect}` : "16 / 9",
+    // mantiene “tamaño premium” sin romper la grilla
+    maxHeight: maxH,
+  };
 
   if (loading) {
-    return <div style={shellStyle}>Cargando imágenes…</div>;
+    return (
+      <div style={shellStyle}>
+        <div style={topBarStyle}>
+          <div style={chipStyle}>…</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={btnDisabled}>←</div>
+            <div style={btnDisabled}>→</div>
+          </div>
+        </div>
+        <div style={{ padding: 16, color: "rgba(15, 23, 42, 0.70)", fontWeight: 800 }}>
+          Cargando imágenes…
+        </div>
+      </div>
+    );
   }
 
   if (!total) {
-    return <div style={shellStyle}>No se encontraron imágenes.</div>;
+    return (
+      <div style={shellStyle}>
+        <div style={topBarStyle}>
+          <div style={chipStyle}>0/0</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={btnDisabled}>←</div>
+            <div style={btnDisabled}>→</div>
+          </div>
+        </div>
+        <div style={{ padding: 16, color: "rgba(15, 23, 42, 0.70)", fontWeight: 800 }}>
+          No se encontraron imágenes en: <code>{publicFolder}</code>
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
       <div style={shellStyle}>
         <div style={topBarStyle}>
-          <div>{idx + 1}/{total}</div>
+          <div style={chipStyle}>
+            {idx + 1}/{total}
+          </div>
+
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={prev} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>←</button>
-            <button onClick={next} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>→</button>
+            <button type="button" onClick={prev} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+              ← <span style={{ opacity: 0.95 }}>Anterior</span>
+            </button>
+
+            <button type="button" onClick={next} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+              <span style={{ opacity: 0.95 }}>Siguiente</span> →
+            </button>
           </div>
         </div>
 
+        {/* ✅ Vista en página: armónica y más grande */}
         <div style={mediaFrameStyle}>
           <img
             src={imgs[idx]}
             alt={alt}
+            loading="eager"
+            decoding="async"
             onClick={() => setOpen(true)}
-            style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "zoom-in" }}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover", // ✅ llena el frame (alineado y “premium”)
+              display: "block",
+              cursor: "zoom-in",
+            }}
           />
         </div>
       </div>
 
-      {open && (
+      {/* ✅ FIX 2: Lightbox realmente expansible y adaptable al tamaño/aspect original */}
+      {open ? (
         <div
+          role="dialog"
+          aria-modal="true"
           onClick={() => setOpen(false)}
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.8)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
             zIndex: 9999,
+            background: "rgba(2, 6, 23, 0.78)",
+            display: "grid",
+            placeItems: "center",
+            padding: 18,
           }}
         >
-          <img
-            src={imgs[idx]}
-            alt={alt}
-            style={{ maxWidth: "95%", maxHeight: "95%", objectFit: "contain" }}
-          />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(96vw, 1600px)",
+              height: "min(92vh, 920px)",
+              borderRadius: 16,
+              overflow: "hidden",
+              background: "#0b1220",
+              border: "1px solid rgba(255,255,255,0.10)",
+              boxShadow: "0 30px 90px rgba(0,0,0,0.45)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 10,
+                padding: 10,
+                background: "rgba(255,255,255,0.06)",
+                borderBottom: "1px solid rgba(255,255,255,0.10)",
+                flex: "0 0 auto",
+              }}
+            >
+              <div style={{ color: "rgba(255,255,255,0.78)", fontWeight: 900, fontSize: 13 }}>
+                {idx + 1}/{total}
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" onClick={prev} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                  ← Anterior
+                </button>
+                <button type="button" onClick={next} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                  Siguiente →
+                </button>
+                <button type="button" onClick={() => setOpen(false)} style={btnActive}>
+                  Cerrar ✕
+                </button>
+              </div>
+            </div>
+
+            <div
+              style={{
+                flex: "1 1 auto",
+                minHeight: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#0b1220",
+                padding: 12,
+              }}
+            >
+              <img
+                src={imgs[idx]}
+                alt={alt}
+                style={{
+                  width: "auto",
+                  height: "auto",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain", // ✅ respeta proporción real en expansión
+                  display: "block",
+                }}
+              />
+            </div>
+          </div>
         </div>
-      )}
+      ) : null}
     </>
   );
 }
