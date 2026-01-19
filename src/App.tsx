@@ -167,155 +167,235 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Ctrl+F: function ProductGallery
+// Ctrl+F: function ProductGallery(
 function ProductGallery({
-  publicFolder,
+  images,
   alt,
-  maxNumbered = 6,
-  includeHero = false,
+  height, // opcional: si viene, se respeta tal cual (override)
 }: {
-  publicFolder: string;
+  images: string[];
   alt: string;
-  maxNumbered?: number;
-  includeHero?: boolean;
+  height?: number | string;
 }) {
-  const [imgs, setImgs] = React.useState<string[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [idx, setIdx] = React.useState(0);
-  const [open, setOpen] = React.useState(false);
-  const [aspect, setAspect] = React.useState<number | null>(null);
+  const { isMd } = useBreakpoints();
 
-  React.useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    setIdx(0);
-    setOpen(false);
-    setAspect(null);
+  const safeImages = (images || []).filter(Boolean);
+  const [idx, setIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
-    resolveProductGalleryImages(publicFolder, {
-      maxNumbered,
-      includeHero,
-      cacheBust: true,
-    })
-      .then((list) => {
-        if (!alive) return;
-        setImgs(list);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!alive) return;
-        setImgs([]);
-        setLoading(false);
-      });
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [syncedHeightPx, setSyncedHeightPx] = useState<number | null>(null);
+
+  const hasMany = safeImages.length > 1;
+  const currentSrc = safeImages[Math.min(idx, Math.max(0, safeImages.length - 1))] || "";
+
+  const prev = () => {
+    if (!safeImages.length) return;
+    setIdx((p) => (p - 1 + safeImages.length) % safeImages.length);
+  };
+  const next = () => {
+    if (!safeImages.length) return;
+    setIdx((p) => (p + 1) % safeImages.length);
+  };
+
+  // ====== CLAVE: sincronizar altura con la columna de texto (hermano anterior) ======
+  useEffect(() => {
+    if (height != null) {
+      // Si el padre pasa height, no forzamos nada
+      setSyncedHeightPx(null);
+      return;
+    }
+
+    const wrapEl = wrapRef.current;
+    if (!wrapEl) return;
+
+    // Caso típico: en el hero 2 columnas, el texto va primero y la galería después.
+    // Por eso tomamos el "previousElementSibling".
+    let textEl = wrapEl.previousElementSibling as HTMLElement | null;
+
+    // Fallback si por algún motivo no existe: tomar el primer hijo del parent que no sea el wrap.
+    if (!textEl && wrapEl.parentElement) {
+      const kids = Array.from(wrapEl.parentElement.children) as HTMLElement[];
+      textEl = kids.find((k) => k !== wrapEl) || null;
+    }
+
+    if (!textEl) return;
+
+    const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
+
+    const compute = () => {
+      // Alto visible del bloque de texto
+      const h = textEl!.getBoundingClientRect().height;
+
+      // Evitar extremos: mínimo utilizable + máximo razonable en desktop
+      // (sin usar vh como “driver” del layout).
+      const minH = isMd ? 320 : 260;
+      const maxH = isMd ? 720 : 560;
+
+      setSyncedHeightPx(clamp(Math.round(h), minH, maxH));
+    };
+
+    compute();
+
+    const ro = new ResizeObserver(() => compute());
+    ro.observe(textEl);
+
+    // También recalcular si cambian fuentes/layout (resize)
+    const onResize = () => compute();
+    window.addEventListener("resize", onResize);
 
     return () => {
-      alive = false;
+      ro.disconnect();
+      window.removeEventListener("resize", onResize);
     };
-  }, [publicFolder, maxNumbered, includeHero]);
+  }, [height, isMd]);
 
-  React.useEffect(() => {
-    const src = imgs[idx];
-    if (!src) return;
+  // Altura final:
+  // 1) si viene height => se respeta
+  // 2) si logramos medir texto => usamos ese alto
+  // 3) fallback razonable (no gigante)
+  const wrapH: string | number =
+    height != null
+      ? typeof height === "number"
+        ? `${height}px`
+        : height
+      : syncedHeightPx != null
+        ? `${syncedHeightPx}px`
+        : isMd
+          ? "420px"
+          : "340px";
 
-    const img = new Image();
-    img.onload = () => {
-      if (img.naturalWidth && img.naturalHeight) {
-        setAspect(img.naturalWidth / img.naturalHeight);
-      }
-    };
-    img.src = src;
-  }, [imgs, idx]);
-
-  const shellStyle: React.CSSProperties = {
-    width: "100%",
+  const arrowBtnBase: React.CSSProperties = {
+    position: "absolute",
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: isMd ? 44 : 40,
+    height: isMd ? 44 : 40,
+    borderRadius: 999,
     border: `1px solid ${BRAND.line}`,
-    borderRadius: 16,
-    background: "#fff",
-    overflow: "hidden",
-    boxShadow: "0 10px 26px rgba(2, 6, 23, 0.06)",
-  };
-
-  const mediaFrameStyle: React.CSSProperties = {
-    width: "100%",
-    background: "rgba(15, 23, 42, 0.03)",
-    overflow: "hidden",
+    background: "rgba(255,255,255,0.92)",
+    boxShadow: "0 8px 24px rgba(15,23,42,0.10)",
     display: "flex",
-    alignItems: "stretch",
-    aspectRatio: aspect ? `${aspect}` : "16 / 9",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    zIndex: 5,
+    userSelect: "none",
   };
-
-  if (loading || !imgs.length) {
-    return <div style={shellStyle} />;
-  }
 
   return (
-    <>
-      <div style={shellStyle}>
-        <div style={mediaFrameStyle}>
+    <div
+      ref={wrapRef}
+      style={{
+        width: "100%",
+        height: wrapH,                 // <- se ajusta al texto
+        borderRadius: 18,
+        overflow: "hidden",
+        background: BRAND.panel,
+        border: `1px solid ${BRAND.line}`,
+        position: "relative",
+        alignSelf: "flex-start",       // <- evita estiramientos raros del grid
+      }}
+    >
+      {/* Imagen */}
+      <button
+        type="button"
+        onClick={() => currentSrc && setLightboxOpen(true)}
+        style={{
+          all: "unset",
+          display: "block",
+          width: "100%",
+          height: "100%",
+          cursor: currentSrc ? "zoom-in" : "default",
+        }}
+        aria-label="Abrir imagen"
+      >
+        {currentSrc ? (
           <img
-            src={imgs[idx]}
+            src={currentSrc}
             alt={alt}
-            onClick={() => setOpen(true)}
+            loading="eager"
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover",
               display: "block",
-              cursor: "zoom-in",
+              objectFit: "cover", // mismo look “foto” de antes
             }}
           />
-        </div>
-      </div>
+        ) : (
+          <div style={{ width: "100%", height: "100%" }} />
+        )}
+      </button>
 
-      {open && (
-        <div
-          onClick={() => setOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(2,6,23,0.78)",
-            zIndex: 9999,
-            display: "grid",
-            placeItems: "center",
-            padding: 18,
-          }}
-        >
-          <img
-            src={imgs[idx]}
-            alt={alt}
-            style={{
-              maxWidth: "96vw",
-              maxHeight: "92vh",
-              objectFit: "contain",
+      {/* Flechas (formato anterior: overlay izquierda/derecha) */}
+      {hasMany && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              prev();
             }}
-          />
-        </div>
+            style={{ ...arrowBtnBase, left: 14 }}
+            aria-label="Anterior"
+          >
+            <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>‹</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              next();
+            }}
+            style={{ ...arrowBtnBase, right: 14 }}
+            aria-label="Siguiente"
+          >
+            <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>›</span>
+          </button>
+
+          {/* Indicadores */}
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 12,
+              display: "flex",
+              gap: 6,
+              justifyContent: "center",
+              zIndex: 5,
+              pointerEvents: "none",
+            }}
+          >
+            {safeImages.map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: 999,
+                  background: i === idx ? BRAND.primary : "rgba(15,23,42,0.25)",
+                }}
+              />
+            ))}
+          </div>
+        </>
       )}
-    </>
+
+      {/* Lightbox (usa tu componente existente si ya lo tienes; si no existe, elimínalo) */}
+      {"ImageLightbox" in (globalThis as any) ? null : null}
+      <ImageLightbox
+        open={lightboxOpen}
+        src={currentSrc}
+        alt={alt}
+        onClose={() => setLightboxOpen(false)}
+      />
+    </div>
   );
 }
 
-
-
-
-function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Lang>(() => {
-    const saved =
-      (typeof window !== "undefined" &&
-        (window.localStorage.getItem("tt_lang") as Lang | null)) ||
-      null;
-    return saved === "en" ? "en" : "es";
-  });
-
-  const toggleLang = () => {
-    setLang((p) => {
-      const next: Lang = p === "es" ? "en" : "es";
-      if (typeof window !== "undefined") window.localStorage.setItem("tt_lang", next);
-      return next;
-    });
-  };
-
-  return <LangCtx.Provider value={{ lang, toggleLang }}>{children}</LangCtx.Provider>;
-}
 
 function useLang() {
   const ctx = useContext(LangCtx);
