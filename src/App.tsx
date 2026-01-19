@@ -2053,7 +2053,141 @@ function ProductCardImage({
 }
 
 
+function DivisionOverview({ divisionKey }: { divisionKey: Division["key"] }) {
+  const divisions = useDivisions();
+  const division = findDivision(divisions, divisionKey);
+  const { isMd, isXl } = useBreakpoints();
+  const { lang } = useLang();
 
+  if (!division) return <NotFound />;
+
+  const minColPx = division.layout === "grid3" ? 320 : division.layout === "grid2" ? 380 : 9999;
+
+  const heroGridStyle: React.CSSProperties = {
+    ...twoColGrid(isMd, isXl),
+    alignItems: "stretch",
+  };
+
+  const landingBody: React.CSSProperties = {
+    marginTop: 12,
+    fontSize: isMd ? 17 : 18,
+    lineHeight: 1.75,
+    color: "#334155",
+    maxWidth: 760,
+    whiteSpace: "pre-line",
+  };
+
+  return (
+    <div style={{ width: "100%" }}>
+      <section style={{ borderBottom: `1px solid ${BRAND.line}` }}>
+        <div style={{ ...containerStyle(), ...sectionPad(44, 26) }}>
+          <div style={heroGridStyle}>
+            <div>
+              <BackToHome />
+              <h1
+                style={{
+                  marginTop: 10,
+                  fontSize: isMd ? 34 : isXl ? 52 : 44,
+                  fontWeight: 350,
+                  color: BRAND.primary,
+                  lineHeight: 1.08,
+                }}
+              >
+                {pick(division.pageTitle, lang)}
+              </h1>
+
+              <p style={landingBody}>{pick(division.intro, lang)}</p>
+
+              <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {division.key !== "transporte" && (
+                  <Link to="/contacto" style={{ ...btnOutlineLg(), minWidth: 180 }}>
+                    {pick(UI.btnContactar, lang)}
+                  </Link>
+                )}
+
+                {division.key === "packaging" && (
+                  <a
+                    href={MERCADOLIBRE_FILM_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ ...btnPrimaryLg(), minWidth: 180 }}
+                  >
+                    {pick(UI.btnComprarML, lang)}
+                  </a>
+                )}
+
+                {division.key === "acuicola" && (
+                  <a
+                    href={MITILICULTURA_MAPS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ ...btnPrimaryLg(), minWidth: 180 }}
+                  >
+                    {pick(UI.btnVisitanos, lang)}
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div style={{ alignSelf: "stretch", minHeight: 0, display: "flex" }}>
+              <div style={{ flex: "1 1 auto", minHeight: 0 }}>
+                <FigurePlaceholder
+                  title={
+                    division.key === "packaging"
+                      ? lang === "en"
+                        ? "STRETCH FILM"
+                        : "FILM STRETCH"
+                      : lang === "en"
+                        ? "Image"
+                        : "Imagen"
+                  }
+                  subtitle={pick(division.heroImageLabel, lang)}
+                  src={division.heroImageSrc}
+                  alt={pick(division.pageTitle, lang)}
+                  fit="cover"
+                  minHeight={isMd ? 220 : undefined}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div style={{ ...containerStyle(), ...sectionPad(26, 50) }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+              alignItems: "flex-end",
+            }}
+          >
+            <div>
+              <h2 style={{ marginTop: 0, fontSize: 20, fontWeight: 900, color: BRAND.primary }}>
+                {pick(division.productsTitle, lang)}
+              </h2>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 16,
+              ...(division.layout === "single"
+                ? { display: "grid", gridTemplateColumns: "1fr", gap: 16 }
+                : responsiveAutoGrid(minColPx)),
+            }}
+          >
+            {division.products.map((p) => (
+              <ProductCard key={p.key} divisionKey={division.key} product={p} />
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 // Ctrl+F: ProductCard
 function ProductCard({
