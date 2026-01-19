@@ -20,14 +20,7 @@ import {
    CONFIG
 ========================================================= */
 // Ctrl+F: resolveProductGalleryImages
-type ResolveGalleryOptions = {
-  maxNumbered?: number;       // cuántas fotos numeradas buscar (01..max)
-  includeHero?: boolean;      // incluir hero.jpg al inicio
-  extensions?: string[];      // extensiones soportadas
-  timeoutMs?: number;         // timeout por imagen
-  cacheBust?: boolean;        // evita “fantasmas” en dev (recomendado true en StackBlitz)
-};
-
+// Ctrl+F: resolveProductGalleryImages
 type ResolveGalleryOptions = {
   maxNumbered?: number;       // cuántas fotos numeradas buscar (01..max)
   includeHero?: boolean;      // incluir hero.jpg al inicio
@@ -44,10 +37,12 @@ function resolveProductGalleryImages(
     extensions = ["jpg", "jpeg", "png", "webp"],
   } = opts;
 
-  const folder = publicFolder.replace(/\/+$/, "");
+  const folder = String(publicFolder || "").replace(/\/+$/, "");
+  if (!folder) return [];
+
   const exts = extensions.map((e) => e.toLowerCase());
 
-  // Vite: glob EAGER para tener URLs sincronas (NO Promise)
+  // Vite: glob EAGER => URLs sincronas (NO Promise)
   const globPattern = `${folder}/*.{${exts.join(",")}}`;
 
   const modules = import.meta.glob(globPattern, {
@@ -63,7 +58,6 @@ function resolveProductGalleryImages(
   };
 
   if (includeHero) {
-    // hero.(ext)
     for (const ext of exts) {
       const hit = pick(`hero.${ext}`);
       if (hit) {
@@ -73,7 +67,6 @@ function resolveProductGalleryImages(
     }
   }
 
-  // 01..maxNumbered con padding 2
   for (let n = 1; n <= maxNumbered; n++) {
     const nn = String(n).padStart(2, "0");
     let found = "";
@@ -89,34 +82,6 @@ function resolveProductGalleryImages(
 
   // dedupe manteniendo orden
   return Array.from(new Set(out)).filter(Boolean);
-}
-
-function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Lang>(() => {
-    try {
-      const saved = localStorage.getItem("lang");
-      if (saved === "es" || saved === "en") return saved;
-    } catch {}
-    return "es";
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("lang", lang);
-    } catch {}
-  }, [lang]);
-
-  const toggleLang = () => setLang((p) => (p === "es" ? "en" : "es"));
-
-  const value = useMemo(() => ({ lang, setLang, toggleLang }), [lang]);
-
-  return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
-}
-
-function useLang() {
-  const ctx = useContext(LangContext);
-  if (!ctx) throw new Error("useLang must be used within LangProvider");
-  return ctx;
 }
 
 
@@ -165,27 +130,25 @@ type ProductGalleryProps =
     };
 
 // Ctrl+F: function ProductGallery(
-function ProductGallery({
-  publicFolder,
-  alt,
-  maxNumbered = 12,
-  includeHero = true,
-  height,
-}: {
-  publicFolder: string;
-  alt: string;
-  maxNumbered?: number;
-  includeHero?: boolean;
-  height?: string | number;
-}) {
+function ProductGallery(props: ProductGalleryProps) {
   const { isMd } = useBreakpoints();
 
   const images = useMemo(() => {
-    return resolveProductGalleryImages(publicFolder, {
-      maxNumbered,
-      includeHero,
+    if ("images" in props) {
+      return (props.images || []).filter(Boolean);
+    }
+    return resolveProductGalleryImages(props.publicFolder, {
+      maxNumbered: props.maxNumbered ?? 12,
+      includeHero: props.includeHero ?? true,
     }).filter(Boolean);
-  }, [publicFolder, maxNumbered, includeHero]);
+  }, [
+    "images" in props ? (props.images || []).join("|") : props.publicFolder,
+    "images" in props ? "" : String(props.maxNumbered ?? 12),
+    "images" in props ? "" : String(props.includeHero ?? true),
+  ]);
+
+  const alt = props.alt;
+  const forcedHeight = props.height;
 
   const [idx, setIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -214,9 +177,11 @@ function ProductGallery({
     setIdx((p) => (p + 1) % images.length);
   };
 
-  // Altura "fit al texto" (sin inventar layout nuevo)
+  // ✅ Altura "fit al texto" REAL:
+  // tu layout es un grid con 2 columnas; la galería está en la derecha y el texto en la izquierda.
+  // Por eso "previousElementSibling" NO sirve. Aquí buscamos el contenedor grid y tomamos su 1er hijo (columna texto).
   useEffect(() => {
-    if (height != null) {
+    if (forcedHeight != null) {
       setSyncedHeightPx(null);
       return;
     }
@@ -224,15 +189,43 @@ function ProductGallery({
     const wrapEl = wrapRef.current;
     if (!wrapEl) return;
 
-    const textEl = wrapEl.previousElementSibling as HTMLElement | null;
-    if (!textEl) return;
-
     const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
+
+    const findTextColumn = () => {
+      let el: HTMLElement | null = wrapEl;
+
+      // sube hasta encontrar un parent con >=2 hijos (el grid 2-col)
+      for (let k = 0; k < 12 && el; k++) {
+        const p = el.parentElement as HTMLElement | null;
+        if (!p) break;
+
+        if (p.children && p.children.length >= 2) {
+          // En tu ProductDetail, el hijo 0 es texto, hijo 1 es la columna de la galería
+          const first = p.children[0] as HTMLElement | undefined;
+          const second = p.children[1] as HTMLElement | undefined;
+
+          // Validación: la galería vive dentro del hijo 1
+          if (second && second.contains(wrapEl) && first && !first.contains(wrapEl)) {
+            return first;
+          }
+        }
+
+        el = p;
+      }
+
+      return null;
+    };
+
+    const textEl = findTextColumn();
+    if (!textEl) return;
 
     const compute = () => {
       const h = textEl.getBoundingClientRect().height;
-      const minH = isMd ? 320 : 260;
-      const maxH = isMd ? 720 : 560;
+
+      // límites razonables para que NO se dispare (ni quede enano)
+      const minH = isMd ? 300 : 240;
+      const maxH = isMd ? 680 : 560;
+
       setSyncedHeightPx(clamp(Math.round(h), minH, maxH));
     };
 
@@ -248,13 +241,13 @@ function ProductGallery({
       ro.disconnect();
       window.removeEventListener("resize", onResize);
     };
-  }, [height, isMd]);
+  }, [forcedHeight, isMd]);
 
   const wrapH: string | number =
-    height != null
-      ? typeof height === "number"
-        ? `${height}px`
-        : height
+    forcedHeight != null
+      ? typeof forcedHeight === "number"
+        ? `${forcedHeight}px`
+        : forcedHeight
       : syncedHeightPx != null
         ? `${syncedHeightPx}px`
         : isMd
@@ -314,7 +307,7 @@ function ProductGallery({
               width: "100%",
               height: "100%",
               display: "block",
-              objectFit: "cover",
+              objectFit: "cover", // ✅ mantiene formato como antes (no "contain" gigante)
             }}
           />
         ) : (
