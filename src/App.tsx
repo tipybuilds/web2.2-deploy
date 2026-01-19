@@ -3566,7 +3566,7 @@ function AboutCarousel({
   text: string;
   images: { src: string; alt: string }[];
 }) {
-  const { isMd } = useBreakpoints();
+  const { isMd, isXl } = useBreakpoints();
   const [idx, setIdx] = React.useState(0);
 
   const total = Math.max(1, images?.length ?? 0);
@@ -3576,22 +3576,9 @@ function AboutCarousel({
   const goPrev = () => setIdx((v) => v - 1);
   const goNext = () => setIdx((v) => v + 1);
 
-  const wrapStyle: React.CSSProperties = {
-    width: "100%",
-    borderBottom: `1px solid ${BRAND.line}`,
-    background: "#FFFFFF",
-  };
-
-  const sectionInner: React.CSSProperties = {
-    ...containerStyle(),
-    ...sectionPad(28, 44),
-  };
-
-  // ✅ Desktop: texto amplio + imagen angosta (no full-width)
+  // ✅ Misma lógica visual del hero (más pro / minimal)
   const grid: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: isMd ? "1fr" : "minmax(0, 1fr) 520px", // ✅ imagen más angosta
-    gap: isMd ? 18 : 22,
+    ...twoColGrid(isMd, isXl),
     alignItems: "stretch",
   };
 
@@ -3603,36 +3590,35 @@ function AboutCarousel({
     boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
   };
 
+  // ✅ Altura controlada para que NO quede “bloque enorme”
+  const mediaH = isMd ? 260 : 320;
+
   const left: React.CSSProperties = {
     padding: isMd ? 16 : 22,
     minWidth: 0,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "center",
     gap: 10,
+    justifyContent: "center",
   };
 
-  // ✅ Caja imagen: misma “sensación” de card, pero no gigante
-  const mediaWrap: React.CSSProperties = {
+  const right: React.CSSProperties = {
     minWidth: 0,
-    background: "#0B1220",
-    borderLeft: !isMd ? `1px solid ${BRAND.line}` : undefined,
-    borderTop: isMd ? `1px solid ${BRAND.line}` : undefined,
     display: "flex",
     alignItems: "stretch",
     justifyContent: "stretch",
+    borderTop: isMd ? `1px solid ${BRAND.line}` : undefined,
+    borderLeft: !isMd ? `1px solid ${BRAND.line}` : undefined,
+    background: "#0B1220",
   };
 
-  // ✅ Aspecto controlado: evita que quede altísimo
   const mediaBox: React.CSSProperties = {
     width: "100%",
-    aspectRatio: isMd ? "16 / 9" : "4 / 3", // ✅ desktop más “cuadrada”
-    maxHeight: isMd ? 320 : 360,
-    overflow: "hidden",
+    height: mediaH,
     position: "relative",
+    overflow: "hidden",
   };
 
-  // Flechas idénticas a ProductCard
   const navBtn: React.CSSProperties = {
     width: 34,
     height: 34,
@@ -3641,7 +3627,7 @@ function AboutCarousel({
     placeItems: "center",
     border: `1px solid ${BRAND.line}`,
     color: "rgba(15, 23, 42, 0.75)",
-    background: "rgba(255,255,255,0.85)",
+    background: "rgba(255,255,255,0.92)",
     fontWeight: 900,
     cursor: "pointer",
     userSelect: "none",
@@ -3655,71 +3641,60 @@ function AboutCarousel({
     placeItems: "center",
     border: `1px solid ${BRAND.line}`,
     color: "rgba(15, 23, 42, 0.75)",
-    background: "rgba(255,255,255,0.85)",
+    background: "rgba(255,255,255,0.92)",
     fontWeight: 900,
     fontSize: 12,
   };
 
   const controlsRow: React.CSSProperties = {
-    marginTop: 14,
+    marginTop: 12,
     display: "flex",
     alignItems: "center",
     gap: 10,
   };
 
   return (
-    <section style={wrapStyle}>
-      <div style={sectionInner}>
-        <div style={{ ...card, padding: 0 }}>
+    <section style={{ width: "100%", borderBottom: `1px solid ${BRAND.line}`, background: "#FFFFFF" }}>
+      <div style={{ ...containerStyle(), ...sectionPad(26, 38) }}>
+        <div style={card}>
           <div style={grid}>
             {/* LEFT */}
             <div style={left}>
               <div style={{ fontSize: 18, fontWeight: 900, color: BRAND.primary, lineHeight: 1.2 }}>
                 {title}
               </div>
-              <div style={{ color: "#334155", fontSize: 15, lineHeight: 1.7, maxWidth: 760 }}>
+
+              <div style={{ color: "#334155", fontSize: 15, lineHeight: 1.7, maxWidth: 640 }}>
                 {text}
               </div>
 
               {total > 1 ? (
                 <div style={controlsRow}>
                   <div style={counterPill}>{`${safeIdx + 1}/${total}`}</div>
-
-                  <div
-                    role="button"
-                    aria-label="Previous"
-                    onClick={goPrev}
-                    style={navBtn}
-                  >
+                  <div role="button" aria-label="Previous" onClick={goPrev} style={navBtn}>
                     ←
                   </div>
-
-                  <div
-                    role="button"
-                    aria-label="Next"
-                    onClick={goNext}
-                    style={navBtn}
-                  >
+                  <div role="button" aria-label="Next" onClick={goNext} style={navBtn}>
                     →
                   </div>
                 </div>
               ) : null}
             </div>
 
-            {/* RIGHT (IMAGE) */}
-            <div style={mediaWrap}>
+            {/* RIGHT */}
+            <div style={right}>
               <div style={mediaBox}>
                 {current ? (
                   <img
                     src={current.src}
                     alt={current.alt}
+                    draggable={false}
                     style={{
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
                       display: "block",
                     }}
-                    draggable={false}
                   />
                 ) : (
                   <div
@@ -3744,7 +3719,6 @@ function AboutCarousel({
     </section>
   );
 }
-
 
 
 
