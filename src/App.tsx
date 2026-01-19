@@ -1705,34 +1705,60 @@ function ProductCardImage({
   const [src, setSrc] = React.useState<string>("");
 
   React.useEffect(() => {
-    let alive = true;
+    let cancelled = false;
 
-    async function resolve() {
-      const list = Array.isArray(candidates) ? candidates : [candidates];
+    const list = (Array.isArray(candidates) ? candidates : [candidates]).filter(Boolean);
+
+    // Helper: check if an image URL loads
+    const loads = (url: string) =>
+      new Promise<boolean>((resolve) => {
+        const img = new Image();
+
+        const done = (ok: boolean) => {
+          img.onload = null;
+          img.onerror = null;
+          resolve(ok);
+        };
+
+        // Timeout defensivo para no colgarse con URLs raras
+        const t = window.setTimeout(() => done(false), 2500);
+
+        img.onload = () => {
+          window.clearTimeout(t);
+          done(true);
+        };
+        img.onerror = () => {
+          window.clearTimeout(t);
+          done(false);
+        };
+
+        img.src = url;
+      });
+
+    async function resolveFirstWorking() {
       if (!list.length) {
-        if (alive) setSrc("");
+        if (!cancelled) setSrc("");
         return;
       }
 
-      // Preferimos usar tu función de resolver existente si está en el proyecto.
-      // Si no existe, caemos a “primera ruta” (útil si sirves assets directo).
-      const anyWindow: any = window as any;
-
-      try {
-        if (typeof anyWindow?.resolveFirstExistingImage === "function") {
-          const r = await anyWindow.resolveFirstExistingImage(list);
-          if (alive) setSrc(r || "");
+      // Prueba en orden hasta encontrar la primera que carga
+      for (const url of list) {
+        const ok = await loads(url);
+        if (cancelled) return;
+        if (ok) {
+          setSrc(url);
           return;
         }
-      } catch {}
+      }
 
-      // Fallback simple: usa el primer candidato
-      if (alive) setSrc(list[0] || "");
+      // Si ninguna carga, deja vacío
+      if (!cancelled) setSrc("");
     }
 
-    resolve();
+    resolveFirstWorking();
+
     return () => {
-      alive = false;
+      cancelled = true;
     };
   }, [candidates]);
 
@@ -1759,7 +1785,7 @@ function ProductCardImage({
             objectFit: fit,
             display: "block",
             userSelect: "none",
-            pointerEvents: "none", // ✅ NO expansible / NO click en card
+            pointerEvents: "none", // ✅ no expansible en card
           }}
         />
       ) : (
@@ -1780,6 +1806,7 @@ function ProductCardImage({
     </div>
   );
 }
+
 
 
 function ProductCard({
