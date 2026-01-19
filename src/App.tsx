@@ -2194,6 +2194,9 @@ function ProductCard({
   const { lang } = useLang();
   const { isMd } = useBreakpoints();
 
+  // ✅ Hover state SOLO para estilo (sin tocar layout)
+  const [isHover, setIsHover] = React.useState(false);
+
   const title = pick(product.name, lang);
   const subtitle = product.short ? pick(product.short, lang) : "";
   const tag = product.badges?.[0] ? pick(product.badges[0], lang) : undefined;
@@ -2207,19 +2210,6 @@ function ProductCard({
     return buildProductImageCandidates(dir, 1);
   })();
 
-  // ✅ SOLO para transporte: candidatos múltiples (01.jpg, 02.jpg, 03.jpg...)
-  const allImageCandidates: string[][] = (() => {
-    if (divisionKey !== "transporte") return [];
-    const dir = product.imageDir;
-    const count = Math.max(1, Number(product.imageCount ?? 1));
-    if (!dir) return [];
-    const candidates: string[][] = [];
-    for (let i = 1; i <= count; i++) {
-      candidates.push(buildProductImageCandidates(dir, i));
-    }
-    return candidates;
-  })();
-
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
   const longTextRaw =
@@ -2228,79 +2218,34 @@ function ProductCard({
 
   const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
 
-  // =========================================================
-  // ✅ FIX: detectar qué imagen realmente carga (evita slots negros)
-  // =========================================================
-  const [loaded, setLoaded] = React.useState<Record<string, boolean>>({});
-  const markLoaded = React.useCallback((key: string) => {
-    setLoaded((p) => (p[key] ? p : { ...p, [key]: true }));
-  }, []);
+  // ✅ handlers (solo si es clickeable)
+  const hoverHandlers = isClickable
+    ? {
+        onMouseEnter: () => setIsHover(true),
+        onMouseLeave: () => setIsHover(false),
+      }
+    : {};
 
-  function PreloadFirstWorking({
-    candidates,
-    id,
-  }: {
-    candidates: string[];
-    id: string;
-  }) {
-    React.useEffect(() => {
-      let alive = true;
-      if (!candidates?.length) return;
-
-      let idx = 0;
-      const tryNext = () => {
-        if (!alive) return;
-        if (idx >= candidates.length) return;
-
-        const src = candidates[idx++];
-        const img = new Image();
-        img.onload = () => {
-          if (!alive) return;
-          markLoaded(id);
-        };
-        img.onerror = () => {
-          if (!alive) return;
-          tryNext();
-        };
-        img.src = src;
-      };
-
-      tryNext();
-      return () => {
-        alive = false;
-      };
-    }, [candidates, id, markLoaded]);
-
-    return null;
-  }
-
-  // ==========================
-  // VARIANTE: WIDE-COMPACT
-  // ==========================
+  /* =========================================================
+     VARIANTE: WIDE-COMPACT
+  ========================================================= */
   if (product.cardVariant === "wide-compact") {
     const H = isMd ? 240 : 320;
 
-    const isTransporte = divisionKey === "transporte";
-
-    // ✅ CLAVE: SOLO TRANSPORTE IGNORA cardMaxWidth y se estira a 100%
-    const effectiveMaxWidth = isTransporte ? "100%" : maxW;
-    const effectiveMarginInline = isTransporte
-      ? undefined
-      : product.cardMaxWidth
-        ? "auto"
-        : undefined;
-
     const wideCardStyle: React.CSSProperties = {
       background: "white",
-      border: `1px solid ${BRAND.line}`,
+      border: `1px solid ${isClickable && isHover ? "rgba(0,0,0,0.92)" : BRAND.line}`, // ✅ hover borde negro
       borderRadius: 22,
       overflow: "hidden",
-      boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
-      width: "100%",                 // ✅
-      maxWidth: effectiveMaxWidth,    // ✅
-      marginInline: effectiveMarginInline,
+      boxShadow: isClickable && isHover
+        ? "0 12px 30px rgba(15, 23, 42, 0.12)" // ✅ hover pro (sutil)
+        : "0 8px 26px rgba(15, 23, 42, 0.08)",
+      transform: isClickable && isHover ? "translateY(-1px)" : "translateY(0)", // ✅ lift mínimo
+      maxWidth: maxW,
+      marginInline: product.cardMaxWidth ? "auto" : undefined,
       display: "flex",
       flexDirection: "column",
+      transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
     };
 
     const topSectionStyle: React.CSSProperties = {
@@ -2334,63 +2279,21 @@ function ProductCard({
       gap: 12,
     };
 
-    const bannerWrap: React.CSSProperties = {
-      width: "100%",
-      aspectRatio: "21 / 7",
-      maxHeight: isMd ? 220 : 260,
-      background: "#0B1220",
-      borderBottom: `1px solid ${BRAND.line}`,
-    };
-
-    const extraWrap: React.CSSProperties = {
-      width: "100%",
-      aspectRatio: "21 / 8",
-      maxHeight: isMd ? 200 : 240,
-      borderTop: `1px solid ${BRAND.line}`,
-      background: "#0B1220",
-    };
-
-    const bannerCandidates: string[] = isTransporte
-      ? (allImageCandidates[0] ?? cardImageCandidates)
-      : [];
-
     const content = (
-      <div style={wideCardStyle}>
-        {/* ✅ PRELOAD (no visible) */}
-        {isTransporte ? (
-          <>
-            <PreloadFirstWorking candidates={bannerCandidates} id="t-banner" />
-            {allImageCandidates.slice(1).map((c, i) => (
-              <PreloadFirstWorking key={i} candidates={c} id={`t-extra-${i}`} />
-            ))}
-          </>
-        ) : null}
-
-        {/* ✅ SOLO TRANSPORTE: banner SOLO si cargó */}
-        {isTransporte && loaded["t-banner"] ? (
-          <div style={bannerWrap}>
-            <ProductCardImage
-              candidates={bannerCandidates}
-              alt={`${title} - banner`}
-              height={isMd ? 220 : 260}
-              rounded={0}
-              fit="cover"
-              borderless
-            />
-          </div>
-        ) : null}
-
-        {/* TOP */}
-        {isTransporte ? (
-          <div style={{ ...leftStyle, borderBottom: `1px solid ${BRAND.line}` }}>
+      <div
+        style={wideCardStyle}
+        {...hoverHandlers} // ✅ aquí se activa hover
+      >
+        <div style={topSectionStyle}>
+          <div style={leftStyle}>
             <div style={headerRow}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 22, lineHeight: 1.2, color: BRAND.ink }}>
+                <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
                   {title}
                 </div>
 
                 {subtitle ? (
-                  <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
+                  <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14 }}>
                     {subtitle}
                   </div>
                 ) : null}
@@ -2398,7 +2301,6 @@ function ProductCard({
 
               {isClickable ? (
                 <div
-                  aria-hidden="true"
                   style={{
                     width: 34,
                     height: 34,
@@ -2406,8 +2308,6 @@ function ProductCard({
                     display: "grid",
                     placeItems: "center",
                     border: `1px solid ${BRAND.line}`,
-                    color: "rgba(15, 23, 42, 0.75)",
-                    flex: "0 0 auto",
                     fontWeight: 900,
                   }}
                 >
@@ -2422,11 +2322,10 @@ function ProductCard({
                   alignSelf: "flex-start",
                   padding: "6px 10px",
                   borderRadius: 999,
-                  background: "rgba(35, 137, 201, 0.12)",
-                  border: "1px solid rgba(35, 137, 201, 0.18)",
-                  color: "rgba(15, 23, 42, 0.82)",
+                  background: "rgba(35,137,201,0.12)",
+                  border: "1px solid rgba(35,137,201,0.18)",
                   fontWeight: 800,
-                  fontSize: 16,
+                  fontSize: 13,
                 }}
               >
                 {tag}
@@ -2434,157 +2333,23 @@ function ProductCard({
             ) : null}
 
             {legend ? (
-              <div
-                style={{
-                  color: "#334155",
-                  fontSize: 16,
-                  lineHeight: 1.75,
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical" as any,
-                  WebkitLineClamp: 5 as any,
-                  overflow: "hidden",
-                }}
-              >
-                {legend}
-              </div>
-            ) : null}
-
-            {isClickable ? (
-              <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                <span style={{ fontSize: 16, color: BRAND.muted, fontWeight: 800 }}>
-                  {lang === "en" ? "See details" : "Ver detalle"}
-                </span>
-              </div>
+              <div style={{ fontSize: 15, lineHeight: 1.7, color: "#334155" }}>{legend}</div>
             ) : null}
           </div>
-        ) : (
-          <div style={topSectionStyle}>
-            {/* LEFT */}
-            <div style={leftStyle}>
-              <div style={headerRow}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 22, lineHeight: 1.2, color: BRAND.ink }}>
-                    {title}
-                  </div>
 
-                  {subtitle ? (
-                    <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 17, lineHeight: 1.5 }}>
-                      {subtitle}
-                    </div>
-                  ) : null}
-                </div>
-
-                {isClickable ? (
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 12,
-                      display: "grid",
-                      placeItems: "center",
-                      border: `1px solid ${BRAND.line}`,
-                      color: "rgba(15, 23, 42, 0.75)",
-                      flex: "0 0 auto",
-                      fontWeight: 900,
-                    }}
-                  >
-                    →
-                  </div>
-                ) : null}
-              </div>
-
-              {tag ? (
-                <div
-                  style={{
-                    alignSelf: "flex-start",
-                    padding: "6px 10px",
-                    borderRadius: 999,
-                    background: "rgba(35, 137, 201, 0.12)",
-                    border: "1px solid rgba(35, 137, 201, 0.18)",
-                    color: "rgba(15, 23, 42, 0.82)",
-                    fontWeight: 800,
-                    fontSize: 16,
-                  }}
-                >
-                  {tag}
-                </div>
-              ) : null}
-
-              {legend ? (
-                <div
-                  style={{
-                    color: "#334155",
-                    fontSize: 15,
-                    lineHeight: 1.75,
-                    display: "-webkit-box",
-                    WebkitBoxOrient: "vertical" as any,
-                    WebkitLineClamp: 5 as any,
-                    overflow: "hidden",
-                  }}
-                >
-                  {legend}
-                </div>
-              ) : null}
-
-              {isClickable ? (
-                <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                  <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
-                    {lang === "en" ? "See details" : "Ver detalle"}
-                  </span>
-                </div>
-              ) : null}
-            </div>
-
-            {/* RIGHT */}
-            <div style={rightStyle}>
-              {cardImageCandidates.length ? (
-                <ProductCardImage
-                  candidates={cardImageCandidates}
-                  alt={title}
-                  height={H}
-                  rounded={0}
-                  fit="cover"
-                  borderless
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: H,
-                    display: "grid",
-                    placeItems: "center",
-                    color: "rgba(226,232,240,0.75)",
-                    fontWeight: 800,
-                    fontSize: 13,
-                  }}
-                >
-                  Sin imagen
-                </div>
-              )}
-            </div>
+          <div style={rightStyle}>
+            {cardImageCandidates.length ? (
+              <ProductCardImage
+                candidates={cardImageCandidates}
+                alt={title}
+                height={H}
+                rounded={0}
+                fit="cover"
+                borderless
+              />
+            ) : null}
           </div>
-        )}
-
-        {/* ✅ SOLO TRANSPORTE: extras SOLO si cargaron */}
-        {isTransporte
-          ? allImageCandidates.slice(1).map((candidates, index) => {
-              const id = `t-extra-${index}`;
-              if (!loaded[id]) return null;
-              return (
-                <div key={index + 2} style={extraWrap}>
-                  <ProductCardImage
-                    candidates={candidates}
-                    alt={`${title} - imagen ${index + 2}`}
-                    height={isMd ? 200 : 240}
-                    rounded={0}
-                    fit="cover"
-                    borderless
-                  />
-                </div>
-              );
-            })
-          : null}
+        </div>
       </div>
     );
 
@@ -2597,126 +2362,61 @@ function ProductCard({
     );
   }
 
-  // ==========================
-  // DEFAULT CARD (grid normal)
-  // ==========================
+  /* =========================================================
+     DEFAULT CARD (grid normal)
+  ========================================================= */
   const cardStyle: React.CSSProperties = {
     background: "white",
-    border: `1px solid ${BRAND.line}`,
+    border: `1px solid ${isClickable && isHover ? "rgba(0,0,0,0.92)" : BRAND.line}`, // ✅ hover borde negro
     borderRadius: 18,
     padding: 16,
     display: "flex",
     flexDirection: "column",
     gap: 12,
-    boxShadow: "0 6px 24px rgba(15, 23, 42, 0.06)",
+    boxShadow: isClickable && isHover
+      ? "0 10px 26px rgba(15, 23, 42, 0.10)"
+      : "0 6px 24px rgba(15, 23, 42, 0.06)",
+    transform: isClickable && isHover ? "translateY(-1px)" : "translateY(0)", // ✅ lift mínimo
     height: "100%",
     cursor: isClickable ? "pointer" : "default",
     maxWidth: maxW,
     marginInline: product.cardMaxWidth ? "auto" : undefined,
+    transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
   };
 
-  const headerRow2: React.CSSProperties = {
+  const headerRow: React.CSSProperties = {
     display: "flex",
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12,
   };
 
-  const content2 = (
-    <div style={cardStyle}>
-      <div style={headerRow2}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.2, color: BRAND.ink }}>
-            {title}
-          </div>
-
-          {subtitle ? (
-            <div
-              style={{
-                marginTop: 6,
-                color: "rgba(15, 23, 42, 0.75)",
-                fontSize: 14,
-                lineHeight: 1.4,
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical" as any,
-                WebkitLineClamp: 2 as any,
-                overflow: "hidden",
-              }}
-            >
-              {subtitle}
-            </div>
-          ) : null}
+  const content = (
+    <div
+      style={cardStyle}
+      {...hoverHandlers} // ✅ aquí se activa hover
+    >
+      <div style={headerRow}>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 16 }}>{title}</div>
+          {subtitle ? <div style={{ fontSize: 14, color: "#475569" }}>{subtitle}</div> : null}
         </div>
-
-        {isClickable ? (
-          <div
-            aria-hidden="true"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 12,
-              display: "grid",
-              placeItems: "center",
-              border: `1px solid ${BRAND.line}`,
-              color: "rgba(15, 23, 42, 0.75)",
-              flex: "0 0 auto",
-              fontWeight: 900,
-            }}
-          >
-            →
-          </div>
-        ) : null}
+        {isClickable ? <div style={{ fontWeight: 900 }}>→</div> : null}
       </div>
 
-      {tag ? (
-        <div
-          style={{
-            alignSelf: "flex-start",
-            padding: "6px 10px",
-            borderRadius: 999,
-            background: "rgba(35, 137, 201, 0.12)",
-            border: "1px solid rgba(35, 137, 201, 0.18)",
-            color: "rgba(15, 23, 42, 0.82)",
-            fontWeight: 800,
-            fontSize: 13,
-          }}
-        >
-          {tag}
-        </div>
+      {tag ? <div style={{ fontSize: 13, fontWeight: 800 }}>{tag}</div> : null}
+
+      {cardImageCandidates.length ? (
+        <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
       ) : null}
-
-      <div style={{ marginTop: 2 }}>
-        {cardImageCandidates.length ? (
-          <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
-        ) : (
-          <div
-            style={{
-              width: "100%",
-              height: 210,
-              borderRadius: 16,
-              border: `1px dashed ${BRAND.line}`,
-              background: "rgba(15, 23, 42, 0.03)",
-              display: "grid",
-              placeItems: "center",
-              color: "rgba(15, 23, 42, 0.55)",
-              fontWeight: 800,
-              fontSize: 13,
-            }}
-          >
-            Sin imagen
-          </div>
-        )}
-      </div>
     </div>
   );
 
-  if (!isClickable) {
-    return <div style={{ height: "100%" }}>{content2}</div>;
-  }
+  if (!isClickable) return content;
 
   return (
     <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-      {content2}
+      {content}
     </Link>
   );
 }
