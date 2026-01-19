@@ -1026,73 +1026,120 @@ export default function App() {
   );
 }
 
-function AppShell() {
+function AppShell({ children }: { children: React.ReactNode }) {
+  // ✅ Premisa oficial: “zoom out” equivalente a 80%
+  const UI_SCALE = 0.8;
+
+  // Compensaciones matemáticas para que el layout NO se rompa con transform scale()
+  const inv = 1 / UI_SCALE; // 1.25
+  const pct = `${inv * 100}%`; // "125%"
+
   return (
     <div
       style={{
+        width: "100%",
+        minHeight: "100vh",
         background: BRAND.bg,
         color: BRAND.ink,
-        minHeight: "100vh",
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
+        overflowX: "hidden",
       }}
     >
-      <style>{`
-        *, *::before, *::after { box-sizing: border-box; }
-        html, body, #root { height: 100%; width: 100%; }
+      {/* 
+        Wrapper que escala TODO el sitio sin tocar <body>/<html>.
+        Importante: compensar width/minHeight para que el footer no “suba”.
+      */}
+      <div
+        style={{
+          transform: `scale(${UI_SCALE})`,
+          transformOrigin: "top center",
+          width: pct, // 125%
+          minHeight: pct.replace("%", "vh"), // 125vh
+          marginLeft: "auto",
+          marginRight: "auto",
+        }}
+      >
+        {/* Contenedor real del sitio */}
+        <div
+          style={{
+            width: "100%",
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* MAIN */}
+          <main
+            style={{
+              width: "100%",
+              flex: "1 0 auto",
+            }}
+          >
+            {children}
+          </main>
 
-        html {
-          -webkit-text-size-adjust: 100%;
-          text-rendering: optimizeLegibility;
-        }
+          {/* FOOTER: queda siempre al final, no “flota” arriba */}
+          <footer
+            style={{
+              flex: "0 0 auto",
+              borderTop: `1px solid ${BRAND.lineSoft}`,
+              background: BRAND.panel,
+            }}
+          >
+            <div
+              style={{
+                maxWidth: CONTAINER_MAX,
+                margin: "0 auto",
+                padding: "18px 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <div style={{ fontSize: 12, color: BRAND.muted }}>
+                © {new Date().getFullYear()} Tipy Town.
+              </div>
 
-        body {
-          margin: 0;
-          overflow-x: hidden;
-          background: ${BRAND.bg};
-          color: ${BRAND.ink};
-          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-          line-height: 1.6;
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <a
+                  href="#contacto"
+                  style={{
+                    fontSize: 12,
+                    color: BRAND.primary,
+                    textDecoration: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  Contacto
+                </a>
 
-          /* ✅ Importante: sin zoom global para evitar “vacíos” y descuadres de altura */
-          zoom: 1;
-        }
-
-        p { margin: 0; }
-        a { color: inherit; }
-        button, input, textarea, select { font: inherit; }
-        img, video, canvas, svg { max-width: 100%; height: auto; }
-      `}</style>
-
-      <SiteHeader />
-
-      {/* ✅ SIN sticky-footer: esto elimina el “vacío” enorme antes del footer */}
-      <main id="content" style={{ width: "100%" }}>
-        <ScrollToTopOnRouteChange />
-        <Routes>
-          <Route path="/" element={<Home />} />
-
-          <Route path="/acuicola" element={<DivisionOverview divisionKey="acuicola" />} />
-          <Route path="/acuicola/:productKey" element={<ProductDetail divisionKey="acuicola" />} />
-
-          <Route path="/agro" element={<DivisionOverview divisionKey="agro" />} />
-          <Route path="/agro/:productKey" element={<ProductDetail divisionKey="agro" />} />
-
-          <Route path="/packaging" element={<DivisionOverview divisionKey="packaging" />} />
-          <Route path="/packaging/:productKey" element={<ProductDetail divisionKey="packaging" />} />
-
-          <Route path="/transporte" element={<DivisionOverview divisionKey="transporte" />} />
-
-          <Route path="/calidad" element={<Calidad />} />
-          <Route path="/nosotros" element={<Nosotros />} />
-          <Route path="/contacto" element={<Contacto />} />
-
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
-
-      <SiteFooter />
+                {/* Icono LinkedIn ejemplo (si ya lo tienes, deja el tuyo) */}
+                <a
+                  href="https://www.linkedin.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 8,
+                    border: `1px solid ${BRAND.lineSoft}`,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textDecoration: "none",
+                    color: BRAND.primary,
+                    background: "#fff",
+                  }}
+                  aria-label="LinkedIn"
+                  title="LinkedIn"
+                >
+                  in
+                </a>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </div>
     </div>
   );
 }
