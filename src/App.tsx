@@ -142,6 +142,31 @@ const LangCtx = createContext<{ lang: Lang; toggleLang: () => void } | null>(
   null
 );
 
+function PageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",          // ✅ obliga layout a altura completa
+        display: "flex",
+        flexDirection: "column",
+        background: BRAND.bg,
+      }}
+    >
+      {/* Header (si ya lo renderizas fuera, elimina esta sección) */}
+      {/* <SiteHeader /> */}
+
+      <main style={{ flex: "1 1 auto" }}>
+        {children}
+      </main>
+
+      {/* ✅ footer siempre abajo */}
+      <div style={{ marginTop: "auto" }}>
+        <SiteFooter />
+      </div>
+    </div>
+  );
+}
+
 function ProductGallery({
   publicFolder,
   alt,
