@@ -3557,6 +3557,7 @@ function buildProductImageCandidates(dir: string, index1Based: number) {
 
 
 
+// Ctrl+F: function AboutCarousel
 function AboutCarousel({
   title,
   text,
@@ -3576,7 +3577,6 @@ function AboutCarousel({
   const goPrev = () => setIdx((v) => v - 1);
   const goNext = () => setIdx((v) => v + 1);
 
-  // ✅ Misma lógica visual del hero (más pro / minimal)
   const grid: React.CSSProperties = {
     ...twoColGrid(isMd, isXl),
     alignItems: "stretch",
@@ -3590,11 +3590,11 @@ function AboutCarousel({
     boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
   };
 
-  // ✅ Altura controlada para que NO quede “bloque enorme”
-  const mediaH = isMd ? 260 : 320;
+  // ✅ AJUSTE: un poco más de altura (más presencia, sigue siendo pro)
+  const mediaH = isMd ? 300 : 360; // antes: 260 / 320
 
   const left: React.CSSProperties = {
-    padding: isMd ? 16 : 22,
+    padding: isMd ? 18 : 24,
     minWidth: 0,
     display: "flex",
     flexDirection: "column",
@@ -3671,12 +3671,8 @@ function AboutCarousel({
               {total > 1 ? (
                 <div style={controlsRow}>
                   <div style={counterPill}>{`${safeIdx + 1}/${total}`}</div>
-                  <div role="button" aria-label="Previous" onClick={goPrev} style={navBtn}>
-                    ←
-                  </div>
-                  <div role="button" aria-label="Next" onClick={goNext} style={navBtn}>
-                    →
-                  </div>
+                  <div onClick={goPrev} style={navBtn}>←</div>
+                  <div onClick={goNext} style={navBtn}>→</div>
                 </div>
               ) : null}
             </div>
@@ -3720,26 +3716,6 @@ function AboutCarousel({
   );
 }
 
-
-
-/** Ctrl+F: carouselNavBtn */
-function carouselNavBtn(disabled: boolean): React.CSSProperties {
-  return {
-    width: 44,
-    height: 44,
-    borderRadius: 999,
-    border: `1px solid ${BRAND.lineSoft}`,
-    background: disabled ? "#F8FAFC" : "#FFFFFF",
-    color: disabled ? "#94A3B8" : BRAND.primary,
-    cursor: disabled ? "not-allowed" : "pointer",
-    display: "grid",
-    placeItems: "center",
-    fontSize: 22,
-    lineHeight: 1,
-    boxShadow: "0 6px 14px rgba(15, 23, 42, 0.08)",
-    userSelect: "none",
-  };
-}
 
 /** Ctrl+F: carouselImageCard */
 /** Ctrl+F: carouselImageCard */
