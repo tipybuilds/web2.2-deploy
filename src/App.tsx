@@ -1689,6 +1689,99 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
   );
 }
 
+function ProductCardImage({
+  candidates,
+  alt,
+  height = 210,
+  rounded = 16,
+  fit = "cover",
+}: {
+  candidates: string | string[];
+  alt: string;
+  height?: number;
+  rounded?: number;
+  fit?: "cover" | "contain";
+}) {
+  const [src, setSrc] = React.useState<string>("");
+
+  React.useEffect(() => {
+    let alive = true;
+
+    async function resolve() {
+      const list = Array.isArray(candidates) ? candidates : [candidates];
+      if (!list.length) {
+        if (alive) setSrc("");
+        return;
+      }
+
+      // Preferimos usar tu función de resolver existente si está en el proyecto.
+      // Si no existe, caemos a “primera ruta” (útil si sirves assets directo).
+      const anyWindow: any = window as any;
+
+      try {
+        if (typeof anyWindow?.resolveFirstExistingImage === "function") {
+          const r = await anyWindow.resolveFirstExistingImage(list);
+          if (alive) setSrc(r || "");
+          return;
+        }
+      } catch {}
+
+      // Fallback simple: usa el primer candidato
+      if (alive) setSrc(list[0] || "");
+    }
+
+    resolve();
+    return () => {
+      alive = false;
+    };
+  }, [candidates]);
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        height,
+        borderRadius: rounded,
+        overflow: "hidden",
+        background: "rgba(15, 23, 42, 0.04)",
+        border: `1px solid ${BRAND.line}`,
+      }}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          draggable={false}
+          loading="lazy"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: fit,
+            display: "block",
+            userSelect: "none",
+            pointerEvents: "none", // ✅ NO expansible / NO click en card
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "grid",
+            placeItems: "center",
+            color: "rgba(15, 23, 42, 0.55)",
+            fontWeight: 800,
+            fontSize: 13,
+          }}
+        >
+          Sin imagen
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function ProductCard({
   divisionKey,
   product,
@@ -1705,19 +1798,15 @@ function ProductCard({
   const isClickable = product.clickable !== false;
   const to = `/${divisionKey}/${product.key}`;
 
-  // --- Images for the card (01..N) ---
-  const images: Array<string | string[]> = (() => {
+  // --- Images for the card: ONLY ONE static image (01) ---
+  // We keep your candidate builder, but we will use only the first slot.
+  const cardImageCandidates: string | string[] | null = (() => {
     const dir = product.imageDir;
-    const count = Math.max(1, Number(product.imageCount ?? 1));
-    const safeCount = Math.min(count, 6);
+    if (!dir) return null;
 
-    if (!dir) return [];
-
-    // Cards: show 01..N (no hero required)
-    return Array.from({ length: safeCount }, (_, i) => buildIndexedImageCandidates(dir, i + 1));
+    // Card: always attempt "01" (no hero, no carousel)
+    return buildIndexedImageCandidates(dir, 1);
   })();
-
-  const showArrows = images.length > 1;
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
@@ -1769,7 +1858,7 @@ function ProductCard({
           ) : null}
         </div>
 
-        {/* Flecha SOLO decorativa — no “captura” el click */}
+        {/* Flecha decorativa */}
         {isClickable ? (
           <div
             aria-hidden="true"
@@ -1807,15 +1896,28 @@ function ProductCard({
         </div>
       ) : null}
 
+      {/* ✅ Card: single static image. No arrows, no bubbles, no expansion */}
       <div style={{ marginTop: 2 }}>
-        <ImageCarousel
-          images={images}
-          alt={title}
-          height={210}
-          rounded={16}
-          fit="cover"
-          showArrows={showArrows}
-        />
+        {cardImageCandidates ? (
+          <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: 210,
+              borderRadius: 16,
+              border: `1px dashed ${BRAND.line}`,
+              background: "rgba(15, 23, 42, 0.03)",
+              display: "grid",
+              placeItems: "center",
+              color: "rgba(15, 23, 42, 0.55)",
+              fontWeight: 800,
+              fontSize: 13,
+            }}
+          >
+            Sin imagen
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1831,6 +1933,7 @@ function ProductCard({
     </Link>
   );
 }
+
 
 /* =========================================================
    DIVISION OVERVIEW
