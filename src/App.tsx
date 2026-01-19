@@ -332,10 +332,10 @@ function ProductGallery({
   };
 
   /**
-   * ✅ FIX 1: Frame armónico y grande
-   * - Usamos `aspectRatio` real (cuando existe) para que NO se vea “chico” ni raro.
-   * - Limitamos con maxH para mantener consistencia visual con el layout.
-   * - La imagen en la página usa `cover` para verse alineada y contundente.
+   * ✅ FIX: Frame que se adapta dinámicamente a la altura del texto
+   * - Usa la altura pasada desde ProductDetail (textHeight)
+   * - Mantiene aspect ratio cuando es posible
+   * - Altura mínima de seguridad
    */
   const mediaFrameStyle: React.CSSProperties = {
     width: "100%",
@@ -344,10 +344,10 @@ function ProductGallery({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    // frame armónico según imagen, fallback 16/9
-    aspectRatio: aspect ? `${aspect}` : "16 / 9",
-    // mantiene “tamaño premium” sin romper la grilla
-    maxHeight: maxH,
+    // ✅ Usa la altura exacta del texto, con mínimo de seguridad
+    height: Math.max(maxH, 300),
+    // Si tenemos aspect ratio, respetarlo solo si no rompe la altura objetivo
+    aspectRatio: aspect && maxH < 500 ? `${aspect}` : undefined,
   };
 
   if (loading) {
@@ -403,7 +403,7 @@ function ProductGallery({
           </div>
         </div>
 
-        {/* ✅ Vista en página: armónica y más grande */}
+        {/* ✅ Vista que se adapta a la altura del texto */}
         <div style={mediaFrameStyle}>
           <img
             src={imgs[idx]}
@@ -414,7 +414,7 @@ function ProductGallery({
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover", // ✅ llena el frame (alineado y “premium”)
+              objectFit: "cover", // ✅ llena el frame completamente
               display: "block",
               cursor: "zoom-in",
             }}
@@ -422,7 +422,7 @@ function ProductGallery({
         </div>
       </div>
 
-      {/* ✅ FIX 2: Lightbox realmente expansible y adaptable al tamaño/aspect original */}
+      {/* ✅ Lightbox sin cambios */}
       {open ? (
         <div
           role="dialog"
@@ -500,7 +500,7 @@ function ProductGallery({
                   height: "auto",
                   maxWidth: "100%",
                   maxHeight: "100%",
-                  objectFit: "contain", // ✅ respeta proporción real en expansión
+                  objectFit: "contain",
                   display: "block",
                 }}
               />
@@ -511,6 +511,7 @@ function ProductGallery({
     </>
   );
 }
+
 
 
 
@@ -1807,6 +1808,10 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
   const { isMd, isXl } = useBreakpoints();
   const { lang } = useLang();
 
+  // ✅ REF para medir altura del contenido del texto
+  const textContentRef = useRef<HTMLDivElement>(null);
+  const [textHeight, setTextHeight] = useState<number>(420); // fallback inicial
+
   if (!division) return <NotFound />;
   if (!productKey) return <NotFound />;
 
@@ -1831,6 +1836,31 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
   const titleSize = isMd ? 34 : isXl ? 52 : 44;
   const detailBodyFont = isMd ? 17 : 18;
 
+  // ✅ Efecto para medir y sincronizar altura del texto
+  useEffect(() => {
+    const measureTextHeight = () => {
+      if (textContentRef.current) {
+        const height = textContentRef.current.offsetHeight;
+        setTextHeight(height);
+      }
+    };
+
+    // Medir inmediatamente
+    measureTextHeight();
+
+    // Re-medir en resize
+    const handleResize = () => measureTextHeight();
+    window.addEventListener('resize', handleResize);
+
+    // Re-medir cuando cambie el contenido
+    const timer = setTimeout(measureTextHeight, 100);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timer);
+    };
+  }, [bodyText, title, lang, isMd, isXl]); // re-medir cuando cambie contenido
+
   return (
     <div style={{ width: "100%" }}>
       <section style={{ borderBottom: `1px solid ${BRAND.line}` }}>
@@ -1838,57 +1868,65 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
           <div style={heroGridStyle}>
             {/* LEFT: texto */}
             <div style={{ minWidth: 0 }}>
-              <BackToDivision divisionKey={divisionKey} />
+              {/* ✅ REF en el contenedor del texto */}
+              <div ref={textContentRef}>
+                <BackToDivision divisionKey={divisionKey} />
 
-              <h1
-                style={{
-                  marginTop: 10,
-                  fontSize: titleSize,
-                  lineHeight: 1.08,
-                  color: BRAND.primary,
-                  fontWeight: 350,
-                }}
-              >
-                {title}
-              </h1>
+                <h1
+                  style={{
+                    marginTop: 10,
+                    fontSize: titleSize,
+                    lineHeight: 1.08,
+                    color: BRAND.primary,
+                    fontWeight: 350,
+                  }}
+                >
+                  {title}
+                </h1>
 
-              <div style={{ marginTop: 12, maxWidth: 760 }}>
-                {toParagraphs(bodyText).map((p, idx) => (
-                  <p
-                    key={idx}
-                    style={{
-                      marginTop: idx === 0 ? 0 : 12,
-                      fontSize: detailBodyFont,
-                      lineHeight: 1.78,
-                      color: "#334155",
-                    }}
-                  >
-                    {p}
-                  </p>
-                ))}
-              </div>
+                <div style={{ marginTop: 12, maxWidth: 760 }}>
+                  {toParagraphs(bodyText).map((p, idx) => (
+                    <p
+                      key={idx}
+                      style={{
+                        marginTop: idx === 0 ? 0 : 12,
+                        fontSize: detailBodyFont,
+                        lineHeight: 1.78,
+                        color: "#334155",
+                      }}
+                    >
+                      {p}
+                    </p>
+                  ))}
+                </div>
 
-              <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <Link to="/contacto" style={{ ...btnOutlineLg(), minWidth: 180 }}>
-                  {pick(UI.btnContactar, lang)}
-                </Link>
+                <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <Link to="/contacto" style={{ ...btnOutlineLg(), minWidth: 180 }}>
+                    {pick(UI.btnContactar, lang)}
+                  </Link>
 
-                {product.datasheetUrl ? (
-                  <a
-                    href={product.datasheetUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ ...btnPrimaryLg(), minWidth: 180 }}
-                  >
-                    {lang === "en" ? "Datasheet" : "Ficha técnica"}
-                  </a>
-                ) : null}
+                  {product.datasheetUrl ? (
+                    <a
+                      href={product.datasheetUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ ...btnPrimaryLg(), minWidth: 180 }}
+                    >
+                      {lang === "en" ? "Datasheet" : "Ficha técnica"}
+                    </a>
+                  ) : null}
+                </div>
               </div>
             </div>
 
-            {/* RIGHT: galería real desde /public */}
+            {/* RIGHT: galería que se adapta a la altura del texto */}
             <div style={{ minWidth: 0 }}>
-              <ProductGallery publicFolder={dir} alt={title} maxNumbered={count} />
+              <ProductGallery 
+                publicFolder={dir} 
+                alt={title} 
+                maxNumbered={count}
+                maxH={textHeight} // ✅ Altura dinámica basada en el texto
+              />
             </div>
           </div>
         </div>
@@ -1896,6 +1934,7 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
     </div>
   );
 }
+
 
 function ProductCardImage({
   candidates,
