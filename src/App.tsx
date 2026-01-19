@@ -2249,7 +2249,6 @@ function ProductCard({
     candidates: string[];
     id: string;
   }) {
-    // intenta en orden y marca "loaded" en el primer src que carga
     React.useEffect(() => {
       let alive = true;
       if (!candidates?.length) return;
@@ -2289,14 +2288,23 @@ function ProductCard({
 
     const isTransporte = divisionKey === "transporte";
 
+    // ✅ CLAVE: SOLO TRANSPORTE IGNORA cardMaxWidth y se estira a 100%
+    const effectiveMaxWidth = isTransporte ? "100%" : maxW;
+    const effectiveMarginInline = isTransporte
+      ? undefined
+      : product.cardMaxWidth
+        ? "auto"
+        : undefined;
+
     const wideCardStyle: React.CSSProperties = {
       background: "white",
       border: `1px solid ${BRAND.line}`,
       borderRadius: 22,
       overflow: "hidden",
       boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
-      maxWidth: maxW,
-      marginInline: product.cardMaxWidth ? "auto" : undefined,
+      width: "100%",                 // ✅
+      maxWidth: effectiveMaxWidth,    // ✅
+      marginInline: effectiveMarginInline,
       display: "flex",
       flexDirection: "column",
     };
@@ -2332,17 +2340,14 @@ function ProductCard({
       gap: 12,
     };
 
-    // ✅ Banner full width (pero SIN slot si no carga)
     const bannerWrap: React.CSSProperties = {
       width: "100%",
-      // “largo, no alto”
       aspectRatio: "21 / 7",
       maxHeight: isMd ? 220 : 260,
       background: "#0B1220",
       borderBottom: `1px solid ${BRAND.line}`,
     };
 
-    // ✅ Imágenes adicionales full width (pero SIN slot si no cargan)
     const extraWrap: React.CSSProperties = {
       width: "100%",
       aspectRatio: "21 / 8",
@@ -2357,7 +2362,7 @@ function ProductCard({
 
     const content = (
       <div style={wideCardStyle}>
-        {/* ✅ PRELOAD (no se ve). Sirve para decidir si renderizar o no */}
+        {/* ✅ PRELOAD (no visible) */}
         {isTransporte ? (
           <>
             <PreloadFirstWorking candidates={bannerCandidates} id="t-banner" />
@@ -2616,16 +2621,16 @@ function ProductCard({
     marginInline: product.cardMaxWidth ? "auto" : undefined,
   };
 
-  const headerRow: React.CSSProperties = {
+  const headerRow2: React.CSSProperties = {
     display: "flex",
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12,
   };
 
-  const content = (
+  const content2 = (
     <div style={cardStyle}>
-      <div style={headerRow}>
+      <div style={headerRow2}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.2, color: BRAND.ink }}>
             {title}
@@ -2712,12 +2717,12 @@ function ProductCard({
   );
 
   if (!isClickable) {
-    return <div style={{ height: "100%" }}>{content}</div>;
+    return <div style={{ height: "100%" }}>{content2}</div>;
   }
 
   return (
     <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-      {content}
+      {content2}
     </Link>
   );
 }
