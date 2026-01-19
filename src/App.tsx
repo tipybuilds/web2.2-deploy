@@ -2188,6 +2188,7 @@ function DivisionOverview({ divisionKey }: { divisionKey: Division["key"] }) {
    PRODUCT CARD
    Ctrl+F: ProductCard
 ========================================================= */
+// Ctrl+F: function ProductCard(
 function ProductCard({
   divisionKey,
   product,
@@ -2197,9 +2198,7 @@ function ProductCard({
 }) {
   const { lang } = useLang();
   const { isMd } = useBreakpoints();
-
-  // ✅ NUEVO: hover state (solo styling)
-  const [isHover, setIsHover] = React.useState(false);
+  const [isHover, setIsHover] = useState(false);
 
   const title = pick(product.name, lang);
   const subtitle = product.short ? pick(product.short, lang) : "";
@@ -2214,7 +2213,11 @@ function ProductCard({
     return buildProductImageCandidates(dir, 1);
   })();
 
-  const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
+  const isTransporte = divisionKey === "transporte";
+
+  // Importante: NO centrar ni limitar ancho en Transporte.
+  // En otras divisiones se respeta tal cual product.cardMaxWidth.
+  const maxW = !isTransporte && product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
   const longTextRaw =
     (product.descriptionText ? pick(product.descriptionText, lang) : "") ||
@@ -2222,13 +2225,10 @@ function ProductCard({
 
   const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
 
-  // ✅ NUEVO: handlers hover (solo si es clickeable)
-  const hoverHandlers = isClickable
-    ? {
-        onMouseEnter: () => setIsHover(true),
-        onMouseLeave: () => setIsHover(false),
-      }
-    : {};
+  // Hover: borde negro (solo efecto hover; en reposo se mantiene igual)
+  const hoverBorder = isClickable && isHover ? "rgba(15, 23, 42, 0.92)" : BRAND.line;
+  const hoverShadow =
+    isClickable && isHover ? "0 10px 30px rgba(15, 23, 42, 0.12)" : undefined;
 
   /* =========================================================
      VARIANTE: WIDE-COMPACT
@@ -2238,19 +2238,17 @@ function ProductCard({
 
     const wideCardStyle: React.CSSProperties = {
       background: "white",
-      border: `1px solid ${isClickable && isHover ? "rgba(0,0,0,0.92)" : BRAND.line}`, // ✅ CAMBIO
+      border: `1px solid ${hoverBorder}`,
       borderRadius: 22,
       overflow: "hidden",
-      boxShadow:
-        isClickable && isHover
-          ? "0 12px 30px rgba(15, 23, 42, 0.12)" // ✅ CAMBIO (sutil)
-          : "0 8px 26px rgba(15, 23, 42, 0.08)",
+      boxShadow: hoverShadow ?? "0 8px 26px rgba(15, 23, 42, 0.08)",
+      // ✅ Transporte: ocupar TODO el ancho disponible, sin maxWidth ni auto-centering
+      width: isTransporte ? "100%" : undefined,
       maxWidth: maxW,
-      marginInline: product.cardMaxWidth ? "auto" : undefined,
+      marginInline: !isTransporte && product.cardMaxWidth ? "auto" : undefined,
       display: "flex",
       flexDirection: "column",
       transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
-      transform: isClickable && isHover ? "translateY(-1px)" : "translateY(0)", // ✅ CAMBIO (sutil)
     };
 
     const topSectionStyle: React.CSSProperties = {
@@ -2288,7 +2286,8 @@ function ProductCard({
       <div
         className={`tt-productcard ${isClickable ? "is-clickable" : ""}`}
         style={wideCardStyle}
-        {...hoverHandlers} // ✅ NUEVO
+        onMouseEnter={() => setIsHover(true)}
+        onMouseLeave={() => setIsHover(false)}
       >
         <div style={topSectionStyle}>
           <div style={leftStyle}>
@@ -2373,22 +2372,18 @@ function ProductCard({
   ========================================================= */
   const cardStyle: React.CSSProperties = {
     background: "white",
-    border: `1px solid ${isClickable && isHover ? "rgba(0,0,0,0.92)" : BRAND.line}`, // ✅ CAMBIO
+    border: `1px solid ${hoverBorder}`,
     borderRadius: 18,
     padding: 16,
     display: "flex",
     flexDirection: "column",
     gap: 12,
-    boxShadow:
-      isClickable && isHover
-        ? "0 10px 26px rgba(15, 23, 42, 0.10)" // ✅ CAMBIO (sutil)
-        : "0 6px 24px rgba(15, 23, 42, 0.06)",
+    boxShadow: hoverShadow ?? "0 6px 24px rgba(15, 23, 42, 0.06)",
     height: "100%",
     cursor: isClickable ? "pointer" : "default",
     maxWidth: maxW,
-    marginInline: product.cardMaxWidth ? "auto" : undefined,
+    marginInline: !isTransporte && product.cardMaxWidth ? "auto" : undefined,
     transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
-    transform: isClickable && isHover ? "translateY(-1px)" : "translateY(0)", // ✅ CAMBIO (sutil)
   };
 
   const headerRow: React.CSSProperties = {
@@ -2402,7 +2397,8 @@ function ProductCard({
     <div
       className={`tt-productcard ${isClickable ? "is-clickable" : ""}`}
       style={cardStyle}
-      {...hoverHandlers} // ✅ NUEVO
+      onMouseEnter={() => setIsHover(true)}
+      onMouseLeave={() => setIsHover(false)}
     >
       <div style={headerRow}>
         <div>
@@ -2428,6 +2424,7 @@ function ProductCard({
     </Link>
   );
 }
+
 
 function Calidad() {
   const { isMd, isXl } = useBreakpoints();
