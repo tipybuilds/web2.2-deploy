@@ -1450,7 +1450,7 @@ Available in standard color, with custom color manufacturing available upon requ
             imageLabel: { es: "Foto: tracto / rampla / ruta", en: "Photo: tractor unit / trailer / route" },
             
             imageDir: "/images/divisions/transporte/products/capacidad",
-            imageCount: 1,
+            imageCount: 5,
             clickable: false,
             cardMaxWidth: 1500,
             cardVariant: "wide-compact",
@@ -2055,9 +2055,6 @@ function ProductCardImage({
 
 
 
-// Ctrl+F: ProductCard
-// Ctrl+F: ProductCard
-// Ctrl+F: ProductCard
 function ProductCard({
   divisionKey,
   product,
@@ -2096,21 +2093,20 @@ function ProductCard({
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
-  // Texto "leyenda" para wide-compact
   const longTextRaw =
     (product.descriptionText ? pick(product.descriptionText, lang) : "") ||
     pick(product.descriptionPlaceholder, lang);
 
   const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
 
-  const isTransporte = divisionKey === "transporte";
-
   // ==========================
   // VARIANTE: WIDE-COMPACT
-  // ✅ Transporte: 01.jpg como banner real full-bleed
+  // ✅ Transporte: 01.jpg como BANNER full width (solo transporte)
   // ==========================
   if (product.cardVariant === "wide-compact") {
     const H = isMd ? 240 : 320;
+
+    const isTransporte = divisionKey === "transporte";
 
     const wideCardStyle: React.CSSProperties = {
       background: "white",
@@ -2121,7 +2117,7 @@ function ProductCard({
       maxWidth: maxW,
       marginInline: product.cardMaxWidth ? "auto" : undefined,
       display: "flex",
-      flexDirection: "column",
+      flexDirection: "column", // ✅ transporte y no-transporte: columna, pero cambia el contenido
     };
 
     const topSectionStyle: React.CSSProperties = {
@@ -2145,7 +2141,7 @@ function ProductCard({
       justifyContent: "stretch",
       borderTop: isMd ? `1px solid ${BRAND.line}` : undefined,
       borderLeft: !isMd ? `1px solid ${BRAND.line}` : undefined,
-      background: "white", // ✅ NO negro
+      background: "#0B1220",
     };
 
     const headerRow: React.CSSProperties = {
@@ -2155,101 +2151,139 @@ function ProductCard({
       gap: 12,
     };
 
-    // ✅ Banner full-bleed SOLO transporte (sin negro, y con placeholder claro)
-    const bannerWrapStyle: React.CSSProperties = {
-      width: "100vw",
-      marginLeft: "calc(50% - 50vw)",
-      marginRight: "calc(50% - 50vw)",
-      background: "white", // ✅ NO negro
+    // ✅ Banner (01.jpg) ancho completo SOLO transporte
+    const bannerStyle: React.CSSProperties = {
+      width: "100%",
+      height: isMd ? 220 : 320,
+      background: "#0B1220",
+      borderBottom: `1px solid ${BRAND.line}`,
+    };
+
+    // ✅ Imágenes adicionales ancho completo (02.jpg, 03.jpg...) SOLO transporte
+    const fullWidthImageStyle: React.CSSProperties = {
+      width: "100%",
+      height: isMd ? 200 : 260,
       borderTop: `1px solid ${BRAND.line}`,
-      borderBottom: `1px solid ${BRAND.line}`,
-      overflow: "hidden",
+      background: "#0B1220",
     };
 
-    const bannerHeight = isMd ? 220 : 320;
-
-    const bannerInnerStyle: React.CSSProperties = {
-      width: "100%",
-      height: bannerHeight,
-      background: "rgba(15, 23, 42, 0.03)", // ✅ placeholder suave
-      display: "block",
-    };
-
-    // ✅ Imágenes adicionales full-bleed SOLO transporte (sin negro)
-    const fullBleedWrapStyle: React.CSSProperties = {
-      width: "100vw",
-      marginLeft: "calc(50% - 50vw)",
-      marginRight: "calc(50% - 50vw)",
-      background: "white",
-      borderBottom: `1px solid ${BRAND.line}`,
-      overflow: "hidden",
-    };
-
-    const extraHeight = isMd ? 220 : 300;
-
-    const extraInnerStyle: React.CSSProperties = {
-      width: "100%",
-      height: extraHeight,
-      background: "rgba(15, 23, 42, 0.03)",
-      display: "block",
-    };
-
-    // 01.jpg (banner) para transporte; si no hay allImageCandidates, usa cardImageCandidates
     const bannerCandidates: string[] = isTransporte
-      ? (allImageCandidates[0] && allImageCandidates[0].length ? allImageCandidates[0] : cardImageCandidates)
+      ? (allImageCandidates[0] ?? cardImageCandidates)
       : [];
-
-    // Extras: SOLO si hay candidatos (evita bloques vacíos)
-    const extraCandidatesList: string[][] = isTransporte
-      ? allImageCandidates
-          .slice(1)
-          .filter((arr) => Array.isArray(arr) && arr.length > 0)
-      : [];
-
-    const Placeholder = ({ height }: { height: number }) => (
-      <div
-        style={{
-          width: "100%",
-          height,
-          display: "grid",
-          placeItems: "center",
-          border: `1px dashed ${BRAND.line}`,
-          background: "rgba(15, 23, 42, 0.03)",
-          color: "rgba(15, 23, 42, 0.55)",
-          fontWeight: 800,
-          fontSize: 13,
-        }}
-      >
-        Sin imagen
-      </div>
-    );
 
     const content = (
-      <div style={{ width: "100%" }}>
-        {/* ✅ SOLO TRANSPORTE: banner 01.jpg full-bleed */}
+      <div style={wideCardStyle}>
+        {/* ✅ SOLO TRANSPORTE: 01.jpg como banner full width */}
         {isTransporte ? (
-          <div style={bannerWrapStyle}>
-            <div style={bannerInnerStyle}>
-              {bannerCandidates.length ? (
-                <ProductCardImage
-                  candidates={bannerCandidates}
-                  alt={`${title} - banner`}
-                  height={bannerHeight}
-                  rounded={0}
-                  fit="cover"
-                  borderless
-                />
-              ) : (
-                <Placeholder height={bannerHeight} />
-              )}
-            </div>
+          <div style={bannerStyle}>
+            {bannerCandidates.length ? (
+              <ProductCardImage
+                candidates={bannerCandidates}
+                alt={`${title} - banner`}
+                height={isMd ? 220 : 320}
+                rounded={0}
+                fit="cover"
+                borderless
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: isMd ? 220 : 320,
+                  display: "grid",
+                  placeItems: "center",
+                  color: "rgba(226,232,240,0.75)",
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                Sin imagen
+              </div>
+            )}
           </div>
         ) : null}
 
-        {/* Card principal */}
-        <div style={wideCardStyle}>
-          {/* Transporte: solo texto (porque el banner ya ocupa la imagen). */}
-          {isTransporte ? (
+        {/* TOP: Transporte = solo texto (porque el banner ya tomó la imagen 01)
+            No-transporte = texto + imagen a la derecha (como antes) */}
+        {isTransporte ? (
+          <div style={{ ...leftStyle, borderBottom: `1px solid ${BRAND.line}` }}>
+            <div style={headerRow}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
+                  {title}
+                </div>
+
+                {subtitle ? (
+                  <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
+                    {subtitle}
+                  </div>
+                ) : null}
+              </div>
+
+              {isClickable ? (
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
+                    display: "grid",
+                    placeItems: "center",
+                    border: `1px solid ${BRAND.line}`,
+                    color: "rgba(15, 23, 42, 0.75)",
+                    flex: "0 0 auto",
+                    fontWeight: 900,
+                  }}
+                >
+                  →
+                </div>
+              ) : null}
+            </div>
+
+            {tag ? (
+              <div
+                style={{
+                  alignSelf: "flex-start",
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                  background: "rgba(35, 137, 201, 0.12)",
+                  border: "1px solid rgba(35, 137, 201, 0.18)",
+                  color: "rgba(15, 23, 42, 0.82)",
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                {tag}
+              </div>
+            ) : null}
+
+            {legend ? (
+              <div
+                style={{
+                  color: "#334155",
+                  fontSize: 15,
+                  lineHeight: 1.75,
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical" as any,
+                  WebkitLineClamp: 5 as any,
+                  overflow: "hidden",
+                }}
+              >
+                {legend}
+              </div>
+            ) : null}
+
+            {isClickable ? (
+              <div style={{ marginTop: "auto", paddingTop: 6 }}>
+                <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
+                  {lang === "en" ? "See details" : "Ver detalle"}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div style={topSectionStyle}>
+            {/* LEFT (leyenda) */}
             <div style={leftStyle}>
               <div style={headerRow}>
                 <div style={{ minWidth: 0 }}>
@@ -2325,122 +2359,49 @@ function ProductCard({
                 </div>
               ) : null}
             </div>
-          ) : (
-            <div style={topSectionStyle}>
-              {/* LEFT */}
-              <div style={leftStyle}>
-                <div style={headerRow}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
-                      {title}
-                    </div>
 
-                    {subtitle ? (
-                      <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
-                        {subtitle}
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {isClickable ? (
-                    <div
-                      aria-hidden="true"
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 12,
-                        display: "grid",
-                        placeItems: "center",
-                        border: `1px solid ${BRAND.line}`,
-                        color: "rgba(15, 23, 42, 0.75)",
-                        flex: "0 0 auto",
-                        fontWeight: 900,
-                      }}
-                    >
-                      →
-                    </div>
-                  ) : null}
+            {/* RIGHT (imagen edge-to-edge) */}
+            <div style={rightStyle}>
+              {cardImageCandidates.length ? (
+                <ProductCardImage
+                  candidates={cardImageCandidates}
+                  alt={title}
+                  height={H}
+                  rounded={0}
+                  fit="cover"
+                  borderless
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: H,
+                    display: "grid",
+                    placeItems: "center",
+                    color: "rgba(226,232,240,0.75)",
+                    fontWeight: 800,
+                    fontSize: 13,
+                  }}
+                >
+                  Sin imagen
                 </div>
-
-                {tag ? (
-                  <div
-                    style={{
-                      alignSelf: "flex-start",
-                      padding: "6px 10px",
-                      borderRadius: 999,
-                      background: "rgba(35, 137, 201, 0.12)",
-                      border: "1px solid rgba(35, 137, 201, 0.18)",
-                      color: "rgba(15, 23, 42, 0.82)",
-                      fontWeight: 800,
-                      fontSize: 13,
-                    }}
-                  >
-                    {tag}
-                  </div>
-                ) : null}
-
-                {legend ? (
-                  <div
-                    style={{
-                      color: "#334155",
-                      fontSize: 15,
-                      lineHeight: 1.75,
-                      display: "-webkit-box",
-                      WebkitBoxOrient: "vertical" as any,
-                      WebkitLineClamp: 5 as any,
-                      overflow: "hidden",
-                    }}
-                  >
-                    {legend}
-                  </div>
-                ) : null}
-
-                {isClickable ? (
-                  <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                    <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
-                      {lang === "en" ? "See details" : "Ver detalle"}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-
-              {/* RIGHT */}
-              <div style={rightStyle}>
-                {cardImageCandidates.length ? (
-                  <ProductCardImage
-                    candidates={cardImageCandidates}
-                    alt={title}
-                    height={H}
-                    rounded={0}
-                    fit="cover"
-                    borderless
-                  />
-                ) : (
-                  <Placeholder height={H} />
-                )}
-              </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* ✅ SOLO TRANSPORTE: extras (02/03...) full-bleed, sin negro */}
+        {/* ✅ SOLO TRANSPORTE: imágenes adicionales (02.jpg, 03.jpg...) ancho completo */}
         {isTransporte
-          ? extraCandidatesList.map((candidates, idx) => (
-              <div key={idx + 2} style={fullBleedWrapStyle}>
-                <div style={extraInnerStyle}>
-                  {candidates.length ? (
-                    <ProductCardImage
-                      candidates={candidates}
-                      alt={`${title} - imagen ${idx + 2}`}
-                      height={extraHeight}
-                      rounded={0}
-                      fit="cover"
-                      borderless
-                    />
-                  ) : (
-                    <Placeholder height={extraHeight} />
-                  )}
-                </div>
+          ? allImageCandidates.slice(1).map((candidates, index) => (
+              <div key={index + 2} style={fullWidthImageStyle}>
+                <ProductCardImage
+                  candidates={candidates}
+                  alt={`${title} - imagen ${index + 2}`}
+                  height={isMd ? 200 : 260}
+                  rounded={0}
+                  fit="cover"
+                  borderless
+                />
               </div>
             ))
           : null}
@@ -2581,6 +2542,138 @@ function ProductCard({
 }
 
 
+
+/* =========================================================
+   DIVISION OVERVIEW
+========================================================= */
+function DivisionOverview({ divisionKey }: { divisionKey: Division["key"] }) {
+  const divisions = useDivisions();
+  const division = findDivision(divisions, divisionKey);
+  const { isMd, isXl } = useBreakpoints();
+  const { lang } = useLang();
+
+  if (!division) return <NotFound />;
+
+  const minColPx = division.layout === "grid3" ? 320 : division.layout === "grid2" ? 380 : 9999;
+
+  const heroGridStyle: React.CSSProperties = {
+    ...twoColGrid(isMd, isXl),
+    alignItems: "stretch",
+  };
+
+  // ✅ +3px SOLO en texto largo de landing
+  const landingBody: React.CSSProperties = {
+    marginTop: 12,
+    fontSize: isMd ? 17 : 18, // antes 15
+    lineHeight: 1.75,
+    color: "#334155",
+    maxWidth: 760,
+    whiteSpace: "pre-line", // respeta tus saltos de línea en intro
+  };
+
+  return (
+    <div style={{ width: "100%" }}>
+      <section style={{ borderBottom: `1px solid ${BRAND.line}` }}>
+        <div style={{ ...containerStyle(), ...sectionPad(44, 26) }}>
+          <div style={heroGridStyle}>
+            <div>
+              <BackToHome />
+              <h1
+                style={{
+                  marginTop: 10,
+                  fontSize: isMd ? 34 : isXl ? 52 : 44,
+                  fontWeight: 350,
+                  color: BRAND.primary,
+                  lineHeight: 1.08,
+                }}
+              >
+                {pick(division.pageTitle, lang)}
+              </h1>
+
+              <p style={landingBody}>{pick(division.intro, lang)}</p>
+
+              <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {division.key !== "transporte" && (
+                  <Link to="/contacto" style={{ ...btnOutlineLg(), minWidth: 180 }}>
+                    {pick(UI.btnContactar, lang)}
+                  </Link>
+                )}
+
+                {division.key === "packaging" && (
+                  <a
+                    href={MERCADOLIBRE_FILM_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ ...btnPrimaryLg(), minWidth: 180 }}
+                  >
+                    {pick(UI.btnComprarML, lang)}
+                  </a>
+                )}
+
+                {division.key === "acuicola" && (
+                  <a
+                    href={MITILICULTURA_MAPS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ ...btnPrimaryLg(), minWidth: 180 }}
+                  >
+                    {pick(UI.btnVisitanos, lang)}
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div style={{ alignSelf: "stretch", minHeight: 0, display: "flex" }}>
+              <div style={{ flex: "1 1 auto", minHeight: 0 }}>
+                <FigurePlaceholder
+                  title={
+                    division.key === "packaging"
+                      ? lang === "en"
+                        ? "STRETCH FILM"
+                        : "FILM STRETCH"
+                      : lang === "en"
+                        ? "Image"
+                        : "Imagen"
+                  }
+                  subtitle={pick(division.heroImageLabel, lang)}
+                  src={division.heroImageSrc}
+                  alt={pick(division.pageTitle, lang)}
+                  fit="cover"
+                  minHeight={isMd ? 220 : undefined}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div style={{ ...containerStyle(), ...sectionPad(26, 50) }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div>
+              <h2 style={{ marginTop: 0, fontSize: 20, fontWeight: 900, color: BRAND.primary }}>
+                {pick(division.productsTitle, lang)}
+              </h2>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 16,
+              ...(division.layout === "single"
+                ? { display: "grid", gridTemplateColumns: "1fr", gap: 16 }
+                : responsiveAutoGrid(minColPx)),
+            }}
+          >
+            {division.products.map((p) => (
+              <ProductCard key={p.key} divisionKey={division.key} product={p} />
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 /* =========================================================
    CALIDAD / NOSOTROS / CONTACTO
@@ -3257,139 +3350,6 @@ function MiniCard({ title, desc }: { title: string; desc: string }) {
     </div>
   );
 }
-
-// Ctrl+F: DivisionOverview
-function DivisionOverview({ divisionKey }: { divisionKey: Division["key"] }) {
-  // Hooks “si existen” (defensivo para evitar romper build si cambiaste nombres)
-  const lang = (() => {
-    try {
-      // @ts-ignore
-      return useLang()?.lang ?? "es";
-    } catch {
-      return "es";
-    }
-  })();
-
-  const bp = (() => {
-    try {
-      // @ts-ignore
-      return useBreakpoints?.() ?? { isMd: false, isXl: false };
-    } catch {
-      return { isMd: false, isXl: false };
-    }
-  })();
-
-  const divisions = (() => {
-    try {
-      // @ts-ignore
-      return useDivisions?.() ?? [];
-    } catch {
-      return [];
-    }
-  })();
-
-  const division = (() => {
-    try {
-      // @ts-ignore
-      if (typeof findDivision === "function") return findDivision(divisions, divisionKey);
-      // fallback si findDivision no existe
-      // @ts-ignore
-      return (divisions || []).find((d: any) => d?.key === divisionKey) ?? null;
-    } catch {
-      return null;
-    }
-  })();
-
-  const title = (() => {
-    try {
-      // @ts-ignore
-      if (division?.name) return pick(division.name, lang);
-      // @ts-ignore
-      if (division?.title) return pick(division.title, lang);
-    } catch {}
-    // fallback
-    const s = String(divisionKey || "");
-    return s ? s.charAt(0).toUpperCase() + s.slice(1) : "División";
-  })();
-
-  const subtitle = (() => {
-    try {
-      // @ts-ignore
-      if (division?.subtitle) return pick(division.subtitle, lang);
-      // @ts-ignore
-      if (division?.desc) return pick(division.desc, lang);
-      // @ts-ignore
-      if (division?.description) return pick(division.description, lang);
-    } catch {}
-    return "";
-  })();
-
-  const wrapStyle: React.CSSProperties = {
-    width: "100%",
-  };
-
-  const containerStyle: React.CSSProperties = {
-    maxWidth: typeof CONTAINER_MAX !== "undefined" ? CONTAINER_MAX : 1760,
-    margin: "0 auto",
-    padding: "28px 20px",
-  };
-
-  const h1Style: React.CSSProperties = {
-    fontSize: bp.isMd ? 30 : 42,
-    lineHeight: 1.15,
-    fontWeight: 950,
-    letterSpacing: "-0.02em",
-    margin: 0,
-    color: BRAND?.primary ?? "#0B1220",
-  };
-
-  const pStyle: React.CSSProperties = {
-    marginTop: 10,
-    marginBottom: 0,
-    color: "rgba(15, 23, 42, 0.75)",
-    fontSize: 14.5,
-    lineHeight: 1.7,
-    maxWidth: 900,
-  };
-
-  // Si no existe la división, no rompemos: mostramos un fallback básico
-  if (!division) {
-    return (
-      <div style={wrapStyle}>
-        <div style={containerStyle}>
-          <h1 style={h1Style}>{title}</h1>
-          <p style={pStyle}>
-            {lang === "en"
-              ? "This section is being updated."
-              : "Esta sección se está actualizando."}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Render básico de overview (sin asumir estructura interna de division)
-  return (
-    <div style={wrapStyle}>
-      <div style={containerStyle}>
-        <h1 style={h1Style}>{title}</h1>
-        {subtitle ? <p style={pStyle}>{subtitle}</p> : null}
-      </div>
-
-      {/* Si tu Division trae un render/sections/custom component, lo soportamos sin romper */}
-      {(() => {
-        try {
-          // @ts-ignore
-          if (typeof division?.render === "function") return division.render();
-          // @ts-ignore
-          if (division?.component) return division.component;
-        } catch {}
-        return null;
-      })()}
-    </div>
-  );
-}
-
 
 function DivisionCard({ division }: { division: Division }) {
   const { lang } = useLang();
