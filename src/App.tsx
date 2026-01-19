@@ -1846,24 +1846,11 @@ function ProductCard({
   const isClickable = product.clickable !== false;
   const to = `/${divisionKey}/${product.key}`;
 
-  // ================================
-  // CARD IMAGE (SOLO 01.*, NUNCA HERO)
-  // ================================
+  // ✅ Card: solo primera numerada (01.*), nunca hero
   const cardImageCandidates: string[] = (() => {
     const dir = product.imageDir;
     if (!dir) return [];
-
-    const base = dir.replace(/\/+$/, "");
-    return [
-      `${base}/01.jpg`,
-      `${base}/01.jpeg`,
-      `${base}/01.png`,
-      `${base}/01.webp`,
-      `${base}/1.jpg`,
-      `${base}/1.jpeg`,
-      `${base}/1.png`,
-      `${base}/1.webp`,
-    ];
+    return buildProductImageCandidates(dir, 1);
   })();
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
@@ -1892,17 +1879,9 @@ function ProductCard({
 
   const content = (
     <div style={cardStyle}>
-      {/* ================= HEADER ================= */}
       <div style={headerRow}>
         <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              fontWeight: 900,
-              fontSize: 16,
-              lineHeight: 1.2,
-              color: BRAND.ink,
-            }}
-          >
+          <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.2, color: BRAND.ink }}>
             {title}
           </div>
 
@@ -1944,7 +1923,6 @@ function ProductCard({
         ) : null}
       </div>
 
-      {/* ================= TAG ================= */}
       {tag ? (
         <div
           style={{
@@ -1962,16 +1940,9 @@ function ProductCard({
         </div>
       ) : null}
 
-      {/* ================= IMAGE ================= */}
       <div style={{ marginTop: 2 }}>
         {cardImageCandidates.length ? (
-          <ProductCardImage
-            candidates={cardImageCandidates}
-            alt={title}
-            height={210}
-            rounded={16}
-            fit="cover"
-          />
+          <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
         ) : (
           <div
             style={{
@@ -1994,7 +1965,6 @@ function ProductCard({
     </div>
   );
 
-  // ================= WRAPPER =================
   if (!isClickable) {
     return <div style={{ height: "100%" }}>{content}</div>;
   }
@@ -2005,6 +1975,7 @@ function ProductCard({
     </Link>
   );
 }
+
 
 
 /* =========================================================
