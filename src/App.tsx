@@ -2419,6 +2419,131 @@ function ProductCard({
 }
 
 
+  // ==========================
+  // DEFAULT CARD (grid normal)
+  // ==========================
+  const cardStyle: React.CSSProperties = {
+    background: "white",
+    border: `1px solid ${BRAND.line}`,
+    borderRadius: 18,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    boxShadow: "0 6px 24px rgba(15, 23, 42, 0.06)",
+    height: "100%",
+    cursor: isClickable ? "pointer" : "default",
+    maxWidth: maxW,
+    marginInline: product.cardMaxWidth ? "auto" : undefined,
+  };
+
+  const headerRow: React.CSSProperties = {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  };
+
+  const content = (
+    <div style={cardStyle}>
+      <div style={headerRow}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.2, color: BRAND.ink }}>
+            {title}
+          </div>
+
+          {subtitle ? (
+            <div
+              style={{
+                marginTop: 6,
+                color: "rgba(15, 23, 42, 0.75)",
+                fontSize: 14,
+                lineHeight: 1.4,
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical" as any,
+                WebkitLineClamp: 2 as any,
+                overflow: "hidden",
+              }}
+            >
+              {subtitle}
+            </div>
+          ) : null}
+        </div>
+
+        {isClickable ? (
+          <div
+            aria-hidden="true"
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 12,
+              display: "grid",
+              placeItems: "center",
+              border: `1px solid ${BRAND.line}`,
+              color: "rgba(15, 23, 42, 0.75)",
+              flex: "0 0 auto",
+              fontWeight: 900,
+            }}
+          >
+            →
+          </div>
+        ) : null}
+      </div>
+
+      {tag ? (
+        <div
+          style={{
+            alignSelf: "flex-start",
+            padding: "6px 10px",
+            borderRadius: 999,
+            background: "rgba(35, 137, 201, 0.12)",
+            border: "1px solid rgba(35, 137, 201, 0.18)",
+            color: "rgba(15, 23, 42, 0.82)",
+            fontWeight: 800,
+            fontSize: 13,
+          }}
+        >
+          {tag}
+        </div>
+      ) : null}
+
+      <div style={{ marginTop: 2 }}>
+        {cardImageCandidates.length ? (
+          <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: 210,
+              borderRadius: 16,
+              border: `1px dashed ${BRAND.line}`,
+              background: "rgba(15, 23, 42, 0.03)",
+              display: "grid",
+              placeItems: "center",
+              color: "rgba(15, 23, 42, 0.55)",
+              fontWeight: 800,
+              fontSize: 13,
+            }}
+          >
+            Sin imagen
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (!isClickable) {
+    return <div style={{ height: "100%" }}>{content}</div>;
+  }
+
+  return (
+    <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+      {content}
+    </Link>
+  );
+}
+
+
 
 
 /* =========================================================
