@@ -612,6 +612,19 @@ const UI = {
   nosotrosP3: {
     es: "Calidad en materiales, procesos y entregas. Los detalles hacen la diferencia.",
     en: "Quality in materials, processes, and deliveries. Details make the difference.",
+
+
+ nosotrosP4: {
+    es: "",
+    en: "",
+
+ nosotrosP5: {
+    es: "",
+    en: "",
+
+ nosotrosP6: {
+    es: "",
+    en: "",
   
 
   },
