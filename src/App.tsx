@@ -1450,7 +1450,7 @@ Available in standard color, with custom color manufacturing available upon requ
             imageLabel: { es: "Foto: tracto / rampla / ruta", en: "Photo: tractor unit / trailer / route" },
             
             imageDir: "/images/divisions/transporte/products/capacidad",
-            imageCount: 5,
+            imageCount: 1,
             clickable: false,
             cardMaxWidth: 1500,
             cardVariant: "wide-compact",
@@ -2056,6 +2056,7 @@ function ProductCardImage({
 
 
 // Ctrl+F: ProductCard
+// Ctrl+F: ProductCard
 function ProductCard({
   divisionKey,
   product,
@@ -2094,7 +2095,6 @@ function ProductCard({
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
-  // Texto "leyenda" para wide-compact
   const longTextRaw =
     (product.descriptionText ? pick(product.descriptionText, lang) : "") ||
     pick(product.descriptionPlaceholder, lang);
@@ -2103,10 +2103,11 @@ function ProductCard({
 
   // ==========================
   // VARIANTE: WIDE-COMPACT
-  // ✅ Transporte: 01.jpg como BANNER real (full-bleed)
+  // ✅ Transporte: 01.jpg como BANNER full width (solo transporte)
   // ==========================
   if (product.cardVariant === "wide-compact") {
     const H = isMd ? 240 : 320;
+
     const isTransporte = divisionKey === "transporte";
 
     const wideCardStyle: React.CSSProperties = {
@@ -2118,7 +2119,7 @@ function ProductCard({
       maxWidth: maxW,
       marginInline: product.cardMaxWidth ? "auto" : undefined,
       display: "flex",
-      flexDirection: "column",
+      flexDirection: "column", // ✅ transporte y no-transporte: columna, pero cambia el contenido
     };
 
     const topSectionStyle: React.CSSProperties = {
@@ -2152,84 +2153,139 @@ function ProductCard({
       gap: 12,
     };
 
-    // ✅ BANNER full-bleed REAL (ocupa el ancho de la pantalla)
-    // Nota: el truco 100vw + marginLeft centra y no afecta otras landings porque va gated por isTransporte.
-    const bannerWrapStyle: React.CSSProperties = {
-      width: "100vw",
-      marginLeft: "calc(50% - 50vw)",
-      marginRight: "calc(50% - 50vw)",
-      background: "#0B1220",
-      borderRadius: 0,
-      overflow: "hidden",
-      border: `1px solid ${BRAND.line}`,
-      boxShadow: "0 10px 28px rgba(15, 23, 42, 0.10)",
-    };
-
-    const bannerInnerStyle: React.CSSProperties = {
-      width: "100%",
-      height: isMd ? 220 : 360,
-      background: "#0B1220",
-    };
-
-    const fullBleedImageStyle: React.CSSProperties = {
-      width: "100vw",
-      marginLeft: "calc(50% - 50vw)",
-      marginRight: "calc(50% - 50vw)",
-      background: "#0B1220",
-      overflow: "hidden",
-      borderTop: `1px solid ${BRAND.line}`,
-    };
-
-    const fullBleedInnerStyle: React.CSSProperties = {
+    // ✅ Banner (01.jpg) ancho completo SOLO transporte
+    const bannerStyle: React.CSSProperties = {
       width: "100%",
       height: isMd ? 220 : 320,
       background: "#0B1220",
+      borderBottom: `1px solid ${BRAND.line}`,
     };
 
-    // 01.jpg para banner (solo transporte)
+    // ✅ Imágenes adicionales ancho completo (02.jpg, 03.jpg...) SOLO transporte
+    const fullWidthImageStyle: React.CSSProperties = {
+      width: "100%",
+      height: isMd ? 200 : 260,
+      borderTop: `1px solid ${BRAND.line}`,
+      background: "#0B1220",
+    };
+
     const bannerCandidates: string[] = isTransporte
       ? (allImageCandidates[0] ?? cardImageCandidates)
       : [];
 
     const content = (
-      <div style={{ width: "100%" }}>
-        {/* ✅ SOLO TRANSPORTE: 01.jpg como banner full-bleed */}
+      <div style={wideCardStyle}>
+        {/* ✅ SOLO TRANSPORTE: 01.jpg como banner full width */}
         {isTransporte ? (
-          <div style={bannerWrapStyle}>
-            <div style={bannerInnerStyle}>
-              {bannerCandidates.length ? (
-                <ProductCardImage
-                  candidates={bannerCandidates}
-                  alt={`${title} - banner`}
-                  height={isMd ? 220 : 360}
-                  rounded={0}
-                  fit="cover"
-                  borderless
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: isMd ? 220 : 360,
-                    display: "grid",
-                    placeItems: "center",
-                    color: "rgba(226,232,240,0.75)",
-                    fontWeight: 800,
-                    fontSize: 13,
-                  }}
-                >
-                  Sin imagen
-                </div>
-              )}
-            </div>
+          <div style={bannerStyle}>
+            {bannerCandidates.length ? (
+              <ProductCardImage
+                candidates={bannerCandidates}
+                alt={`${title} - banner`}
+                height={isMd ? 220 : 320}
+                rounded={0}
+                fit="cover"
+                borderless
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: isMd ? 220 : 320,
+                  display: "grid",
+                  placeItems: "center",
+                  color: "rgba(226,232,240,0.75)",
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                Sin imagen
+              </div>
+            )}
           </div>
         ) : null}
 
-        {/* CARD de contenido (no full-bleed) */}
-        <div style={wideCardStyle}>
-          {/* Para transporte: SOLO texto arriba (porque la imagen ya es banner).
-              Para otras divisiones: texto + imagen derecha como estaba. */}
-          {isTransporte ? (
+        {/* TOP: Transporte = solo texto (porque el banner ya tomó la imagen 01)
+            No-transporte = texto + imagen a la derecha (como antes) */}
+        {isTransporte ? (
+          <div style={{ ...leftStyle, borderBottom: `1px solid ${BRAND.line}` }}>
+            <div style={headerRow}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
+                  {title}
+                </div>
+
+                {subtitle ? (
+                  <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
+                    {subtitle}
+                  </div>
+                ) : null}
+              </div>
+
+              {isClickable ? (
+                <div
+                  aria-hidden="true"
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
+                    display: "grid",
+                    placeItems: "center",
+                    border: `1px solid ${BRAND.line}`,
+                    color: "rgba(15, 23, 42, 0.75)",
+                    flex: "0 0 auto",
+                    fontWeight: 900,
+                  }}
+                >
+                  →
+                </div>
+              ) : null}
+            </div>
+
+            {tag ? (
+              <div
+                style={{
+                  alignSelf: "flex-start",
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                  background: "rgba(35, 137, 201, 0.12)",
+                  border: "1px solid rgba(35, 137, 201, 0.18)",
+                  color: "rgba(15, 23, 42, 0.82)",
+                  fontWeight: 800,
+                  fontSize: 13,
+                }}
+              >
+                {tag}
+              </div>
+            ) : null}
+
+            {legend ? (
+              <div
+                style={{
+                  color: "#334155",
+                  fontSize: 15,
+                  lineHeight: 1.75,
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical" as any,
+                  WebkitLineClamp: 5 as any,
+                  overflow: "hidden",
+                }}
+              >
+                {legend}
+              </div>
+            ) : null}
+
+            {isClickable ? (
+              <div style={{ marginTop: "auto", paddingTop: 6 }}>
+                <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
+                  {lang === "en" ? "See details" : "Ver detalle"}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div style={topSectionStyle}>
+            {/* LEFT (leyenda) */}
             <div style={leftStyle}>
               <div style={headerRow}>
                 <div style={{ minWidth: 0 }}>
@@ -2305,144 +2361,49 @@ function ProductCard({
                 </div>
               ) : null}
             </div>
-          ) : (
-            <div style={topSectionStyle}>
-              <div style={leftStyle}>
-                <div style={headerRow}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
-                      {title}
-                    </div>
 
-                    {subtitle ? (
-                      <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
-                        {subtitle}
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {isClickable ? (
-                    <div
-                      aria-hidden="true"
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 12,
-                        display: "grid",
-                        placeItems: "center",
-                        border: `1px solid ${BRAND.line}`,
-                        color: "rgba(15, 23, 42, 0.75)",
-                        flex: "0 0 auto",
-                        fontWeight: 900,
-                      }}
-                    >
-                      →
-                    </div>
-                  ) : null}
+            {/* RIGHT (imagen edge-to-edge) */}
+            <div style={rightStyle}>
+              {cardImageCandidates.length ? (
+                <ProductCardImage
+                  candidates={cardImageCandidates}
+                  alt={title}
+                  height={H}
+                  rounded={0}
+                  fit="cover"
+                  borderless
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: H,
+                    display: "grid",
+                    placeItems: "center",
+                    color: "rgba(226,232,240,0.75)",
+                    fontWeight: 800,
+                    fontSize: 13,
+                  }}
+                >
+                  Sin imagen
                 </div>
-
-                {tag ? (
-                  <div
-                    style={{
-                      alignSelf: "flex-start",
-                      padding: "6px 10px",
-                      borderRadius: 999,
-                      background: "rgba(35, 137, 201, 0.12)",
-                      border: "1px solid rgba(35, 137, 201, 0.18)",
-                      color: "rgba(15, 23, 42, 0.82)",
-                      fontWeight: 800,
-                      fontSize: 13,
-                    }}
-                  >
-                    {tag}
-                  </div>
-                ) : null}
-
-                {legend ? (
-                  <div
-                    style={{
-                      color: "#334155",
-                      fontSize: 15,
-                      lineHeight: 1.75,
-                      display: "-webkit-box",
-                      WebkitBoxOrient: "vertical" as any,
-                      WebkitLineClamp: 5 as any,
-                      overflow: "hidden",
-                    }}
-                  >
-                    {legend}
-                  </div>
-                ) : null}
-
-                {isClickable ? (
-                  <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                    <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
-                      {lang === "en" ? "See details" : "Ver detalle"}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-
-              <div style={rightStyle}>
-                {cardImageCandidates.length ? (
-                  <ProductCardImage
-                    candidates={cardImageCandidates}
-                    alt={title}
-                    height={H}
-                    rounded={0}
-                    fit="cover"
-                    borderless
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      height: H,
-                      display: "grid",
-                      placeItems: "center",
-                      color: "rgba(226,232,240,0.75)",
-                      fontWeight: 800,
-                      fontSize: 13,
-                    }}
-                  >
-                    Sin imagen
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* ✅ SOLO TRANSPORTE: 02.jpg, 03.jpg... full-bleed (si existen) */}
+        {/* ✅ SOLO TRANSPORTE: imágenes adicionales (02.jpg, 03.jpg...) ancho completo */}
         {isTransporte
           ? allImageCandidates.slice(1).map((candidates, index) => (
-              <div key={index + 2} style={fullBleedImageStyle}>
-                <div style={fullBleedInnerStyle}>
-                  {candidates?.length ? (
-                    <ProductCardImage
-                      candidates={candidates}
-                      alt={`${title} - imagen ${index + 2}`}
-                      height={isMd ? 220 : 320}
-                      rounded={0}
-                      fit="cover"
-                      borderless
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: "100%",
-                        height: isMd ? 220 : 320,
-                        display: "grid",
-                        placeItems: "center",
-                        color: "rgba(226,232,240,0.75)",
-                        fontWeight: 800,
-                        fontSize: 13,
-                      }}
-                    >
-                      Sin imagen
-                    </div>
-                  )}
-                </div>
+              <div key={index + 2} style={fullWidthImageStyle}>
+                <ProductCardImage
+                  candidates={candidates}
+                  alt={`${title} - imagen ${index + 2}`}
+                  height={isMd ? 200 : 260}
+                  rounded={0}
+                  fit="cover"
+                  borderless
+                />
               </div>
             ))
           : null}
@@ -2581,6 +2542,7 @@ function ProductCard({
     </Link>
   );
 }
+
 
 
 /* =========================================================
