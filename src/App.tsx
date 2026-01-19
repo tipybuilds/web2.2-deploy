@@ -917,8 +917,7 @@ function AppShell() {
           /* ✅ Global UI scale (Chrome/Safari/Edge) */
           zoom: ${UI_SCALE};
 
-          /* ✅ Compensación del “zoom” para que no quede margen raro */
-          zoom-origin: top center;
+        
         }
 
         /* ✅ Mantén assets fluidos */
