@@ -1026,13 +1026,10 @@ export default function App() {
   );
 }
 
-function AppShell({ children }: { children: React.ReactNode }) {
-  // ✅ Premisa oficial: “zoom out” equivalente a 80%
+function AppShell() {
+  // ✅ PREMISA OFICIAL — NUNCA OLVIDAR
   const UI_SCALE = 0.8;
-
-  // Compensaciones matemáticas para que el layout NO se rompa con transform scale()
-  const inv = 1 / UI_SCALE; // 1.25
-  const pct = `${inv * 100}%`; // "125%"
+  const INV_SCALE = 1 / UI_SCALE; // 1.25
 
   return (
     <div
@@ -1044,40 +1041,79 @@ function AppShell({ children }: { children: React.ReactNode }) {
         overflowX: "hidden",
       }}
     >
-      {/* 
-        Wrapper que escala TODO el sitio sin tocar <body>/<html>.
-        Importante: compensar width/minHeight para que el footer no “suba”.
-      */}
+      {/* Wrapper de escala global */}
       <div
         style={{
           transform: `scale(${UI_SCALE})`,
           transformOrigin: "top center",
-          width: pct, // 125%
-          minHeight: pct.replace("%", "vh"), // 125vh
-          marginLeft: "auto",
-          marginRight: "auto",
+          width: `${INV_SCALE * 100}%`,     // 125%
+          minHeight: `${INV_SCALE * 100}vh`, // 125vh
+          marginInline: "auto",
         }}
       >
-        {/* Contenedor real del sitio */}
         <div
           style={{
-            width: "100%",
             minHeight: "100vh",
             display: "flex",
             flexDirection: "column",
           }}
         >
-          {/* MAIN */}
+          {/* HEADER */}
+          <SiteHeader />
+
+          {/* MAIN — ocupa solo lo necesario */}
           <main
             style={{
               width: "100%",
               flex: "1 0 auto",
             }}
           >
-            {children}
+            <ScrollToTopOnRouteChange />
+
+            <Routes>
+              <Route path="/" element={<Home />} />
+
+              <Route
+                path="/acuicola"
+                element={<DivisionOverview divisionKey="acuicola" />}
+              />
+              <Route
+                path="/acuicola/:productKey"
+                element={<ProductDetail divisionKey="acuicola" />}
+              />
+
+              <Route
+                path="/agro"
+                element={<DivisionOverview divisionKey="agro" />}
+              />
+              <Route
+                path="/agro/:productKey"
+                element={<ProductDetail divisionKey="agro" />}
+              />
+
+              <Route
+                path="/packaging"
+                element={<DivisionOverview divisionKey="packaging" />}
+              />
+              <Route
+                path="/packaging/:productKey"
+                element={<ProductDetail divisionKey="packaging" />}
+              />
+
+              <Route
+                path="/transporte"
+                element={<DivisionOverview divisionKey="transporte" />}
+              />
+
+              <Route path="/calidad" element={<Calidad />} />
+              <Route path="/nosotros" element={<Nosotros />} />
+              <Route path="/contacto" element={<Contacto />} />
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </main>
 
-          {/* FOOTER: queda siempre al final, no “flota” arriba */}
+          {/* FOOTER — SIEMPRE ABAJO, SIN VACÍOS */}
           <footer
             style={{
               flex: "0 0 auto",
@@ -1102,7 +1138,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <a
-                  href="#contacto"
+                  href="/contacto"
                   style={{
                     fontSize: 12,
                     color: BRAND.primary,
@@ -1113,7 +1149,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
                   Contacto
                 </a>
 
-                {/* Icono LinkedIn ejemplo (si ya lo tienes, deja el tuyo) */}
                 <a
                   href="https://www.linkedin.com"
                   target="_blank"
@@ -1131,7 +1166,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
                     background: "#fff",
                   }}
                   aria-label="LinkedIn"
-                  title="LinkedIn"
                 >
                   in
                 </a>
