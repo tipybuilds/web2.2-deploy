@@ -28,128 +28,68 @@ type ResolveGalleryOptions = {
   cacheBust?: boolean;        // evita “fantasmas” en dev (recomendado true en StackBlitz)
 };
 
+type ResolveGalleryOptions = {
+  maxNumbered?: number;       // cuántas fotos numeradas buscar (01..max)
+  includeHero?: boolean;      // incluir hero.jpg al inicio
+  extensions?: string[];      // extensiones soportadas
+};
+
 function resolveProductGalleryImages(
   publicFolder: string,
   opts: ResolveGalleryOptions = {}
-): Promise<string[]> {
+): string[] {
   const {
     maxNumbered = 12,
     includeHero = true,
     extensions = ["jpg", "jpeg", "png", "webp"],
-    timeoutMs = 2500,
-    cacheBust = true,
   } = opts;
 
-  // Normaliza: "img/productos/x" -> "/img/productos/x"
-  const base = (publicFolder.startsWith("/") ? publicFolder : `/${publicFolder}`)
-    .replace(/\/+$/, "");
+  const folder = publicFolder.replace(/\/+$/, "");
+  const exts = extensions.map((e) => e.toLowerCase());
 
-  const candidates: string[] = [];
+  // Vite: glob EAGER para tener URLs sincronas (NO Promise)
+  const globPattern = `${folder}/*.{${exts.join(",")}}`;
 
-  // Hero primero
+  const modules = import.meta.glob(globPattern, {
+    eager: true,
+    as: "url",
+  }) as Record<string, string>;
+
+  const out: string[] = [];
+
+  const pick = (filename: string) => {
+    const full = `${folder}/${filename}`;
+    return modules[full] || "";
+  };
+
   if (includeHero) {
-    for (const ext of extensions) candidates.push(`${base}/hero.${ext}`);
-  }
-
-  // 01..maxNumbered
-  for (let i = 1; i <= maxNumbered; i++) {
-    const nn = String(i).padStart(2, "0");
-    for (const ext of extensions) candidates.push(`${base}/${nn}.${ext}`);
-  }
-
-  const uniqCandidates = Array.from(new Set(candidates));
-
-  const probe = (src: string) =>
-    new Promise<string | null>((resolve) => {
-      const img = new Image();
-      let done = false;
-
-      const finish = (ok: boolean) => {
-        if (done) return;
-        done = true;
-        resolve(ok ? src : null);
-      };
-
-      const t = window.setTimeout(() => finish(false), timeoutMs);
-
-      img.onload = () => {
-        window.clearTimeout(t);
-        finish(true);
-      };
-      img.onerror = () => {
-        window.clearTimeout(t);
-        finish(false);
-      };
-
-      if (!cacheBust) {
-        img.src = src;
-        return;
+    // hero.(ext)
+    for (const ext of exts) {
+      const hit = pick(`hero.${ext}`);
+      if (hit) {
+        out.push(hit);
+        break;
       }
+    }
+  }
 
-      const bust = `__v=${Date.now()}`;
-      img.src = src.includes("?") ? `${src}&${bust}` : `${src}?${bust}`;
-    });
+  // 01..maxNumbered con padding 2
+  for (let n = 1; n <= maxNumbered; n++) {
+    const nn = String(n).padStart(2, "0");
+    let found = "";
+    for (const ext of exts) {
+      const hit = pick(`${nn}.${ext}`);
+      if (hit) {
+        found = hit;
+        break;
+      }
+    }
+    if (found) out.push(found);
+  }
 
-  return Promise.all(uniqCandidates.map(probe)).then((found) => {
-    return found.filter((x): x is string => Boolean(x));
-  });
+  // dedupe manteniendo orden
+  return Array.from(new Set(out)).filter(Boolean);
 }
-
-const BRAND = {
-  primary: "#343E75",
-  secondary: "#2389C9",
-  surface: "#D2E4EE",
-  ink: "#0B1220",
-  muted: "#64748b",
-  bg: "#F3F4F6", // fondo general
-  panel: "#FFFFFF", // cajas
-  line: "rgba(15, 23, 42, 0.08)", // bordes
-  // ✅ tu footer lo usa; si no existe rompe.
-  lineSoft: "rgba(15, 23, 42, 0.08)",
-};
-
-const HEADER_H = 64;
-
-// ✅ PREMISA OFICIAL UI
-const UI_SCALE = 0.8;
-
-// ✅ Este es el ancho visual que tú quieres ver en pantalla
-const CONTAINER_MAX = 2048;
-
-// ✅ Compensación: como todo está escalado, el maxWidth real debe ser mayor
-const CONTAINER_MAX_SCALED = Math.round(CONTAINER_MAX / UI_SCALE);
-
-// WhatsApp
-const WHATSAPP_PHONE_E164 = "+56968160062";
-
-// Film
-const MERCADOLIBRE_FILM_URL = "https://www.mercadolibre.cl/";
-
-// Maps (solo landing Acuícola)
-const MITILICULTURA_MAPS_URL =
-  "https://www.google.com/maps?rlz=1C5CHFA_enCL1035CL1035&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRg8MgYIAhBFGDwyBggDEEUYPDIGCAQQRRhB0gEHODkyajBqN6gCALACAA&um=1&ie=UTF-8&fb=1&gl=cl&sa=X&geocode=KStJtgUAFyKWMW9SiiF6XN9R&daddr=5700000+Castro,+Los+Lagos";
-
-// Email destino
-const SALES_EMAIL = "martin@tipytown.cl";
-
-/* =========================================================
-   I18N (ES/EN)
-========================================================= */
-type Lang = "es" | "en";
-type Bilingual = { es: string; en: string };
-
-const LangCtx = createContext<{ lang: Lang; toggleLang: () => void } | null>(
-  null
-);
-
-// Ctrl+F: LangProvider
-type Lang = "es" | "en";
-
-const LangContext = createContext<{
-  lang: Lang;
-  setLang: (l: Lang) => void;
-  toggleLang: () => void;
-} | null>(null);
 
 function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>(() => {
@@ -224,55 +164,57 @@ type ProductGalleryProps =
       includeHero?: never;
     };
 
-function ProductGallery(props: ProductGalleryProps) {
+// Ctrl+F: function ProductGallery(
+function ProductGallery({
+  publicFolder,
+  alt,
+  maxNumbered = 12,
+  includeHero = true,
+  height,
+}: {
+  publicFolder: string;
+  alt: string;
+  maxNumbered?: number;
+  includeHero?: boolean;
+  height?: string | number;
+}) {
   const { isMd } = useBreakpoints();
 
-  const alt = props.alt;
-  const height = props.height;
-
-  // Resolver imágenes desde publicFolder (tu API actual) o directo desde images
   const images = useMemo(() => {
-    if ("images" in props) {
-      return (props.images || []).filter(Boolean);
-    }
-    // IMPORTANTE: esto asume que YA EXISTE tu helper resolveProductGalleryImages
-    // Ctrl+F: resolveProductGalleryImages (debe estar en App.tsx)
-    return resolveProductGalleryImages(props.publicFolder, {
-      maxNumbered: props.maxNumbered ?? 12,
-      includeHero: props.includeHero ?? true,
+    return resolveProductGalleryImages(publicFolder, {
+      maxNumbered,
+      includeHero,
     }).filter(Boolean);
-  }, [props]);
+  }, [publicFolder, maxNumbered, includeHero]);
 
-  const safeImages = images;
   const [idx, setIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [syncedHeightPx, setSyncedHeightPx] = useState<number | null>(null);
 
-  const hasMany = safeImages.length > 1;
-  const currentIdx = Math.min(idx, Math.max(0, safeImages.length - 1));
-  const currentSrc = safeImages[currentIdx] || "";
+  const hasMany = images.length > 1;
+  const currentIdx = Math.min(idx, Math.max(0, images.length - 1));
+  const currentSrc = images[currentIdx] || "";
 
   useEffect(() => {
-    // si cambia el set de imágenes, evitar idx fuera de rango
     setIdx((p) => {
-      const max = Math.max(0, safeImages.length - 1);
+      const max = Math.max(0, images.length - 1);
       return Math.min(p, max);
     });
-  }, [safeImages.length]);
+  }, [images.length]);
 
   const prev = () => {
-    if (!safeImages.length) return;
-    setIdx((p) => (p - 1 + safeImages.length) % safeImages.length);
+    if (!images.length) return;
+    setIdx((p) => (p - 1 + images.length) % images.length);
   };
 
   const next = () => {
-    if (!safeImages.length) return;
-    setIdx((p) => (p + 1) % safeImages.length);
+    if (!images.length) return;
+    setIdx((p) => (p + 1) % images.length);
   };
 
-  // ====== CLAVE: altura sincronizada con el bloque de texto (hermano anterior) ======
+  // Altura "fit al texto" (sin inventar layout nuevo)
   useEffect(() => {
     if (height != null) {
       setSyncedHeightPx(null);
@@ -282,25 +224,15 @@ function ProductGallery(props: ProductGalleryProps) {
     const wrapEl = wrapRef.current;
     if (!wrapEl) return;
 
-    // En tu layout: texto (izq) primero, galería (der) después
-    let textEl = wrapEl.previousElementSibling as HTMLElement | null;
-
-    if (!textEl && wrapEl.parentElement) {
-      const kids = Array.from(wrapEl.parentElement.children) as HTMLElement[];
-      textEl = kids.find((k) => k !== wrapEl) || null;
-    }
-
+    const textEl = wrapEl.previousElementSibling as HTMLElement | null;
     if (!textEl) return;
 
     const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 
     const compute = () => {
-      const h = textEl!.getBoundingClientRect().height;
-
-      // mínimos/máximos para no romper visualmente
+      const h = textEl.getBoundingClientRect().height;
       const minH = isMd ? 320 : 260;
       const maxH = isMd ? 720 : 560;
-
       setSyncedHeightPx(clamp(Math.round(h), minH, maxH));
     };
 
@@ -361,7 +293,6 @@ function ProductGallery(props: ProductGalleryProps) {
         alignSelf: "flex-start",
       }}
     >
-      {/* Imagen */}
       <button
         type="button"
         onClick={() => currentSrc && setLightboxOpen(true)}
@@ -391,7 +322,6 @@ function ProductGallery(props: ProductGalleryProps) {
         )}
       </button>
 
-      {/* Flechas */}
       {hasMany && (
         <>
           <button
@@ -418,7 +348,6 @@ function ProductGallery(props: ProductGalleryProps) {
             <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>›</span>
           </button>
 
-          {/* Dots */}
           <div
             style={{
               position: "absolute",
@@ -432,7 +361,7 @@ function ProductGallery(props: ProductGalleryProps) {
               pointerEvents: "none",
             }}
           >
-            {safeImages.map((_, i) => (
+            {images.map((_: string, i: number) => (
               <span
                 key={i}
                 style={{
@@ -447,7 +376,6 @@ function ProductGallery(props: ProductGalleryProps) {
         </>
       )}
 
-      {/* Lightbox (si ya existe en tu App.tsx) */}
       <ImageLightbox
         open={lightboxOpen}
         src={currentSrc}
@@ -458,13 +386,6 @@ function ProductGallery(props: ProductGalleryProps) {
   );
 }
 
-
-
-function useLang() {
-  const ctx = useContext(LangCtx);
-  if (!ctx) throw new Error("useLang must be used within LangProvider");
-  return ctx;
-}
 
 function pick(b: Bilingual, lang: Lang) {
   return lang === "en" ? b.en : b.es;
