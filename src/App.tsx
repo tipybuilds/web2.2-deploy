@@ -1478,6 +1478,7 @@ Available in standard color, with custom color manufacturing available upon requ
   );
 }
 
+
 function findDivision(divisions: Division[], key: Division["key"]) {
   return divisions.find((d) => d.key === key);
 }
