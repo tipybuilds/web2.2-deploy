@@ -3568,132 +3568,177 @@ function AboutCarousel({
   images: { src: string; alt: string }[];
 }) {
   const { isMd } = useBreakpoints();
-  const [i, setI] = React.useState(0);
+  const [idx, setIdx] = React.useState(0);
 
-  const safeImages = (images || []).filter((x) => x?.src);
-  const canNav = safeImages.length > 1;
+  const total = Math.max(1, images?.length ?? 0);
+  const safeIdx = ((idx % total) + total) % total;
+  const current = images?.[safeIdx];
 
-  // Si cambian las imágenes, resetea índice
-  React.useEffect(() => {
-    setI(0);
-  }, [safeImages.map((x) => x.src).join("|")]);
+  const goPrev = () => setIdx((v) => v - 1);
+  const goNext = () => setIdx((v) => v + 1);
 
-  const next = () => {
-    if (!canNav) return;
-    setI((v) => (v + 1) % safeImages.length);
+  const wrapStyle: React.CSSProperties = {
+    width: "100%",
+    borderBottom: `1px solid ${BRAND.line}`,
+    background: "#FFFFFF",
   };
 
-  const prev = () => {
-    if (!canNav) return;
-    setI((v) => (v - 1 + safeImages.length) % safeImages.length);
+  const sectionInner: React.CSSProperties = {
+    ...containerStyle(),
+    ...sectionPad(28, 44),
   };
 
-  const H = isMd ? 240 : 320;
-  const current = safeImages[i] || safeImages[0];
+  // ✅ Desktop: texto amplio + imagen angosta (no full-width)
+  const grid: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: isMd ? "1fr" : "minmax(0, 1fr) 520px", // ✅ imagen más angosta
+    gap: isMd ? 18 : 22,
+    alignItems: "stretch",
+  };
+
+  const card: React.CSSProperties = {
+    background: "white",
+    border: `1px solid ${BRAND.line}`,
+    borderRadius: 22,
+    overflow: "hidden",
+    boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
+  };
+
+  const left: React.CSSProperties = {
+    padding: isMd ? 16 : 22,
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    gap: 10,
+  };
+
+  // ✅ Caja imagen: misma “sensación” de card, pero no gigante
+  const mediaWrap: React.CSSProperties = {
+    minWidth: 0,
+    background: "#0B1220",
+    borderLeft: !isMd ? `1px solid ${BRAND.line}` : undefined,
+    borderTop: isMd ? `1px solid ${BRAND.line}` : undefined,
+    display: "flex",
+    alignItems: "stretch",
+    justifyContent: "stretch",
+  };
+
+  // ✅ Aspecto controlado: evita que quede altísimo
+  const mediaBox: React.CSSProperties = {
+    width: "100%",
+    aspectRatio: isMd ? "16 / 9" : "4 / 3", // ✅ desktop más “cuadrada”
+    maxHeight: isMd ? 320 : 360,
+    overflow: "hidden",
+    position: "relative",
+  };
+
+  // Flechas idénticas a ProductCard
+  const navBtn: React.CSSProperties = {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    display: "grid",
+    placeItems: "center",
+    border: `1px solid ${BRAND.line}`,
+    color: "rgba(15, 23, 42, 0.75)",
+    background: "rgba(255,255,255,0.85)",
+    fontWeight: 900,
+    cursor: "pointer",
+    userSelect: "none",
+  };
+
+  const counterPill: React.CSSProperties = {
+    height: 34,
+    padding: "0 12px",
+    borderRadius: 999,
+    display: "grid",
+    placeItems: "center",
+    border: `1px solid ${BRAND.line}`,
+    color: "rgba(15, 23, 42, 0.75)",
+    background: "rgba(255,255,255,0.85)",
+    fontWeight: 900,
+    fontSize: 12,
+  };
+
+  const controlsRow: React.CSSProperties = {
+    marginTop: 14,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  };
 
   return (
-    <section
-      style={{
-        width: "100%",
-        background: "#F3F4F6",
-        borderTop: `1px solid ${BRAND.lineSoft}`,
-        borderBottom: `1px solid ${BRAND.lineSoft}`,
-      }}
-    >
-      <div style={{ ...containerStyle(), ...sectionPad(28, 28) }}>
-        <div
-          style={{
-            background: BRAND.panel,
-            border: `1px solid ${BRAND.lineSoft}`,
-            borderRadius: 22,
-            boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
-            overflow: "hidden",
-            display: "grid",
-            gridTemplateColumns: isMd ? "1fr" : "minmax(0, 0.95fr) minmax(0, 1.05fr)",
-            alignItems: "stretch",
-          }}
-        >
-          {/* LEFT: leyenda */}
-          <div style={{ padding: 18, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 20,
-                fontWeight: 900,
-                color: BRAND.primary,
-                lineHeight: 1.15,
-              }}
-            >
-              {title}
-            </div>
+    <section style={wrapStyle}>
+      <div style={sectionInner}>
+        <div style={{ ...card, padding: 0 }}>
+          <div style={grid}>
+            {/* LEFT */}
+            <div style={left}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: BRAND.primary, lineHeight: 1.2 }}>
+                {title}
+              </div>
+              <div style={{ color: "#334155", fontSize: 15, lineHeight: 1.7, maxWidth: 760 }}>
+                {text}
+              </div>
 
-            <div style={{ marginTop: 10, color: "#334155", fontSize: 15, lineHeight: 1.75, maxWidth: 720 }}>
-              {text}
-            </div>
+              {total > 1 ? (
+                <div style={controlsRow}>
+                  <div style={counterPill}>{`${safeIdx + 1}/${total}`}</div>
 
-            <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              {safeImages.length ? (
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 900,
-                    color: "rgba(15, 23, 42, 0.72)",
-                    background: "rgba(15, 23, 42, 0.06)",
-                    border: `1px solid ${BRAND.lineSoft}`,
-                    borderRadius: 999,
-                    padding: "6px 10px",
-                  }}
-                >
-                  {i + 1}/{safeImages.length}
-                </div>
-              ) : null}
+                  <div
+                    role="button"
+                    aria-label="Previous"
+                    onClick={goPrev}
+                    style={navBtn}
+                  >
+                    ←
+                  </div>
 
-              {canNav ? (
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <button type="button" onClick={prev} aria-label="Previous" style={carouselNavBtn(false)}>
-                    ‹
-                  </button>
-                  <button type="button" onClick={next} aria-label="Next" style={carouselNavBtn(false)}>
-                    ›
-                  </button>
+                  <div
+                    role="button"
+                    aria-label="Next"
+                    onClick={goNext}
+                    style={navBtn}
+                  >
+                    →
+                  </div>
                 </div>
               ) : null}
             </div>
-          </div>
 
-          {/* RIGHT: 1 sola imagen (no se repite) */}
-          <div
-            style={{
-              minWidth: 0,
-              borderLeft: !isMd ? `1px solid ${BRAND.lineSoft}` : undefined,
-              borderTop: isMd ? `1px solid ${BRAND.lineSoft}` : undefined,
-              background: "#0B1220",
-              height: H,
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            {current ? (
-              <img
-                src={current.src}
-                alt={current.alt}
-                loading="lazy"
-                decoding="async"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  background: "linear-gradient(135deg, #0B1220 0%, #111827 60%, #0B1220 100%)",
-                }}
-              />
-            )}
+            {/* RIGHT (IMAGE) */}
+            <div style={mediaWrap}>
+              <div style={mediaBox}>
+                {current ? (
+                  <img
+                    src={current.src}
+                    alt={current.alt}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                    draggable={false}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "grid",
+                      placeItems: "center",
+                      color: "rgba(226,232,240,0.75)",
+                      fontWeight: 800,
+                      fontSize: 13,
+                    }}
+                  >
+                    Sin imagen
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
