@@ -1435,8 +1435,8 @@ Available in standard color, with custom color manufacturing available upon requ
             name: { es: "Capacidad logística interna", en: "Internal logistics capacity" },
             
             descriptionPlaceholder: {
-              es: "Esta división existe para asegurar continuidad operacional en nuestras distintas líneas...",
-              en: "This division exists to ensure operational continuity across our business lines...",
+              es: "Esta división existe para asegurar continuidad operacional en nuestras distintas líneas.",
+              en: "This division exists to ensure operational continuity across our business lines.",
             },
             imageLabel: { es: "Foto: tracto / rampla / ruta", en: "Photo: tractor unit / trailer / route" },
             
@@ -2215,8 +2215,7 @@ function ProductCard({
 
   const isTransporte = divisionKey === "transporte";
 
-  // Importante: NO centrar ni limitar ancho en Transporte.
-  // En otras divisiones se respeta tal cual product.cardMaxWidth.
+  // Importante: NO limitar ni centrar ancho en Transporte.
   const maxW = !isTransporte && product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
   const longTextRaw =
@@ -2225,7 +2224,7 @@ function ProductCard({
 
   const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
 
-  // Hover: borde negro (solo efecto hover; en reposo se mantiene igual)
+  // Hover: borde negro (solo hover)
   const hoverBorder = isClickable && isHover ? "rgba(15, 23, 42, 0.92)" : BRAND.line;
   const hoverShadow =
     isClickable && isHover ? "0 10px 30px rgba(15, 23, 42, 0.12)" : undefined;
@@ -2234,7 +2233,11 @@ function ProductCard({
      VARIANTE: WIDE-COMPACT
   ========================================================= */
   if (product.cardVariant === "wide-compact") {
+    // Mantén tu altura original (puedes ajustar después si quieres)
     const H = isMd ? 240 : 320;
+
+    // ✅ Transporte: NUNCA apilar (aunque isMd sea true por UI_SCALE)
+    const stack = isMd && !isTransporte;
 
     const wideCardStyle: React.CSSProperties = {
       background: "white",
@@ -2242,7 +2245,6 @@ function ProductCard({
       borderRadius: 22,
       overflow: "hidden",
       boxShadow: hoverShadow ?? "0 8px 26px rgba(15, 23, 42, 0.08)",
-      // ✅ Transporte: ocupar TODO el ancho disponible, sin maxWidth ni auto-centering
       width: isTransporte ? "100%" : undefined,
       maxWidth: maxW,
       marginInline: !isTransporte && product.cardMaxWidth ? "auto" : undefined,
@@ -2253,7 +2255,9 @@ function ProductCard({
 
     const topSectionStyle: React.CSSProperties = {
       display: "grid",
-      gridTemplateColumns: isMd ? "1fr" : "minmax(0, 0.95fr) minmax(0, 1.05fr)",
+      gridTemplateColumns: stack
+        ? "1fr"
+        : "minmax(0, 0.95fr) minmax(0, 1.05fr)",
       alignItems: "stretch",
     };
 
@@ -2270,8 +2274,8 @@ function ProductCard({
       display: "flex",
       alignItems: "stretch",
       justifyContent: "stretch",
-      borderTop: isMd ? `1px solid ${BRAND.line}` : undefined,
-      borderLeft: !isMd ? `1px solid ${BRAND.line}` : undefined,
+      borderTop: stack ? `1px solid ${BRAND.line}` : undefined,
+      borderLeft: !stack ? `1px solid ${BRAND.line}` : undefined,
       background: "#0B1220",
     };
 
