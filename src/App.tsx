@@ -3541,7 +3541,7 @@ function AboutCarousel({
     setI((v) => (v - 1 + safeImages.length) % safeImages.length);
   };
 
-  const H = isMd ? 140 : 180; // ✅ CAMBIO: reducido de 240:320 a 140:180
+  const H = isMd ? 240 : 320;
   const current = safeImages[i] || safeImages[0];
 
   return (
@@ -3620,7 +3620,7 @@ function AboutCarousel({
               borderLeft: !isMd ? `1px solid ${BRAND.lineSoft}` : undefined,
               borderTop: isMd ? `1px solid ${BRAND.lineSoft}` : undefined,
               background: "#0B1220",
-              height: H, // ✅ CAMBIO: usa la altura reducida
+              height: H,
               position: "relative",
               overflow: "hidden",
             }}
@@ -3653,6 +3653,7 @@ function AboutCarousel({
     </section>
   );
 }
+
 
 
 
