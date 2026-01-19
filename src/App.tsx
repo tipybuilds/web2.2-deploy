@@ -1225,22 +1225,34 @@ function useDivisions(): Division[] {
         products: [
           {
             key: "manga",
-            name: { es: "Manga para cultivo de choritos", en: "Cotton sleeves for mussel farming" },
-            short: { es: "Desempeño, consistencia y continuidad operacional.", en: "Performance, consistency, and operational continuity." },
+            name: {
+              es: "Manga para cultivo de choritos",
+              en: "Cotton sleeves for mussel farming",
+            },
+            short: {
+              es: "Desempeño, consistencia y continuidad operacional.",
+              en: "Performance, consistency, and operational continuity.",
+            },
             descriptionPlaceholder: {
               es: "Describe tu necesidad (medidas, volumen y zona).",
               en: "Describe your need (dimensions, volume, and region).",
             },
             descriptionText: {
               es: "Malla de algodón 100% orgánica y biodegradable para la siembra y contención de la semilla de chorito en procesos de mitilicultura, desarrollada y probada en condiciones reales de operación en centros de cultivo.\n\nFabricada a partir de fibras naturales, esta malla entrega una resistencia mecánica controlada, alta uniformidad dimensional y un desempeño confiable durante la etapa crítica de siembra, asegurando una correcta contención de la semilla y un desarrollo inicial homogéneo.\n\nSe ofrece en distintas tallas y medidas según el requerimiento del cliente, permitiendo seleccionar la dimensión adecuada para el tipo de semilla, la densidad de carga y el sistema de cultivo, optimizando la siembra y reduciendo pérdidas operativas desde el inicio del ciclo productivo.\n\nUna vez cumplida su función, la malla se biodegrada de manera natural en el ambiente marino, integrándose al entorno sin afectar la operación ni el desarrollo del cultivo.\n\nDiseñada para asegurar continuidad operacional, eficiencia en la siembra y seguridad en terreno, esta solución combina desempeño técnico con un enfoque productivo y ambiental alineado con las exigencias actuales de la mitilicultura.",
-
-en: "100% organic and biodegradable cotton mesh designed for the seeding and containment of mussel seed in mussel farming operations, developed and tested under real operating conditions at cultivation sites.\n\nManufactured from natural fibers, this mesh provides controlled mechanical strength, high dimensional uniformity, and reliable performance during the critical seeding stage, ensuring proper seed containment and uniform early development.\n\nAvailable in multiple sizes and dimensions according to customer requirements, allowing the selection of the appropriate mesh size based on seed type, loading density, and cultivation system, optimizing seeding efficiency and reducing operational losses from the beginning of the production cycle.\n\nOnce its function is fulfilled, the mesh biodegrades naturally in the marine environment, integrating into the surroundings without affecting operations or crop development.\n\nDesigned to ensure operational continuity, seeding efficiency, and on-site safety, this solution combines technical performance with a productive and environmentally aligned approach that meets the current standards of the mussel farming industry.",
+              en: "100% organic and biodegradable cotton mesh designed for the seeding and containment of mussel seed in mussel farming operations, developed and tested under real operating conditions at cultivation sites.\n\nManufactured from natural fibers, this mesh provides controlled mechanical strength, high dimensional uniformity, and reliable performance during the critical seeding stage, ensuring proper seed containment and uniform early development.\n\nAvailable in multiple sizes and dimensions according to customer requirements, allowing the selection of the appropriate mesh size based on seed type, loading density, and cultivation system, optimizing seeding efficiency and reducing operational losses from the beginning of the production cycle.\n\nOnce its function is fulfilled, the mesh biodegrades naturally in the marine environment, integrating into the surroundings without affecting operations or crop development.\n\nDesigned to ensure operational continuity, seeding efficiency, and on-site safety, this solution combines technical performance with a productive and environmentally aligned approach that meets the current standards of the mussel farming industry.",
             },
-            imageLabel: { es: "Foto: manga de algodón / operación", en: "Photo: cotton sleeves / field operation" },
+            imageLabel: {
+              es: "Foto: manga de algodón / operación",
+              en: "Photo: cotton sleeves / field operation",
+            },
 
             imageDir: "/images/divisions/acuicola/products/manga",
             imageCount: 5,
             heroSrc: "/images/divisions/acuicola/products/manga/hero.jpg",
+
+            // ✅ para que la imagen y el texto queden “en bloque” y alineen con el CTA
+            cardVariant: "wide-compact",
+            cardMaxWidth: 1500,
 
             badges: [{ es: "100% algodón biodegradable", en: "100% biodegradable cotton" }],
           },
@@ -1251,14 +1263,16 @@ en: "100% organic and biodegradable cotton mesh designed for the seeding and con
             short: { es: "Probado en agua. Eficiencia continua.", en: "Proven in water. Continuous efficiency." },
             descriptionPlaceholder: {
               es: "El Cabo Mussel Super Loop es nuestro cable de última generación, desarrollado como un sustrato técnico de alto desempeño para maximizar la siembra y la captación de choritos, con resultados comprobados en condiciones reales de cultivo.\n\nSu diseño estructural tipo Super Loop incrementa la superficie efectiva de fijación, favoreciendo una adherencia más eficiente del chorito desde las primeras etapas y una mejor distribución de carga a lo largo de la línea de cultivo.\n\nEste diseño permite reducir pérdidas durante el ciclo productivo, mejorar la estabilidad del sistema y asegurar un desempeño consistente en ambientes marinos exigentes, contribuyendo directamente a la continuidad operacional de los centros de cultivo.\n\nCabo Mussel Super Loop está diseñado para productores que buscan optimizar rendimiento desde la etapa de siembra, combinando innovación técnica, confiabilidad operativa y resultados medibles en terreno.",
-
-en: "Mussel Rope Super Loop is our next-generation rope, developed as a high-performance technical substrate to maximize mussel seeding and spat collection, with proven results under real farming conditions.\n\nIts Super Loop structural design increases the effective attachment surface, promoting more efficient mussel fixation from the earliest stages and improving load distribution along the cultivation line.\n\nThis design helps reduce losses throughout the production cycle, enhances system stability, and ensures consistent performance in demanding marine environments, directly supporting operational continuity at farming sites.\n\nMussel Rope Super Loop is designed for producers focused on optimizing performance from the seeding stage, combining technical innovation, operational reliability, and measurable field results.",
-
+              en: "Mussel Rope Super Loop is our next-generation rope, developed as a high-performance technical substrate to maximize mussel seeding and spat collection, with proven results under real farming conditions.\n\nIts Super Loop structural design increases the effective attachment surface, promoting more efficient mussel fixation from the earliest stages and improving load distribution along the cultivation line.\n\nThis design helps reduce losses throughout the production cycle, enhances system stability, and ensures consistent performance in demanding marine environments, directly supporting operational continuity at farming sites.\n\nMussel Rope Super Loop is designed for producers focused on optimizing performance from the seeding stage, combining technical innovation, operational reliability, and measurable field results.",
             },
             imageLabel: { es: "Foto: cabo mussel / captación y siembra", en: "Photo: Cabo Mussel / collection & seeding" },
 
             imageDir: "/images/divisions/acuicola/products/cabo-mussel",
             imageCount: 5,
+
+            // ✅ mismo criterio visual (opcional pero recomendado para consistencia)
+            cardVariant: "wide-compact",
+            cardMaxWidth: 1500,
 
             badges: [{ es: "Máximo rendimiento", en: "Max performance" }],
           },
@@ -1273,16 +1287,20 @@ en: "Mussel Rope Super Loop is our next-generation rope, developed as a high-per
               Nuestro foco está en la consistencia: diámetro controlado, resistencia uniforme y comportamiento repetible en operación. Esto mejora la eficiencia en maniobras, reduce reprocesos y entrega mayor control en tareas de amarre de cuelgas y colectores.
               
               Producto orientado a continuidad operacional y control del riesgo, fabricado bajo estándar industrial.`,
-                            en: `We produce 100% virgin polypropylene (PP) raffia rope engineered for aquaculture applications that require consistent tie-off, reliable mechanical performance, and steady availability. It is a practical, robust solution for operations where input stability is critical to avoid downtime and losses driven by variability.
+              en: `We produce 100% virgin polypropylene (PP) raffia rope engineered for aquaculture applications that require consistent tie-off, reliable mechanical performance, and steady availability. It is a practical, robust solution for operations where input stability is critical to avoid downtime and losses driven by variability.
               
               Our focus is consistency: controlled diameter, uniform strength, and repeatable behavior in the field. This improves handling efficiency, reduces rework, and increases control during dropper and collector tie-off tasks.
               
               Built for operational continuity and risk control, manufactured to industrial standards.`,
-                          },
+            },
             imageLabel: { es: "Foto: cabo rafia / bobinas / bodega", en: "Photo: PP rope / coils / warehouse" },
 
             imageDir: "/images/divisions/acuicola/products/cabo-rafia",
             imageCount: 5,
+
+            // ✅ mismo criterio visual
+            cardVariant: "wide-compact",
+            cardMaxWidth: 1500,
 
             badges: [{ es: "Amarre de cuelgas y colectores", en: "Droppers & collectors tie-off" }],
           },
@@ -1314,8 +1332,7 @@ We offer alternatives aligned with operational standards and commercial needs, e
             short: { es: "Certificación + desempeño ambiental, sin sacrificar operación.", en: "Certified sustainability without sacrificing uptime." },
             descriptionPlaceholder: {
               es: "Malla de fruta de algodón 100% natural y biodegradable, desarrollada para marcas y retailers que buscan soluciones de packaging alineadas con altos estándares ambientales.\n\nUn producto noble y orgánico, con baja huella de carbono y una cadena productiva corta y trazable, que combina sustentabilidad real con un desempeño confiable en procesos de packing y comercialización.",
-
-en: "100% natural and biodegradable cotton fruit netting, developed for brands and retailers seeking packaging solutions aligned with high environmental standards.\n\nA noble, organic product with a low carbon footprint and a short, traceable production chain, combining genuine sustainability with reliable performance in packing and commercialization processes.",
+              en: "100% natural and biodegradable cotton fruit netting, developed for brands and retailers seeking packaging solutions aligned with high environmental standards.\n\nA noble, organic product with a low carbon footprint and a short, traceable production chain, combining genuine sustainability with reliable performance in packing and commercialization processes.",
             },
             imageLabel: { es: "Foto: malla biodegradable / fruta / packing", en: "Photo: biodegradable netting / fruit / packing" },
 
@@ -1361,12 +1378,12 @@ It is the right choice for high-volume operations, tight commercial windows, or 
 El formato Pack 6 (3,0 kg por rollo) entrega mayor autonomía por rollo y menos recambios, ideal para operaciones con alta rotación o cuando necesitas mantener ritmo sin detenerte a cambiar rollos constantemente. Es una opción eficiente para bodegas y centros de distribución que buscan continuidad y costo por pallet controlado.
 
 Resultados repetibles, buena tensión y desempeño estable en operación real.`,
-              en: `Tipy Town Transparent Stretch Film is engineered for demanding packaging operations aiming for maximum stability with minimal consumption. Its strength and elasticity help achieve firm, consistent containment—reducing breaks, claims, and losses caused by insufficient wrapping.
+          en: `Tipy Town Transparent Stretch Film is engineered for demanding packaging operations aiming for maximum stability with minimal consumption. Its strength and elasticity help achieve firm, consistent containment—reducing breaks, claims, and losses caused by insufficient wrapping.
 
 The 6-pack format (3.0 kg per roll) provides longer runs per roll and fewer changeovers, ideal for high-throughput environments or when you need to keep pace without frequent roll swaps. A strong fit for warehouses and distribution centers that prioritize uptime and controlled cost per pallet.
 
 Repeatable results, consistent tension, and stable performance in real operations.`,
-            },
+        },
         heroImageLabel: { es: "Foto: pallets / bodega / film stretch", en: "Photo: pallets / warehouse / stretch film" },
         heroImageSrc: "/images/divisions/packaging/hero.jpg",
         productsTitle: { es: "Film Stretch", en: "Stretch Film" },
@@ -1384,14 +1401,14 @@ Fabricado con resinas de primer nivel y control de proceso, el film ofrece buena
 El formato Pack 6 de 1,7 kg por rollo es ideal para trabajos frecuentes y variados. Es fácil de manejar, cómodo para uso prolongado y entrega resultados consistentes tanto en aplicaciones domésticas como comerciales, cuando se busca orden, protección y estabilidad con un consumo controlado.
 
 Disponible en color estándar y con opción de fabricación en otros colores bajo pedido.`,
-  en: `Tipy Town Stretch Film is a versatile solution for manual wrapping, designed to secure, bundle, and protect items across a wide range of uses: moving, small warehouses, SMEs, retail, e-commerce, and industrial applications.
+              en: `Tipy Town Stretch Film is a versatile solution for manual wrapping, designed to secure, bundle, and protect items across a wide range of uses: moving, small warehouses, SMEs, retail, e-commerce, and industrial applications.
 
 Manufactured with premium-grade resins and controlled processes, the film delivers good elasticity, consistent tension, and high tear resistance—allowing firm and efficient wrapping without breaking or losing cling during use.
 
 The 6-pack format with 1.7 kg per roll is ideal for frequent and varied tasks. Easy to handle and comfortable for extended use, it provides consistent results for both domestic and commercial applications where protection, order, and stability are required.
 
 Available in standard color, with custom color manufacturing available upon request.`,
-},
+            },
             imageLabel: { es: "Foto: film stretch manual", en: "Photo: hand stretch film" },
             imageDir: "/images/divisions/packaging/products/film-stretch-1,7kgs",
             imageCount: 5,
@@ -1409,14 +1426,14 @@ Su combinación de elasticidad controlada, buena memoria y alta resistencia perm
 El formato Pack 6 de 3,0 kg por rollo es especialmente adecuado para bodegas, pymes, mudanzas de mayor volumen y operaciones donde se busca disminuir recambios y mantener un ritmo de trabajo constante.
 
 Disponible en color estándar y con opción de fabricación en otros colores bajo pedido.`,
-  en: `Tipy Town Stretch Film is designed for manual wrapping applications that require greater autonomy, strength, and uninterrupted workflow, while remaining easy to use.
+              en: `Tipy Town Stretch Film is designed for manual wrapping applications that require greater autonomy, strength, and uninterrupted workflow, while remaining easy to use.
 
 Its combination of controlled elasticity, strong memory, and high resistance allows items or groups of products to be wrapped firmly and securely, reducing breaks and the need for rewrapping.
 
 The 6-pack format with 3.0 kg per roll is particularly well suited for warehouses, SMEs, larger moving jobs, and operations where fewer changeovers and steady work pace are key.
 
 Available in standard color, with custom color manufacturing available upon request.`,
-},
+            },
             imageLabel: { es: "Foto: film stretch 3 kg", en: "Photo: 3.0 kg stretch film" },
             imageDir: "/images/divisions/packaging/products/film-stretch-3kgs",
             imageCount: 5,
@@ -1441,13 +1458,13 @@ Available in standard color, with custom color manufacturing available upon requ
           {
             key: "capacidad",
             name: { es: "Capacidad logística interna", en: "Internal logistics capacity" },
-            
+
             descriptionPlaceholder: {
               es: "Esta división existe para asegurar continuidad operacional en nuestras distintas líneas...",
               en: "This division exists to ensure operational continuity across our business lines...",
             },
             imageLabel: { es: "Foto: tracto / rampla / ruta", en: "Photo: tractor unit / trailer / route" },
-            
+
             imageDir: "/images/divisions/transporte/products/capacidad",
             imageCount: 5,
             clickable: false,
@@ -1625,74 +1642,74 @@ function SiteHeader() {
 }
 
 function SiteFooter() {
-  const { lang } = useLang();
+  const FOOTER_H = 56; // ALTO FIJO, NO CAMBIA
 
   return (
     <footer
       style={{
+        position: "fixed",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: FOOTER_H,
+        background: BRAND.panel,
         borderTop: `1px solid ${BRAND.lineSoft}`,
-        background: "#F8FAFC",
-        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 18px",
+        zIndex: 100,
       }}
     >
       <div
         style={{
-          ...containerStyle(),
-          paddingTop: 18,
-          paddingBottom: 18,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 16,
-          flexWrap: "wrap",
+          fontSize: 12,
+          color: BRAND.muted,
+          fontWeight: 600,
+          whiteSpace: "nowrap",
         }}
       >
-        <div style={{ fontSize: 12, color: BRAND.muted }}>© {new Date().getFullYear()} Tipy Town.</div>
+        © 2026 Tipy Town.
+      </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Link
-            to="/contacto"
-            style={{
-              fontSize: 12,
-              color: BRAND.primary,
-              textDecoration: "none",
-            }}
-          >
-            {pick(UI.btnContacto, lang)}
-          </Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <a
+          href="/contacto"
+          style={{
+            fontSize: 12,
+            color: BRAND.primary,
+            textDecoration: "none",
+            fontWeight: 700,
+            lineHeight: 1,
+          }}
+        >
+          Contacto
+        </a>
 
-          <a
-            href="https://www.linkedin.com/company/tipy-town"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Tipy Town en LinkedIn"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              borderRadius: 6,
-              color: BRAND.muted,
-              background: "transparent",
-              transition: "opacity 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = "0.65";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = "1";
-            }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-              <path d="M20.447 20.452H16.89v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.345V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.368-1.85 3.601 0 4.264 2.37 4.264 5.455v6.286zM5.337 7.433a1.987 1.987 0 1 1 0-3.974 1.987 1.987 0 0 1 0 3.974zM6.993 20.452H3.68V9h3.313v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.727v20.545C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.273V1.727C24 .774 23.2 0 22.222 0z" />
-            </svg>
-          </a>
-        </div>
+        <a
+          href="https://www.linkedin.com"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="LinkedIn"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 28,
+            height: 28,
+            borderRadius: 6,
+            border: `1px solid ${BRAND.lineSoft}`,
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 800, color: BRAND.muted }}>
+            in
+          </span>
+        </a>
       </div>
     </footer>
   );
 }
+
 
 /* =========================================================
    HOME
