@@ -2055,6 +2055,7 @@ function ProductCardImage({
 
 
 
+// Ctrl+F: ProductCard
 function ProductCard({
   divisionKey,
   product,
@@ -2078,16 +2079,14 @@ function ProductCard({
     return buildProductImageCandidates(dir, 1);
   })();
 
-  // SOLO transporte: múltiples imágenes
+  // ✅ SOLO transporte: candidatos múltiples (01.jpg, 02.jpg, 03.jpg...)
   const allImageCandidates: string[][] = (() => {
     if (divisionKey !== "transporte") return [];
     const dir = product.imageDir;
     const count = Math.max(1, Number(product.imageCount ?? 1));
     if (!dir) return [];
     const out: string[][] = [];
-    for (let i = 1; i <= count; i++) {
-      out.push(buildProductImageCandidates(dir, i));
-    }
+    for (let i = 1; i <= count; i++) out.push(buildProductImageCandidates(dir, i));
     return out;
   })();
 
@@ -2099,11 +2098,73 @@ function ProductCard({
 
   const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
 
+  const isTransporte = divisionKey === "transporte";
+
   // ==========================
   // VARIANTE: WIDE-COMPACT
   // ==========================
   if (product.cardVariant === "wide-compact") {
-    const isTransporte = divisionKey === "transporte";
+    // Helper interno: <img> full-bleed con fallback real (y placeholder al agotar)
+    function BannerImg({
+      candidates,
+      alt,
+      ratio,
+    }: {
+      candidates: string[];
+      alt: string;
+      ratio: string;
+    }) {
+      const [idx, setIdx] = React.useState(0);
+
+      React.useEffect(() => {
+        setIdx(0);
+      }, [candidates.join("|")]);
+
+      const exhausted = idx >= candidates.length;
+
+      return (
+        <div
+          style={{
+            width: "100%",
+            aspectRatio: ratio,
+            overflow: "hidden",
+            background: "rgba(15, 23, 42, 0.03)", // ✅ nunca negro
+            border: `1px solid ${BRAND.line}`,
+            borderLeft: "none",
+            borderRight: "none",
+          }}
+        >
+          {!exhausted ? (
+            <img
+              src={candidates[idx]}
+              alt={alt}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+              }}
+              loading="lazy"
+              onError={() => setIdx((v) => v + 1)}
+            />
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "grid",
+                placeItems: "center",
+                color: "rgba(15, 23, 42, 0.55)",
+                fontWeight: 800,
+                fontSize: 13,
+              }}
+            >
+              Sin imagen
+            </div>
+          )}
+        </div>
+      );
+    }
 
     const wideCardStyle: React.CSSProperties = {
       background: "white",
@@ -2117,22 +2178,6 @@ function ProductCard({
       flexDirection: "column",
     };
 
-    // ✅ BANNER REAL: sin height fija, manda la imagen
-    const bannerWrapStyle: React.CSSProperties = {
-      width: "100%",
-      aspectRatio: "21 / 9", // mismo look que foto 2
-      overflow: "hidden",
-      background: "#0B1220",
-      borderBottom: `1px solid ${BRAND.line}`,
-    };
-
-    const textBlockStyle: React.CSSProperties = {
-      padding: 18,
-      display: "flex",
-      flexDirection: "column",
-      gap: 10,
-    };
-
     const headerRow: React.CSSProperties = {
       display: "flex",
       alignItems: "flex-start",
@@ -2140,27 +2185,38 @@ function ProductCard({
       gap: 12,
     };
 
-    const bannerCandidates =
-      isTransporte ? allImageCandidates[0] ?? cardImageCandidates : [];
+    const textBlockStyle: React.CSSProperties = {
+      padding: 18,
+      minWidth: 0,
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
+    };
+
+    // ✅ Ratio tipo “foto 2”
+    const ratio = isMd ? "16 / 9" : "21 / 9";
+
+    // Banner = 01
+    const bannerCandidates: string[] = isTransporte
+      ? (allImageCandidates[0] && allImageCandidates[0].length ? allImageCandidates[0] : cardImageCandidates)
+      : [];
+
+    // ✅ Extras SOLO si el array existe y tiene candidatos
+    // (esto evita crear “slots” vacíos gigantes)
+    const extraCandidatesList: string[][] = isTransporte
+      ? allImageCandidates
+          .slice(1)
+          .filter((arr) => Array.isArray(arr) && arr.length > 0)
+      : [];
 
     const content = (
       <div style={wideCardStyle}>
-        {/* ===== BANNER SOLO TRANSPORTE ===== */}
-        {isTransporte && (
-          <div style={bannerWrapStyle}>
-            {bannerCandidates.length ? (
-              <ProductCardImage
-                candidates={bannerCandidates}
-                alt={`${title} - banner`}
-                fit="cover"
-                rounded={0}
-                borderless
-              />
-            ) : null}
-          </div>
-        )}
+        {/* ✅ SOLO TRANSPORTE: 01.jpg como banner */}
+        {isTransporte && bannerCandidates.length ? (
+          <BannerImg candidates={bannerCandidates} alt={`${title} - banner`} ratio={ratio} />
+        ) : null}
 
-        {/* ===== TEXTO ===== */}
+        {/* TEXTO */}
         <div style={textBlockStyle}>
           <div style={headerRow}>
             <div style={{ minWidth: 0 }}>
@@ -2168,14 +2224,14 @@ function ProductCard({
                 {title}
               </div>
 
-              {subtitle && (
-                <div style={{ marginTop: 6, color: "rgba(15,23,42,.75)", fontSize: 14, lineHeight: 1.5 }}>
+              {subtitle ? (
+                <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
                   {subtitle}
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {isClickable && (
+            {isClickable ? (
               <div
                 aria-hidden="true"
                 style={{
@@ -2185,59 +2241,59 @@ function ProductCard({
                   display: "grid",
                   placeItems: "center",
                   border: `1px solid ${BRAND.line}`,
+                  color: "rgba(15, 23, 42, 0.75)",
+                  flex: "0 0 auto",
                   fontWeight: 900,
                 }}
               >
                 →
               </div>
-            )}
+            ) : null}
           </div>
 
-          {tag && (
+          {tag ? (
             <div
               style={{
                 alignSelf: "flex-start",
                 padding: "6px 10px",
                 borderRadius: 999,
-                background: "rgba(35,137,201,.12)",
-                border: "1px solid rgba(35,137,201,.18)",
+                background: "rgba(35, 137, 201, 0.12)",
+                border: "1px solid rgba(35, 137, 201, 0.18)",
+                color: "rgba(15, 23, 42, 0.82)",
                 fontWeight: 800,
                 fontSize: 13,
               }}
             >
               {tag}
             </div>
-          )}
+          ) : null}
 
-          {legend && (
+          {legend ? (
             <div style={{ color: "#334155", fontSize: 15, lineHeight: 1.75 }}>
               {legend}
             </div>
-          )}
+          ) : null}
+
+          {isClickable ? (
+            <div style={{ marginTop: "auto", paddingTop: 6 }}>
+              <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
+                {lang === "en" ? "See details" : "Ver detalle"}
+              </span>
+            </div>
+          ) : null}
         </div>
 
-        {/* ===== IMÁGENES ADICIONALES TRANSPORTE ===== */}
-        {isTransporte &&
-          allImageCandidates.slice(1).map((candidates, i) => (
-            <div
-              key={i}
-              style={{
-                width: "100%",
-                aspectRatio: "21 / 9",
-                overflow: "hidden",
-                borderTop: `1px solid ${BRAND.line}`,
-                background: "#0B1220",
-              }}
-            >
-              <ProductCardImage
-                candidates={candidates}
-                alt={`${title} - ${i + 2}`}
-                fit="cover"
-                rounded={0}
-                borderless
+        {/* ✅ SOLO TRANSPORTE: 02.jpg, 03.jpg... (solo si realmente hay candidatos) */}
+        {isTransporte
+          ? extraCandidatesList.map((cands, i) => (
+              <BannerImg
+                key={`extra-${i}`}
+                candidates={cands}
+                alt={`${title} - imagen ${i + 2}`}
+                ratio={ratio}
               />
-            </div>
-          ))}
+            ))
+          : null}
       </div>
     );
 
@@ -2251,7 +2307,7 @@ function ProductCard({
   }
 
   // ==========================
-  // DEFAULT CARD (NO TOCADO)
+  // DEFAULT CARD (grid normal)
   // ==========================
   const cardStyle: React.CSSProperties = {
     background: "white",
@@ -2268,161 +2324,112 @@ function ProductCard({
     marginInline: product.cardMaxWidth ? "auto" : undefined,
   };
 
-  const contentDefault = (
+  const headerRow: React.CSSProperties = {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  };
+
+  const content = (
     <div style={cardStyle}>
-      <div style={{ fontWeight: 900, fontSize: 16, color: BRAND.ink }}>{title}</div>
-      {subtitle && <div style={{ color: "rgba(15,23,42,.75)", fontSize: 14 }}>{subtitle}</div>}
-      {cardImageCandidates.length && (
-        <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
-      )}
+      <div style={headerRow}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.2, color: BRAND.ink }}>
+            {title}
+          </div>
+
+          {subtitle ? (
+            <div
+              style={{
+                marginTop: 6,
+                color: "rgba(15, 23, 42, 0.75)",
+                fontSize: 14,
+                lineHeight: 1.4,
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical" as any,
+                WebkitLineClamp: 2 as any,
+                overflow: "hidden",
+              }}
+            >
+              {subtitle}
+            </div>
+          ) : null}
+        </div>
+
+        {isClickable ? (
+          <div
+            aria-hidden="true"
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 12,
+              display: "grid",
+              placeItems: "center",
+              border: `1px solid ${BRAND.line}`,
+              color: "rgba(15, 23, 42, 0.75)",
+              flex: "0 0 auto",
+              fontWeight: 900,
+            }}
+          >
+            →
+          </div>
+        ) : null}
+      </div>
+
+      {tag ? (
+        <div
+          style={{
+            alignSelf: "flex-start",
+            padding: "6px 10px",
+            borderRadius: 999,
+            background: "rgba(35, 137, 201, 0.12)",
+            border: "1px solid rgba(35, 137, 201, 0.18)",
+            color: "rgba(15, 23, 42, 0.82)",
+            fontWeight: 800,
+            fontSize: 13,
+          }}
+        >
+          {tag}
+        </div>
+      ) : null}
+
+      <div style={{ marginTop: 2 }}>
+        {cardImageCandidates.length ? (
+          <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: 210,
+              borderRadius: 16,
+              border: `1px dashed ${BRAND.line}`,
+              background: "rgba(15, 23, 42, 0.03)",
+              display: "grid",
+              placeItems: "center",
+              color: "rgba(15, 23, 42, 0.55)",
+              fontWeight: 800,
+              fontSize: 13,
+            }}
+          >
+            Sin imagen
+          </div>
+        )}
+      </div>
     </div>
   );
 
-  if (!isClickable) return contentDefault;
+  if (!isClickable) {
+    return <div style={{ height: "100%" }}>{content}</div>;
+  }
 
   return (
     <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-      {contentDefault}
+      {content}
     </Link>
   );
 }
 
-
-
-
-
-/* =========================================================
-   DIVISION OVERVIEW
-========================================================= */
-// Ctrl+F: DivisionOverview
-function DivisionOverview({ divisionKey }: { divisionKey: Division["key"] }) {
-  const divisions = useDivisions();
-  const division = findDivision(divisions, divisionKey);
-  const { isMd, isXl } = useBreakpoints();
-  const { lang } = useLang();
-
-  if (!division) return <NotFound />;
-
-  const minColPx = division.layout === "grid3" ? 320 : division.layout === "grid2" ? 380 : 9999;
-
-  const heroGridStyle: React.CSSProperties = {
-    ...twoColGrid(isMd, isXl),
-    alignItems: "stretch",
-  };
-
-  // ✅ +3px SOLO en texto largo de landing
-  const landingBody: React.CSSProperties = {
-    marginTop: 12,
-    fontSize: isMd ? 17 : 18, // antes 15
-    lineHeight: 1.75,
-    color: "#334155",
-    maxWidth: 760,
-    whiteSpace: "pre-line", // respeta tus saltos de línea en intro
-  };
-
-  return (
-    <div style={{ width: "100%" }}>
-      <section style={{ borderBottom: `1px solid ${BRAND.line}` }}>
-        <div style={{ ...containerStyle(), ...sectionPad(44, 26) }}>
-          <div style={heroGridStyle}>
-            <div>
-              <BackToHome />
-              <h1
-                style={{
-                  marginTop: 10,
-                  fontSize: isMd ? 34 : isXl ? 52 : 44,
-                  fontWeight: 350,
-                  color: BRAND.primary,
-                  lineHeight: 1.08,
-                }}
-              >
-                {pick(division.pageTitle, lang)}
-              </h1>
-
-              <p style={landingBody}>{pick(division.intro, lang)}</p>
-
-              <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {division.key !== "transporte" && (
-                  <Link to="/contacto" style={{ ...btnOutlineLg(), minWidth: 180 }}>
-                    {pick(UI.btnContactar, lang)}
-                  </Link>
-                )}
-
-                {division.key === "packaging" && (
-                  <a
-                    href={MERCADOLIBRE_FILM_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ ...btnPrimaryLg(), minWidth: 180 }}
-                  >
-                    {pick(UI.btnComprarML, lang)}
-                  </a>
-                )}
-
-                {division.key === "acuicola" && (
-                  <a
-                    href={MITILICULTURA_MAPS_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ ...btnPrimaryLg(), minWidth: 180 }}
-                  >
-                    {pick(UI.btnVisitanos, lang)}
-                  </a>
-                )}
-              </div>
-            </div>
-
-            <div style={{ alignSelf: "stretch", minHeight: 0, display: "flex" }}>
-              <div style={{ flex: "1 1 auto", minHeight: 0 }}>
-                <FigurePlaceholder
-                  title={
-                    division.key === "packaging"
-                      ? lang === "en"
-                        ? "STRETCH FILM"
-                        : "FILM STRETCH"
-                      : lang === "en"
-                        ? "Image"
-                        : "Imagen"
-                  }
-                  subtitle={pick(division.heroImageLabel, lang)}
-                  src={division.heroImageSrc}
-                  alt={pick(division.pageTitle, lang)}
-                  fit="cover"
-                  minHeight={isMd ? 220 : undefined}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <div style={{ ...containerStyle(), ...sectionPad(26, 50) }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
-            <div>
-              <h2 style={{ marginTop: 0, fontSize: 20, fontWeight: 900, color: BRAND.primary }}>
-                {pick(division.productsTitle, lang)}
-              </h2>
-            </div>
-          </div>
-
-          <div
-            style={{
-              marginTop: 16,
-              ...(division.layout === "single"
-                ? { display: "grid", gridTemplateColumns: "1fr", gap: 16 }
-                : responsiveAutoGrid(minColPx)),
-            }}
-          >
-            {division.products.map((p) => (
-              <ProductCard key={p.key} divisionKey={division.key} product={p} />
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
 
 
 /* =========================================================
