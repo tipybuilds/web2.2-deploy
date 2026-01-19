@@ -137,13 +137,15 @@ const LangCtx = createContext<{ lang: Lang; toggleLang: () => void } | null>(
 function ProductGallery({
   publicFolder,
   alt,
-  maxNumbered = 6,          // 01..06
-  includeHero = false,      // ✅ por defecto NO hero en productos
+  maxNumbered = 6,       // 01..06
+  includeHero = false,   // ✅ productos: por defecto NO hero
+  maxH = 560,            // ✅ límite visual para que no se descontrole (antes era “acotado”)
 }: {
-  publicFolder: string;     // Ej: "/images/divisions/acuicola/products/manga"
+  publicFolder: string;  // Ej: "/images/divisions/acuicola/products/manga"
   alt: string;
   maxNumbered?: number;
   includeHero?: boolean;
+  maxH?: number;
 }) {
   const [imgs, setImgs] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -156,7 +158,7 @@ function ProductGallery({
 
     resolveProductGalleryImages(publicFolder, {
       maxNumbered,
-      includeHero, // ✅ controlado por prop
+      includeHero,
       extensions: ["jpg", "jpeg", "png", "webp"],
       timeoutMs: 3000,
       cacheBust: true,
@@ -183,59 +185,116 @@ function ProductGallery({
   const prev = () => setIdx((v) => (total ? (v - 1 + total) % total : 0));
   const next = () => setIdx((v) => (total ? (v + 1) % total : 0));
 
+  const shellStyle: React.CSSProperties = {
+    width: "100%",
+    border: `1px solid ${BRAND.line}`,
+    borderRadius: 16,
+    background: "#fff",
+    overflow: "hidden",
+    boxShadow: "0 10px 26px rgba(2, 6, 23, 0.06)",
+  };
+
+  const topBarStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    padding: 10,
+    borderBottom: `1px solid ${BRAND.line}`,
+    background: "rgba(255,255,255,0.92)",
+    backdropFilter: "blur(6px)",
+  };
+
+  const chipStyle: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 900,
+    color: "rgba(15, 23, 42, 0.72)",
+    background: "rgba(15, 23, 42, 0.06)",
+    border: `1px solid ${BRAND.line}`,
+    borderRadius: 999,
+    padding: "6px 10px",
+  };
+
+  const btnBase: React.CSSProperties = {
+    padding: "8px 12px",
+    borderRadius: 12,
+    border: `1px solid ${BRAND.line}`,
+    fontWeight: 900,
+    fontSize: 13,
+    lineHeight: 1,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    userSelect: "none",
+    WebkitUserSelect: "none",
+  };
+
+  // ✅ Diferenciación real (no blanco sobre blanco)
+  const btnActive: React.CSSProperties = {
+    ...btnBase,
+    background: BRAND.primary,
+    color: "#fff",
+    border: `1px solid rgba(2, 6, 23, 0.10)`,
+    boxShadow: "0 8px 18px rgba(52, 62, 117, 0.25)",
+    cursor: "pointer",
+  };
+
+  const btnDisabled: React.CSSProperties = {
+    ...btnBase,
+    background: "rgba(15, 23, 42, 0.05)",
+    color: "rgba(15, 23, 42, 0.35)",
+    cursor: "not-allowed",
+  };
+
+  const mediaFrameStyle: React.CSSProperties = {
+    width: "100%",
+    maxHeight: maxH,                 // ✅ límite duro
+    height: maxH,                    // ✅ mantiene el “formato” sin crecer infinito
+    display: "grid",
+    placeItems: "center",
+    background: "rgba(15, 23, 42, 0.03)",
+    overflow: "hidden",
+  };
+
   if (loading) {
     return (
-      <div
-        style={{
-          width: "100%",
-          border: `1px solid rgba(15, 23, 42, 0.10)`,
-          borderRadius: 16,
-          background: "#fff",
-          padding: 16,
-        }}
-      >
-        Cargando imágenes…
+      <div style={shellStyle}>
+        <div style={topBarStyle}>
+          <div style={chipStyle}>…</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={btnDisabled}>←</div>
+            <div style={btnDisabled}>→</div>
+          </div>
+        </div>
+        <div style={{ padding: 16, color: "rgba(15, 23, 42, 0.70)", fontWeight: 800 }}>
+          Cargando imágenes…
+        </div>
       </div>
     );
   }
 
   if (!total) {
     return (
-      <div
-        style={{
-          width: "100%",
-          border: `1px solid rgba(15, 23, 42, 0.10)`,
-          borderRadius: 16,
-          background: "#fff",
-          padding: 16,
-        }}
-      >
-        No se encontraron imágenes en: <code>{publicFolder}</code>
+      <div style={shellStyle}>
+        <div style={topBarStyle}>
+          <div style={chipStyle}>0/0</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div style={btnDisabled}>←</div>
+            <div style={btnDisabled}>→</div>
+          </div>
+        </div>
+        <div style={{ padding: 16, color: "rgba(15, 23, 42, 0.70)", fontWeight: 800 }}>
+          No se encontraron imágenes en: <code>{publicFolder}</code>
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        border: `1px solid rgba(15, 23, 42, 0.10)`,
-        borderRadius: 16,
-        background: "#fff",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          padding: 10,
-          borderBottom: `1px solid rgba(15, 23, 42, 0.08)`,
-        }}
-      >
-        <div style={{ fontSize: 13, color: "rgba(15, 23, 42, 0.70)" }}>
+    <div style={shellStyle}>
+      {/* ✅ Flechas ARRIBA (fuera de la foto) + contraste real */}
+      <div style={topBarStyle}>
+        <div style={chipStyle}>
           {idx + 1}/{total}
         </div>
 
@@ -244,40 +303,39 @@ function ProductGallery({
             type="button"
             onClick={prev}
             disabled={!canNav}
-            style={{
-              padding: "8px 10px",
-              borderRadius: 10,
-              border: `1px solid rgba(15, 23, 42, 0.14)`,
-              background: canNav ? "#fff" : "rgba(15, 23, 42, 0.04)",
-              cursor: canNav ? "pointer" : "not-allowed",
-            }}
+            style={canNav ? btnActive : btnDisabled}
+            aria-label="Anterior"
+            title="Anterior"
           >
-            ← Anterior
+            ← <span style={{ opacity: 0.95 }}>Anterior</span>
           </button>
+
           <button
             type="button"
             onClick={next}
             disabled={!canNav}
-            style={{
-              padding: "8px 10px",
-              borderRadius: 10,
-              border: `1px solid rgba(15, 23, 42, 0.14)`,
-              background: canNav ? "#fff" : "rgba(15, 23, 42, 0.04)",
-              cursor: canNav ? "pointer" : "not-allowed",
-            }}
+            style={canNav ? btnActive : btnDisabled}
+            aria-label="Siguiente"
+            title="Siguiente"
           >
-            Siguiente →
+            <span style={{ opacity: 0.95 }}>Siguiente</span> →
           </button>
         </div>
       </div>
 
-      <div style={{ position: "relative" }}>
+      {/* ✅ Foto con límite (antes estaba “acotado”), sin desbordarse */}
+      <div style={mediaFrameStyle}>
         <img
           src={imgs[idx]}
           alt={alt}
-          style={{ width: "100%", height: "auto", display: "block" }}
           loading="eager"
           decoding="async"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",     // ✅ no “zoom” agresivo; queda encuadrado
+            display: "block",
+          }}
         />
       </div>
     </div>
