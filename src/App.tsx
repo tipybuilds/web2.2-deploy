@@ -2078,17 +2078,17 @@ function ProductCard({
     return buildProductImageCandidates(dir, 1);
   })();
 
-  // ✅ SOLO para transporte: candidatos múltiples (01.jpg, 02.jpg, 03.jpg...)
+  // SOLO transporte: múltiples imágenes
   const allImageCandidates: string[][] = (() => {
     if (divisionKey !== "transporte") return [];
     const dir = product.imageDir;
     const count = Math.max(1, Number(product.imageCount ?? 1));
     if (!dir) return [];
-    const candidates: string[][] = [];
+    const out: string[][] = [];
     for (let i = 1; i <= count; i++) {
-      candidates.push(buildProductImageCandidates(dir, i));
+      out.push(buildProductImageCandidates(dir, i));
     }
-    return candidates;
+    return out;
   })();
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
@@ -2101,11 +2101,8 @@ function ProductCard({
 
   // ==========================
   // VARIANTE: WIDE-COMPACT
-  // ✅ Transporte: 01.jpg como BANNER full width (solo transporte)
   // ==========================
   if (product.cardVariant === "wide-compact") {
-    const H = isMd ? 240 : 320;
-
     const isTransporte = divisionKey === "transporte";
 
     const wideCardStyle: React.CSSProperties = {
@@ -2120,28 +2117,20 @@ function ProductCard({
       flexDirection: "column",
     };
 
-    const topSectionStyle: React.CSSProperties = {
-      display: "grid",
-      gridTemplateColumns: isMd ? "1fr" : "minmax(0, 0.95fr) minmax(0, 1.05fr)",
-      alignItems: "stretch",
+    // ✅ BANNER REAL: sin height fija, manda la imagen
+    const bannerWrapStyle: React.CSSProperties = {
+      width: "100%",
+      aspectRatio: "21 / 9", // mismo look que foto 2
+      overflow: "hidden",
+      background: "#0B1220",
+      borderBottom: `1px solid ${BRAND.line}`,
     };
 
-    const leftStyle: React.CSSProperties = {
+    const textBlockStyle: React.CSSProperties = {
       padding: 18,
-      minWidth: 0,
       display: "flex",
       flexDirection: "column",
       gap: 10,
-    };
-
-    const rightStyle: React.CSSProperties = {
-      minWidth: 0,
-      display: "flex",
-      alignItems: "stretch",
-      justifyContent: "stretch",
-      borderTop: isMd ? `1px solid ${BRAND.line}` : undefined,
-      borderLeft: !isMd ? `1px solid ${BRAND.line}` : undefined,
-      background: "#0B1220",
     };
 
     const headerRow: React.CSSProperties = {
@@ -2151,260 +2140,104 @@ function ProductCard({
       gap: 12,
     };
 
-    // ✅ Banner (01.jpg) ancho completo SOLO transporte - ALTURAS REDUCIDAS
-const bannerStyle: React.CSSProperties = {
-  width: "100%",
-  height: isMd ? 140 : 180, // ✅ CAMBIO: reducido de 220:320
-  background: "#0B1220",
-  borderBottom: `1px solid ${BRAND.line}`,
-};
-
-// ✅ Imágenes adicionales ancho completo SOLO transporte - ALTURAS REDUCIDAS  
-const fullWidthImageStyle: React.CSSProperties = {
-  width: "100%",
-  height: isMd ? 120 : 160, // ✅ CAMBIO: reducido de 200:260
-  borderTop: `1px solid ${BRAND.line}`,
-  background: "#0B1220",
-};
-
-    const bannerCandidates: string[] = isTransporte
-      ? (allImageCandidates[0] ?? cardImageCandidates)
-      : [];
+    const bannerCandidates =
+      isTransporte ? allImageCandidates[0] ?? cardImageCandidates : [];
 
     const content = (
       <div style={wideCardStyle}>
-        {/* ✅ SOLO TRANSPORTE: 01.jpg como banner full width */}
-        {isTransporte ? (
-          <div style={bannerStyle}>
+        {/* ===== BANNER SOLO TRANSPORTE ===== */}
+        {isTransporte && (
+          <div style={bannerWrapStyle}>
             {bannerCandidates.length ? (
               <ProductCardImage
                 candidates={bannerCandidates}
                 alt={`${title} - banner`}
-                height={isMd ? 140 : 180} // ✅ CAMBIO: altura coincide con bannerStyle
-                rounded={0}
                 fit="cover"
+                rounded={0}
                 borderless
               />
-            ) : (
-              <div
-                style={{
-                  width: "100%",
-                  height: isMd ? 140 : 180, // ✅ CAMBIO: altura coincide
-                  display: "grid",
-                  placeItems: "center",
-                  color: "rgba(226,232,240,0.75)",
-                  fontWeight: 800,
-                  fontSize: 13,
-                }}
-              >
-                Sin imagen
-              </div>
-            )}
-          </div>
-        ) : null}
-
-        {/* TOP: Transporte = solo texto (porque el banner ya tomó la imagen 01)
-            No-transporte = texto + imagen a la derecha (como antes) */}
-        {isTransporte ? (
-          <div style={{ ...leftStyle, borderBottom: `1px solid ${BRAND.line}` }}>
-            <div style={headerRow}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
-                  {title}
-                </div>
-
-                {subtitle ? (
-                  <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
-                    {subtitle}
-                  </div>
-                ) : null}
-              </div>
-
-              {isClickable ? (
-                <div
-                  aria-hidden="true"
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 12,
-                    display: "grid",
-                    placeItems: "center",
-                    border: `1px solid ${BRAND.line}`,
-                    color: "rgba(15, 23, 42, 0.75)",
-                    flex: "0 0 auto",
-                    fontWeight: 900,
-                  }}
-                >
-                  →
-                </div>
-              ) : null}
-            </div>
-
-            {tag ? (
-              <div
-                style={{
-                  alignSelf: "flex-start",
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  background: "rgba(35, 137, 201, 0.12)",
-                  border: "1px solid rgba(35, 137, 201, 0.18)",
-                  color: "rgba(15, 23, 42, 0.82)",
-                  fontWeight: 800,
-                  fontSize: 13,
-                }}
-              >
-                {tag}
-              </div>
             ) : null}
-
-            {legend ? (
-              <div
-                style={{
-                  color: "#334155",
-                  fontSize: 15,
-                  lineHeight: 1.75,
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical" as any,
-                  WebkitLineClamp: 5 as any,
-                  overflow: "hidden",
-                }}
-              >
-                {legend}
-              </div>
-            ) : null}
-
-            {isClickable ? (
-              <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
-                  {lang === "en" ? "See details" : "Ver detalle"}
-                </span>
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <div style={topSectionStyle}>
-            {/* LEFT (leyenda) */}
-            <div style={leftStyle}>
-              <div style={headerRow}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
-                    {title}
-                  </div>
-
-                  {subtitle ? (
-                    <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
-                      {subtitle}
-                    </div>
-                  ) : null}
-                </div>
-
-                {isClickable ? (
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 12,
-                      display: "grid",
-                      placeItems: "center",
-                      border: `1px solid ${BRAND.line}`,
-                      color: "rgba(15, 23, 42, 0.75)",
-                      flex: "0 0 auto",
-                      fontWeight: 900,
-                    }}
-                  >
-                    →
-                  </div>
-                ) : null}
-              </div>
-
-              {tag ? (
-                <div
-                  style={{
-                    alignSelf: "flex-start",
-                    padding: "6px 10px",
-                    borderRadius: 999,
-                    background: "rgba(35, 137, 201, 0.12)",
-                    border: "1px solid rgba(35, 137, 201, 0.18)",
-                    color: "rgba(15, 23, 42, 0.82)",
-                    fontWeight: 800,
-                    fontSize: 13,
-                  }}
-                >
-                  {tag}
-                </div>
-              ) : null}
-
-              {legend ? (
-                <div
-                  style={{
-                    color: "#334155",
-                    fontSize: 15,
-                    lineHeight: 1.75,
-                    display: "-webkit-box",
-                    WebkitBoxOrient: "vertical" as any,
-                    WebkitLineClamp: 5 as any,
-                    overflow: "hidden",
-                  }}
-                >
-                  {legend}
-                </div>
-              ) : null}
-
-              {isClickable ? (
-                <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                  <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
-                    {lang === "en" ? "See details" : "Ver detalle"}
-                  </span>
-                </div>
-              ) : null}
-            </div>
-
-            {/* RIGHT (imagen edge-to-edge) */}
-            <div style={rightStyle}>
-              {cardImageCandidates.length ? (
-                <ProductCardImage
-                  candidates={cardImageCandidates}
-                  alt={title}
-                  height={H}
-                  rounded={0}
-                  fit="cover"
-                  borderless
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: H,
-                    display: "grid",
-                    placeItems: "center",
-                    color: "rgba(226,232,240,0.75)",
-                    fontWeight: 800,
-                    fontSize: 13,
-                  }}
-                >
-                  Sin imagen
-                </div>
-              )}
-            </div>
           </div>
         )}
 
-        {/* ✅ SOLO TRANSPORTE: imágenes adicionales (02.jpg, 03.jpg...) ancho completo */}
-        {isTransporte
-          ? allImageCandidates.slice(1).map((candidates, index) => (
-              <div key={index + 2} style={fullWidthImageStyle}>
-                <ProductCardImage
-                  candidates={candidates}
-                  alt={`${title} - imagen ${index + 2}`}
-                  height={isMd ? 120 : 160} // ✅ CAMBIO: altura coincide con fullWidthImageStyle
-                  rounded={0}
-                  fit="cover"
-                  borderless
-                />
+        {/* ===== TEXTO ===== */}
+        <div style={textBlockStyle}>
+          <div style={headerRow}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
+                {title}
               </div>
-            ))
-          : null}
+
+              {subtitle && (
+                <div style={{ marginTop: 6, color: "rgba(15,23,42,.75)", fontSize: 14, lineHeight: 1.5 }}>
+                  {subtitle}
+                </div>
+              )}
+            </div>
+
+            {isClickable && (
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 12,
+                  display: "grid",
+                  placeItems: "center",
+                  border: `1px solid ${BRAND.line}`,
+                  fontWeight: 900,
+                }}
+              >
+                →
+              </div>
+            )}
+          </div>
+
+          {tag && (
+            <div
+              style={{
+                alignSelf: "flex-start",
+                padding: "6px 10px",
+                borderRadius: 999,
+                background: "rgba(35,137,201,.12)",
+                border: "1px solid rgba(35,137,201,.18)",
+                fontWeight: 800,
+                fontSize: 13,
+              }}
+            >
+              {tag}
+            </div>
+          )}
+
+          {legend && (
+            <div style={{ color: "#334155", fontSize: 15, lineHeight: 1.75 }}>
+              {legend}
+            </div>
+          )}
+        </div>
+
+        {/* ===== IMÁGENES ADICIONALES TRANSPORTE ===== */}
+        {isTransporte &&
+          allImageCandidates.slice(1).map((candidates, i) => (
+            <div
+              key={i}
+              style={{
+                width: "100%",
+                aspectRatio: "21 / 9",
+                overflow: "hidden",
+                borderTop: `1px solid ${BRAND.line}`,
+                background: "#0B1220",
+              }}
+            >
+              <ProductCardImage
+                candidates={candidates}
+                alt={`${title} - ${i + 2}`}
+                fit="cover"
+                rounded={0}
+                borderless
+              />
+            </div>
+          ))}
       </div>
     );
 
@@ -2418,7 +2251,7 @@ const fullWidthImageStyle: React.CSSProperties = {
   }
 
   // ==========================
-  // DEFAULT CARD (grid normal)
+  // DEFAULT CARD (NO TOCADO)
   // ==========================
   const cardStyle: React.CSSProperties = {
     background: "white",
@@ -2435,111 +2268,25 @@ const fullWidthImageStyle: React.CSSProperties = {
     marginInline: product.cardMaxWidth ? "auto" : undefined,
   };
 
-  const headerRow: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-  };
-
-  const content = (
+  const contentDefault = (
     <div style={cardStyle}>
-      <div style={headerRow}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.2, color: BRAND.ink }}>
-            {title}
-          </div>
-
-          {subtitle ? (
-            <div
-              style={{
-                marginTop: 6,
-                color: "rgba(15, 23, 42, 0.75)",
-                fontSize: 14,
-                lineHeight: 1.4,
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical" as any,
-                WebkitLineClamp: 2 as any,
-                overflow: "hidden",
-              }}
-            >
-              {subtitle}
-            </div>
-          ) : null}
-        </div>
-
-        {isClickable ? (
-          <div
-            aria-hidden="true"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 12,
-              display: "grid",
-              placeItems: "center",
-              border: `1px solid ${BRAND.line}`,
-              color: "rgba(15, 23, 42, 0.75)",
-              flex: "0 0 auto",
-              fontWeight: 900,
-            }}
-          >
-            →
-          </div>
-        ) : null}
-      </div>
-
-      {tag ? (
-        <div
-          style={{
-            alignSelf: "flex-start",
-            padding: "6px 10px",
-            borderRadius: 999,
-            background: "rgba(35, 137, 201, 0.12)",
-            border: "1px solid rgba(35, 137, 201, 0.18)",
-            color: "rgba(15, 23, 42, 0.82)",
-            fontWeight: 800,
-            fontSize: 13,
-          }}
-        >
-          {tag}
-        </div>
-      ) : null}
-
-      <div style={{ marginTop: 2 }}>
-        {cardImageCandidates.length ? (
-          <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
-        ) : (
-          <div
-            style={{
-              width: "100%",
-              height: 210,
-              borderRadius: 16,
-              border: `1px dashed ${BRAND.line}`,
-              background: "rgba(15, 23, 42, 0.03)",
-              display: "grid",
-              placeItems: "center",
-              color: "rgba(15, 23, 42, 0.55)",
-              fontWeight: 800,
-              fontSize: 13,
-            }}
-          >
-            Sin imagen
-          </div>
-        )}
-      </div>
+      <div style={{ fontWeight: 900, fontSize: 16, color: BRAND.ink }}>{title}</div>
+      {subtitle && <div style={{ color: "rgba(15,23,42,.75)", fontSize: 14 }}>{subtitle}</div>}
+      {cardImageCandidates.length && (
+        <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
+      )}
     </div>
   );
 
-  if (!isClickable) {
-    return <div style={{ height: "100%" }}>{content}</div>;
-  }
+  if (!isClickable) return contentDefault;
 
   return (
     <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
-      {content}
+      {contentDefault}
     </Link>
   );
 }
+
 
 
 
