@@ -20,7 +20,6 @@ import {
    CONFIG
 ========================================================= */
 // Ctrl+F: resolveProductGalleryImages
-// Ctrl+F: resolveProductGalleryImages
 type ResolveGalleryOptions = {
   maxNumbered?: number;       // cuántas fotos numeradas buscar (01..max)
   includeHero?: boolean;      // incluir hero.jpg al inicio
@@ -41,10 +40,9 @@ function resolveProductGalleryImages(
   if (!folder) return [];
 
   const exts = extensions.map((e) => e.toLowerCase());
-
-  // Vite: glob EAGER => URLs sincronas (NO Promise)
   const globPattern = `${folder}/*.{${exts.join(",")}}`;
 
+  // ✅ EAGER + as:url => sincronico (NO Promise)
   const modules = import.meta.glob(globPattern, {
     eager: true,
     as: "url",
@@ -134,9 +132,8 @@ function ProductGallery(props: ProductGalleryProps) {
   const { isMd } = useBreakpoints();
 
   const images = useMemo(() => {
-    if ("images" in props) {
-      return (props.images || []).filter(Boolean);
-    }
+    if ("images" in props) return (props.images || []).filter(Boolean);
+
     return resolveProductGalleryImages(props.publicFolder, {
       maxNumbered: props.maxNumbered ?? 12,
       includeHero: props.includeHero ?? true,
@@ -177,9 +174,7 @@ function ProductGallery(props: ProductGalleryProps) {
     setIdx((p) => (p + 1) % images.length);
   };
 
-  // ✅ Altura "fit al texto" REAL:
-  // tu layout es un grid con 2 columnas; la galería está en la derecha y el texto en la izquierda.
-  // Por eso "previousElementSibling" NO sirve. Aquí buscamos el contenedor grid y tomamos su 1er hijo (columna texto).
+  // ✅ Altura: calza con la columna de texto (fit al texto), con clamp para que NO se dispare
   useEffect(() => {
     if (forcedHeight != null) {
       setSyncedHeightPx(null);
@@ -200,11 +195,9 @@ function ProductGallery(props: ProductGalleryProps) {
         if (!p) break;
 
         if (p.children && p.children.length >= 2) {
-          // En tu ProductDetail, el hijo 0 es texto, hijo 1 es la columna de la galería
-          const first = p.children[0] as HTMLElement | undefined;
-          const second = p.children[1] as HTMLElement | undefined;
+          const first = p.children[0] as HTMLElement | undefined;  // texto
+          const second = p.children[1] as HTMLElement | undefined; // galería
 
-          // Validación: la galería vive dentro del hijo 1
           if (second && second.contains(wrapEl) && first && !first.contains(wrapEl)) {
             return first;
           }
@@ -222,7 +215,7 @@ function ProductGallery(props: ProductGalleryProps) {
     const compute = () => {
       const h = textEl.getBoundingClientRect().height;
 
-      // límites razonables para que NO se dispare (ni quede enano)
+      // límites razonables para que quede como “antes”, pero ajustado al texto
       const minH = isMd ? 300 : 240;
       const maxH = isMd ? 680 : 560;
 
@@ -307,7 +300,8 @@ function ProductGallery(props: ProductGalleryProps) {
               width: "100%",
               height: "100%",
               display: "block",
-              objectFit: "cover", // ✅ mantiene formato como antes (no "contain" gigante)
+              // ✅ mantiene el “formato de antes”: NO “contain” gigante
+              objectFit: "cover",
             }}
           />
         ) : (
@@ -317,6 +311,7 @@ function ProductGallery(props: ProductGalleryProps) {
 
       {hasMany && (
         <>
+          {/* flecha IZQ */}
           <button
             type="button"
             onClick={(e) => {
@@ -329,6 +324,7 @@ function ProductGallery(props: ProductGalleryProps) {
             <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>‹</span>
           </button>
 
+          {/* flecha DER */}
           <button
             type="button"
             onClick={(e) => {
@@ -341,6 +337,7 @@ function ProductGallery(props: ProductGalleryProps) {
             <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>›</span>
           </button>
 
+          {/* dots */}
           <div
             style={{
               position: "absolute",
@@ -378,6 +375,7 @@ function ProductGallery(props: ProductGalleryProps) {
     </div>
   );
 }
+
 
 
 function pick(b: Bilingual, lang: Lang) {
