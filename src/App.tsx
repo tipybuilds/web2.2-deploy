@@ -147,13 +147,27 @@ function ProductGallery({
   alt,
   maxNumbered = 6,
   includeHero = false,
-  maxH = 420,
+
+  /**
+   * ✅ NUEVO
+   * - "fixed": mantiene un alto controlado (cards típicas).
+   * - "stretch": ocupa el alto disponible del contenedor padre (para alinear con el texto).
+   */
+  layout = "fixed",
+
+  /**
+   * ✅ Solo para layout="fixed"
+   */
+  fixedMaxH = 420,
+  fixedMinH = 260,
 }: {
   publicFolder: string;
   alt: string;
   maxNumbered?: number;
   includeHero?: boolean;
-  maxH?: number;
+  layout?: "fixed" | "stretch";
+  fixedMaxH?: number;
+  fixedMinH?: number;
 }) {
   const [imgs, setImgs] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -162,7 +176,7 @@ function ProductGallery({
   // ✅ Lightbox (expansible)
   const [open, setOpen] = React.useState(false);
 
-  // ✅ Medimos la proporción real de la imagen (para que el frame se vea armónico)
+  // ✅ Medimos proporción real (solo para fallback / estabilidad visual)
   const [aspect, setAspect] = React.useState<number | null>(null);
 
   React.useEffect(() => {
@@ -206,7 +220,7 @@ function ProductGallery({
     setIdx((v) => (total ? (v + 1) % total : 0));
   }, [total]);
 
-  // ✅ Cada vez que cambia la imagen activa, recalculamos aspect ratio real
+  // ✅ Recalcular aspect ratio real cuando cambia imagen
   React.useEffect(() => {
     const src = imgs[idx];
     if (!src) {
@@ -249,11 +263,15 @@ function ProductGallery({
 
   const shellStyle: React.CSSProperties = {
     width: "100%",
+    height: layout === "stretch" ? "100%" : "auto", // ✅ clave para alinear con el texto
     border: `1px solid ${BRAND.line}`,
     borderRadius: 16,
     background: "#fff",
     overflow: "hidden",
     boxShadow: "0 10px 26px rgba(2, 6, 23, 0.06)",
+    display: "flex",
+    flexDirection: "column",
+    minHeight: layout === "stretch" ? "100%" : undefined,
   };
 
   const topBarStyle: React.CSSProperties = {
@@ -265,6 +283,7 @@ function ProductGallery({
     borderBottom: `1px solid ${BRAND.line}`,
     background: "rgba(255,255,255,0.92)",
     backdropFilter: "blur(6px)",
+    flex: "0 0 auto",
   };
 
   const chipStyle: React.CSSProperties = {
@@ -307,10 +326,9 @@ function ProductGallery({
   };
 
   /**
-   * ✅ FIX 1: Frame armónico y grande
-   * - Usamos `aspectRatio` real (cuando existe) para que NO se vea “chico” ni raro.
-   * - Limitamos con maxH para mantener consistencia visual con el layout.
-   * - La imagen en la página usa `cover` para verse alineada y contundente.
+   * ✅ FIX: el frame ahora puede:
+   * - "fixed": comportamiento clásico (aspect ratio + maxH).
+   * - "stretch": tomar TODO el alto del card (y del grid) para quedar alineado con texto.
    */
   const mediaFrameStyle: React.CSSProperties = {
     width: "100%",
@@ -319,10 +337,15 @@ function ProductGallery({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    // frame armónico según imagen, fallback 16/9
-    aspectRatio: aspect ? `${aspect}` : "16 / 9",
-    // mantiene “tamaño premium” sin romper la grilla
-    maxHeight: maxH,
+
+    // fixed
+    aspectRatio: layout === "fixed" ? (aspect ? `${aspect}` : "16 / 9") : undefined,
+    minHeight: layout === "fixed" ? fixedMinH : undefined,
+    maxHeight: layout === "fixed" ? fixedMaxH : undefined,
+
+    // stretch
+    flex: layout === "stretch" ? "1 1 auto" : undefined,
+    minHeight: layout === "stretch" ? 0 : undefined,
   };
 
   if (loading) {
@@ -378,7 +401,6 @@ function ProductGallery({
           </div>
         </div>
 
-        {/* ✅ Vista en página: armónica y más grande */}
         <div style={mediaFrameStyle}>
           <img
             src={imgs[idx]}
@@ -389,7 +411,7 @@ function ProductGallery({
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover", // ✅ llena el frame (alineado y “premium”)
+              objectFit: "cover",
               display: "block",
               cursor: "zoom-in",
             }}
@@ -397,7 +419,6 @@ function ProductGallery({
         </div>
       </div>
 
-      {/* ✅ FIX 2: Lightbox realmente expansible y adaptable al tamaño/aspect original */}
       {open ? (
         <div
           role="dialog"
@@ -475,7 +496,7 @@ function ProductGallery({
                   height: "auto",
                   maxWidth: "100%",
                   maxHeight: "100%",
-                  objectFit: "contain", // ✅ respeta proporción real en expansión
+                  objectFit: "contain",
                   display: "block",
                 }}
               />
