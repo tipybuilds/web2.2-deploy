@@ -2721,6 +2721,187 @@ function ProductCard({
     </Link>
   );
 }
+
+function Calidad() {
+  const { isMd, isXl } = useBreakpoints();
+  const { lang } = useLang();
+
+  const t = (o: { es: string; en: string }) => (lang === "en" ? o.en : o.es);
+
+  const titleSize = isMd ? 34 : isXl ? 52 : 44;
+
+  const principles = [
+    {
+      title: { es: "Control en proceso", en: "In-process control" },
+      desc: {
+        es: "Monitoreo de variables críticas durante fabricación para asegurar repetibilidad y estabilidad en operación.",
+        en: "Monitoring critical variables during manufacturing to ensure repeatability and stable field performance.",
+      },
+    },
+    {
+      title: { es: "Registros auditables", en: "Auditable records" },
+      desc: {
+        es: "Trazabilidad por lote, fecha, turno y orden. Evidencia disponible frente a auditorías o requerimientos técnicos.",
+        en: "Traceability by lot, date, shift, and work order. Evidence available for audits and technical requests.",
+      },
+    },
+    {
+      title: { es: "Mejora continua", en: "Continuous improvement" },
+      desc: {
+        es: "Acciones correctivas basadas en evidencia: ajustes de proceso, estandarización y control de recurrencia.",
+        en: "Evidence-based corrective actions: process adjustments, standardization, and recurrence control.",
+      },
+    },
+  ];
+
+  const steps = [
+    {
+      n: "01",
+      t: { es: "Recepción y validación", en: "Receiving & validation" },
+      d: {
+        es: "Recepción controlada de insumos y/o producto: verificación visual y dimensional, identificación por lote y registro básico de conformidad. Se bloquea lo que no cumpla hasta resolver la causa.",
+        en: "Controlled receiving of inputs and/or product: visual and dimensional checks, lot identification, and conformity records. Nonconforming items are held until root cause is addressed.",
+      },
+    },
+    {
+      n: "02",
+      t: { es: "Control en proceso", en: "In-process control" },
+      d: {
+        es: "Durante la fabricación se monitorean variables que afectan desempeño: estructura, tensión, consistencia dimensional y estabilidad de salida. Cuando hay desviación, se corrige en línea y se deja evidencia del ajuste.",
+        en: "During manufacturing we monitor performance-driving variables: structure, tension, dimensional consistency, and output stability. Deviations are corrected on-line and the adjustment is recorded.",
+      },
+    },
+    {
+      n: "03",
+      t: { es: "Registro y trazabilidad", en: "Records & traceability" },
+      d: {
+        es: "Cada partida queda asociada a lote, fecha, turno y orden de producción. Esto permite rastrear condiciones de fabricación, aislar eventos y responder rápido frente a reclamos o auditorías.",
+        en: "Each batch is linked to lot, date, shift, and work order. This enables fast root-cause analysis, event isolation, and quick response to claims or audits.",
+      },
+    },
+    {
+      n: "04",
+      t: { es: "Verificación final", en: "Final verification" },
+      d: {
+        es: "Chequeo final del producto contra especificación: revisión dimensional/visual y confirmación de criterios críticos. Solo se libera producto conforme; lo no conforme se segrega y se gestiona por causa.",
+        en: "Final check against specification: dimensional/visual review and confirmation of critical criteria. Only conforming product is released; nonconforming product is segregated and managed by cause.",
+      },
+    },
+    {
+      n: "05",
+      t: { es: "Liberación y despacho", en: "Release & dispatch" },
+      d: {
+        es: "Despacho con respaldo básico: identificación, registro de salida y consistencia de entrega. El objetivo es continuidad operacional del cliente: menos fricción, menos incertidumbre y respuesta rápida si aparece un desvío.",
+        en: "Dispatch with basic supporting records: identification, outbound registration, and consistent delivery. The goal is customer uptime: less friction, less uncertainty, and fast response if a deviation appears.",
+      },
+    },
+  ];
+
+  // ✅ +3px SOLO textos largos
+  const body18 = isMd ? 17 : 18; // antes 15
+  const body17 = isMd ? 16 : 17; // antes 14
+
+  return (
+    <div style={{ width: "100%" }}>
+      <section style={{ borderBottom: `1px solid ${BRAND.line}` }}>
+        <div style={{ ...containerStyle(), ...sectionPad(44, 30) }}>
+          <BackToHome />
+
+          <h1
+            style={{
+              marginTop: 12,
+              fontSize: titleSize,
+              fontWeight: 350,
+              color: BRAND.primary,
+              lineHeight: 1.08,
+              letterSpacing: -0.2,
+              maxWidth: 980,
+            }}
+          >
+            {t({ es: "Calidad verificable.", en: "Verifiable quality." })}
+            <br />
+            {t({ es: "Control y evidencia.", en: "Control and evidence." })}
+          </h1>
+
+          <p
+            style={{
+              marginTop: 12,
+              fontSize: body18,
+              lineHeight: 1.78,
+              color: "#334155",
+              maxWidth: 980,
+            }}
+          >
+            {t({
+              es: "La calidad no es un discurso: se ejecuta en la operación y se respalda con evidencia. Nuestro foco es entregar consistencia, trazabilidad y respuesta rápida, reduciendo fricción comercial y protegiendo la continuidad operacional.",
+              en: "Quality is not a promise: it’s executed on the floor and backed by evidence. Our focus is consistency, traceability, and fast response—reducing commercial friction and protecting operational continuity.",
+            })}
+          </p>
+
+          <div style={{ marginTop: 18, display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Link to="/contacto" style={btnPrimaryLg()}>
+              {t({ es: "Solicitar información", en: "Request information" })}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section style={{ borderBottom: `1px solid ${BRAND.line}` }}>
+        <div style={{ ...containerStyle(), ...sectionPad(26, 36) }}>
+          <div style={{ border: `1px solid ${BRAND.line}`, borderRadius: 22, padding: 22, background: "white" }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: BRAND.primary }}>
+              {t({ es: "Principios", en: "Principles" })}
+            </h2>
+
+            <p style={{ marginTop: 10, fontSize: body17, lineHeight: 1.78, color: "#334155", maxWidth: 980 }}>
+              {t({
+                es: "Tres reglas simples: medir lo que importa, registrar lo necesario y corregir con evidencia. Esto habilita consistencia y una respuesta rápida cuando el estándar se desvía.",
+                en: "Three simple rules: measure what matters, record what’s necessary, and correct with evidence. This enables consistency and fast response when the standard deviates.",
+              })}
+            </p>
+
+            <div style={{ marginTop: 12, ...responsiveAutoGrid(320) }}>
+              {principles.map((p) => (
+                <MiniCard key={t(p.title)} title={t(p.title)} desc={t(p.desc)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="proceso" style={{ borderBottom: `1px solid ${BRAND.line}` }}>
+        <div style={{ ...containerStyle(), ...sectionPad(26, 46) }}>
+          <div style={{ border: `1px solid ${BRAND.line}`, borderRadius: 22, padding: 22, background: "white" }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: BRAND.primary }}>
+              {t({ es: "Proceso de calidad", en: "Quality process" })}
+            </h2>
+
+            <p style={{ marginTop: 10, fontSize: body17, lineHeight: 1.78, color: "#334155", maxWidth: 980 }}>
+              {t({
+                es: "Un flujo simple, auditable y orientado a operación: detectar temprano, corregir rápido y dejar trazabilidad suficiente para responder con hechos.",
+                en: "A simple, auditable, operations-first flow: detect early, correct fast, and keep sufficient traceability to respond with facts.",
+              })}
+            </p>
+
+            <div style={{ marginTop: 14, display: "grid", gap: 12 }}>
+              {steps.map((s) => (
+                <QualityStepRow
+                  key={s.n}
+                  step={{
+                    n: s.n,
+                    t: s.t,
+                    d: s.d,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function Nosotros() {
   const { isMd, isXl } = useBreakpoints();
   const { lang } = useLang();
