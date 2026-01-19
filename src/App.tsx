@@ -137,11 +137,13 @@ const LangCtx = createContext<{ lang: Lang; toggleLang: () => void } | null>(
 function ProductGallery({
   publicFolder,
   alt,
-  maxNumbered = 6, // tu caso: 01..06
+  maxNumbered = 6,          // 01..06
+  includeHero = false,      // ✅ por defecto NO hero en productos
 }: {
-  publicFolder: string; // Ej: "/img/divisiones/acuicola/cabo-rafia"
+  publicFolder: string;     // Ej: "/images/divisions/acuicola/products/manga"
   alt: string;
   maxNumbered?: number;
+  includeHero?: boolean;
 }) {
   const [imgs, setImgs] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -154,7 +156,7 @@ function ProductGallery({
 
     resolveProductGalleryImages(publicFolder, {
       maxNumbered,
-      includeHero: true,
+      includeHero, // ✅ controlado por prop
       extensions: ["jpg", "jpeg", "png", "webp"],
       timeoutMs: 3000,
       cacheBust: true,
@@ -173,9 +175,10 @@ function ProductGallery({
     return () => {
       alive = false;
     };
-  }, [publicFolder, maxNumbered]);
+  }, [publicFolder, maxNumbered, includeHero]);
 
   const total = imgs.length;
+  const canNav = total > 1;
 
   const prev = () => setIdx((v) => (total ? (v - 1 + total) % total : 0));
   const next = () => setIdx((v) => (total ? (v + 1) % total : 0));
@@ -212,8 +215,6 @@ function ProductGallery({
     );
   }
 
-  const canNav = total > 1;
-
   return (
     <div
       style={{
@@ -224,7 +225,6 @@ function ProductGallery({
         overflow: "hidden",
       }}
     >
-      {/* Header: contador + botones */}
       <div
         style={{
           display: "flex",
@@ -271,7 +271,6 @@ function ProductGallery({
         </div>
       </div>
 
-      {/* Imagen actual */}
       <div style={{ position: "relative" }}>
         <img
           src={imgs[idx]}
@@ -280,26 +279,6 @@ function ProductGallery({
           loading="eager"
           decoding="async"
         />
-      </div>
-
-      {/* DEBUG VISIBLE: lista exacta detectada */}
-      <div
-        style={{
-          padding: 10,
-          borderTop: `1px solid rgba(15, 23, 42, 0.08)`,
-          fontSize: 12,
-          color: "rgba(15, 23, 42, 0.65)",
-          lineHeight: 1.4,
-        }}
-      >
-        <div style={{ marginBottom: 6 }}>
-          <strong>Debug (detectadas):</strong> {total}
-        </div>
-        <div style={{ wordBreak: "break-all" }}>
-          {imgs.map((s, i) => (
-            <div key={`${s}-${i}`}>{s}</div>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -1708,7 +1687,6 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
     </div>
   )}
 </div>
-
   );
 }
 
