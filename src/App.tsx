@@ -2057,6 +2057,7 @@ function ProductCardImage({
 
 // Ctrl+F: ProductCard
 // Ctrl+F: ProductCard
+// Ctrl+F: ProductCard
 function ProductCard({
   divisionKey,
   product,
@@ -2095,20 +2096,21 @@ function ProductCard({
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
+  // Texto "leyenda" para wide-compact
   const longTextRaw =
     (product.descriptionText ? pick(product.descriptionText, lang) : "") ||
     pick(product.descriptionPlaceholder, lang);
 
   const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
 
+  const isTransporte = divisionKey === "transporte";
+
   // ==========================
   // VARIANTE: WIDE-COMPACT
-  // ✅ Transporte: 01.jpg como BANNER full width (solo transporte)
+  // ✅ Transporte: 01.jpg como banner real full-bleed
   // ==========================
   if (product.cardVariant === "wide-compact") {
     const H = isMd ? 240 : 320;
-
-    const isTransporte = divisionKey === "transporte";
 
     const wideCardStyle: React.CSSProperties = {
       background: "white",
@@ -2119,7 +2121,7 @@ function ProductCard({
       maxWidth: maxW,
       marginInline: product.cardMaxWidth ? "auto" : undefined,
       display: "flex",
-      flexDirection: "column", // ✅ transporte y no-transporte: columna, pero cambia el contenido
+      flexDirection: "column",
     };
 
     const topSectionStyle: React.CSSProperties = {
@@ -2143,7 +2145,7 @@ function ProductCard({
       justifyContent: "stretch",
       borderTop: isMd ? `1px solid ${BRAND.line}` : undefined,
       borderLeft: !isMd ? `1px solid ${BRAND.line}` : undefined,
-      background: "#0B1220",
+      background: "white", // ✅ NO negro
     };
 
     const headerRow: React.CSSProperties = {
@@ -2153,139 +2155,101 @@ function ProductCard({
       gap: 12,
     };
 
-    // ✅ Banner (01.jpg) ancho completo SOLO transporte
-    const bannerStyle: React.CSSProperties = {
-      width: "100%",
-      height: isMd ? 220 : 320,
-      background: "#0B1220",
-      borderBottom: `1px solid ${BRAND.line}`,
-    };
-
-    // ✅ Imágenes adicionales ancho completo (02.jpg, 03.jpg...) SOLO transporte
-    const fullWidthImageStyle: React.CSSProperties = {
-      width: "100%",
-      height: isMd ? 200 : 260,
+    // ✅ Banner full-bleed SOLO transporte (sin negro, y con placeholder claro)
+    const bannerWrapStyle: React.CSSProperties = {
+      width: "100vw",
+      marginLeft: "calc(50% - 50vw)",
+      marginRight: "calc(50% - 50vw)",
+      background: "white", // ✅ NO negro
       borderTop: `1px solid ${BRAND.line}`,
-      background: "#0B1220",
+      borderBottom: `1px solid ${BRAND.line}`,
+      overflow: "hidden",
     };
 
+    const bannerHeight = isMd ? 220 : 320;
+
+    const bannerInnerStyle: React.CSSProperties = {
+      width: "100%",
+      height: bannerHeight,
+      background: "rgba(15, 23, 42, 0.03)", // ✅ placeholder suave
+      display: "block",
+    };
+
+    // ✅ Imágenes adicionales full-bleed SOLO transporte (sin negro)
+    const fullBleedWrapStyle: React.CSSProperties = {
+      width: "100vw",
+      marginLeft: "calc(50% - 50vw)",
+      marginRight: "calc(50% - 50vw)",
+      background: "white",
+      borderBottom: `1px solid ${BRAND.line}`,
+      overflow: "hidden",
+    };
+
+    const extraHeight = isMd ? 220 : 300;
+
+    const extraInnerStyle: React.CSSProperties = {
+      width: "100%",
+      height: extraHeight,
+      background: "rgba(15, 23, 42, 0.03)",
+      display: "block",
+    };
+
+    // 01.jpg (banner) para transporte; si no hay allImageCandidates, usa cardImageCandidates
     const bannerCandidates: string[] = isTransporte
-      ? (allImageCandidates[0] ?? cardImageCandidates)
+      ? (allImageCandidates[0] && allImageCandidates[0].length ? allImageCandidates[0] : cardImageCandidates)
       : [];
 
+    // Extras: SOLO si hay candidatos (evita bloques vacíos)
+    const extraCandidatesList: string[][] = isTransporte
+      ? allImageCandidates
+          .slice(1)
+          .filter((arr) => Array.isArray(arr) && arr.length > 0)
+      : [];
+
+    const Placeholder = ({ height }: { height: number }) => (
+      <div
+        style={{
+          width: "100%",
+          height,
+          display: "grid",
+          placeItems: "center",
+          border: `1px dashed ${BRAND.line}`,
+          background: "rgba(15, 23, 42, 0.03)",
+          color: "rgba(15, 23, 42, 0.55)",
+          fontWeight: 800,
+          fontSize: 13,
+        }}
+      >
+        Sin imagen
+      </div>
+    );
+
     const content = (
-      <div style={wideCardStyle}>
-        {/* ✅ SOLO TRANSPORTE: 01.jpg como banner full width */}
+      <div style={{ width: "100%" }}>
+        {/* ✅ SOLO TRANSPORTE: banner 01.jpg full-bleed */}
         {isTransporte ? (
-          <div style={bannerStyle}>
-            {bannerCandidates.length ? (
-              <ProductCardImage
-                candidates={bannerCandidates}
-                alt={`${title} - banner`}
-                height={isMd ? 220 : 320}
-                rounded={0}
-                fit="cover"
-                borderless
-              />
-            ) : (
-              <div
-                style={{
-                  width: "100%",
-                  height: isMd ? 220 : 320,
-                  display: "grid",
-                  placeItems: "center",
-                  color: "rgba(226,232,240,0.75)",
-                  fontWeight: 800,
-                  fontSize: 13,
-                }}
-              >
-                Sin imagen
-              </div>
-            )}
+          <div style={bannerWrapStyle}>
+            <div style={bannerInnerStyle}>
+              {bannerCandidates.length ? (
+                <ProductCardImage
+                  candidates={bannerCandidates}
+                  alt={`${title} - banner`}
+                  height={bannerHeight}
+                  rounded={0}
+                  fit="cover"
+                  borderless
+                />
+              ) : (
+                <Placeholder height={bannerHeight} />
+              )}
+            </div>
           </div>
         ) : null}
 
-        {/* TOP: Transporte = solo texto (porque el banner ya tomó la imagen 01)
-            No-transporte = texto + imagen a la derecha (como antes) */}
-        {isTransporte ? (
-          <div style={{ ...leftStyle, borderBottom: `1px solid ${BRAND.line}` }}>
-            <div style={headerRow}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
-                  {title}
-                </div>
-
-                {subtitle ? (
-                  <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
-                    {subtitle}
-                  </div>
-                ) : null}
-              </div>
-
-              {isClickable ? (
-                <div
-                  aria-hidden="true"
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 12,
-                    display: "grid",
-                    placeItems: "center",
-                    border: `1px solid ${BRAND.line}`,
-                    color: "rgba(15, 23, 42, 0.75)",
-                    flex: "0 0 auto",
-                    fontWeight: 900,
-                  }}
-                >
-                  →
-                </div>
-              ) : null}
-            </div>
-
-            {tag ? (
-              <div
-                style={{
-                  alignSelf: "flex-start",
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  background: "rgba(35, 137, 201, 0.12)",
-                  border: "1px solid rgba(35, 137, 201, 0.18)",
-                  color: "rgba(15, 23, 42, 0.82)",
-                  fontWeight: 800,
-                  fontSize: 13,
-                }}
-              >
-                {tag}
-              </div>
-            ) : null}
-
-            {legend ? (
-              <div
-                style={{
-                  color: "#334155",
-                  fontSize: 15,
-                  lineHeight: 1.75,
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical" as any,
-                  WebkitLineClamp: 5 as any,
-                  overflow: "hidden",
-                }}
-              >
-                {legend}
-              </div>
-            ) : null}
-
-            {isClickable ? (
-              <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
-                  {lang === "en" ? "See details" : "Ver detalle"}
-                </span>
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <div style={topSectionStyle}>
-            {/* LEFT (leyenda) */}
+        {/* Card principal */}
+        <div style={wideCardStyle}>
+          {/* Transporte: solo texto (porque el banner ya ocupa la imagen). */}
+          {isTransporte ? (
             <div style={leftStyle}>
               <div style={headerRow}>
                 <div style={{ minWidth: 0 }}>
@@ -2361,49 +2325,122 @@ function ProductCard({
                 </div>
               ) : null}
             </div>
+          ) : (
+            <div style={topSectionStyle}>
+              {/* LEFT */}
+              <div style={leftStyle}>
+                <div style={headerRow}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
+                      {title}
+                    </div>
 
-            {/* RIGHT (imagen edge-to-edge) */}
-            <div style={rightStyle}>
-              {cardImageCandidates.length ? (
-                <ProductCardImage
-                  candidates={cardImageCandidates}
-                  alt={title}
-                  height={H}
-                  rounded={0}
-                  fit="cover"
-                  borderless
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: H,
-                    display: "grid",
-                    placeItems: "center",
-                    color: "rgba(226,232,240,0.75)",
-                    fontWeight: 800,
-                    fontSize: 13,
-                  }}
-                >
-                  Sin imagen
+                    {subtitle ? (
+                      <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
+                        {subtitle}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {isClickable ? (
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 12,
+                        display: "grid",
+                        placeItems: "center",
+                        border: `1px solid ${BRAND.line}`,
+                        color: "rgba(15, 23, 42, 0.75)",
+                        flex: "0 0 auto",
+                        fontWeight: 900,
+                      }}
+                    >
+                      →
+                    </div>
+                  ) : null}
                 </div>
-              )}
-            </div>
-          </div>
-        )}
 
-        {/* ✅ SOLO TRANSPORTE: imágenes adicionales (02.jpg, 03.jpg...) ancho completo */}
+                {tag ? (
+                  <div
+                    style={{
+                      alignSelf: "flex-start",
+                      padding: "6px 10px",
+                      borderRadius: 999,
+                      background: "rgba(35, 137, 201, 0.12)",
+                      border: "1px solid rgba(35, 137, 201, 0.18)",
+                      color: "rgba(15, 23, 42, 0.82)",
+                      fontWeight: 800,
+                      fontSize: 13,
+                    }}
+                  >
+                    {tag}
+                  </div>
+                ) : null}
+
+                {legend ? (
+                  <div
+                    style={{
+                      color: "#334155",
+                      fontSize: 15,
+                      lineHeight: 1.75,
+                      display: "-webkit-box",
+                      WebkitBoxOrient: "vertical" as any,
+                      WebkitLineClamp: 5 as any,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {legend}
+                  </div>
+                ) : null}
+
+                {isClickable ? (
+                  <div style={{ marginTop: "auto", paddingTop: 6 }}>
+                    <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
+                      {lang === "en" ? "See details" : "Ver detalle"}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* RIGHT */}
+              <div style={rightStyle}>
+                {cardImageCandidates.length ? (
+                  <ProductCardImage
+                    candidates={cardImageCandidates}
+                    alt={title}
+                    height={H}
+                    rounded={0}
+                    fit="cover"
+                    borderless
+                  />
+                ) : (
+                  <Placeholder height={H} />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ✅ SOLO TRANSPORTE: extras (02/03...) full-bleed, sin negro */}
         {isTransporte
-          ? allImageCandidates.slice(1).map((candidates, index) => (
-              <div key={index + 2} style={fullWidthImageStyle}>
-                <ProductCardImage
-                  candidates={candidates}
-                  alt={`${title} - imagen ${index + 2}`}
-                  height={isMd ? 200 : 260}
-                  rounded={0}
-                  fit="cover"
-                  borderless
-                />
+          ? extraCandidatesList.map((candidates, idx) => (
+              <div key={idx + 2} style={fullBleedWrapStyle}>
+                <div style={extraInnerStyle}>
+                  {candidates.length ? (
+                    <ProductCardImage
+                      candidates={candidates}
+                      alt={`${title} - imagen ${idx + 2}`}
+                      height={extraHeight}
+                      rounded={0}
+                      fit="cover"
+                      borderless
+                    />
+                  ) : (
+                    <Placeholder height={extraHeight} />
+                  )}
+                </div>
               </div>
             ))
           : null}
