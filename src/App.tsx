@@ -569,6 +569,27 @@ function responsiveAutoGrid(minColPx: number): React.CSSProperties {
    TEXT HELPERS (PÁRRAFOS)
 ========================================================= */
 
+function buildCardFirstImageCandidates(dir: string) {
+  // Normaliza: sin trailing slash
+  const base = (dir || "").replace(/\/+$/, "");
+
+  if (!base) return [];
+
+  // Cards: SOLO 01 (y fallback 1), sin hero jamás.
+  // Orden: primero lo más probable en tu repo.
+  const names = [
+    "01.jpg",
+    "01.jpeg",
+    "01.png",
+    "01.webp",
+    "1.jpg",
+    "1.jpeg",
+    "1.png",
+    "1.webp",
+  ];
+
+  return names.map((n) => `${base}/${n}`);
+}
 
 
 function toParagraphs(text: string): string[] {
@@ -1825,14 +1846,11 @@ function ProductCard({
   const isClickable = product.clickable !== false;
   const to = `/${divisionKey}/${product.key}`;
 
-  // --- Images for the card: ONLY ONE static image (01) ---
-  // We keep your candidate builder, but we will use only the first slot.
-  const cardImageCandidates: string | string[] | null = (() => {
+  // --- Card image: ONLY first numbered image (01.*), NEVER hero ---
+  const cardImageCandidates: string[] = (() => {
     const dir = product.imageDir;
-    if (!dir) return null;
-
-    // Card: always attempt "01" (no hero, no carousel)
-    return buildIndexedImageCandidates(dir, 1);
+    if (!dir) return [];
+    return buildCardFirstImageCandidates(dir);
   })();
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
@@ -1885,7 +1903,6 @@ function ProductCard({
           ) : null}
         </div>
 
-        {/* Flecha decorativa */}
         {isClickable ? (
           <div
             aria-hidden="true"
@@ -1925,8 +1942,14 @@ function ProductCard({
 
       {/* ✅ Card: single static image. No arrows, no bubbles, no expansion */}
       <div style={{ marginTop: 2 }}>
-        {cardImageCandidates ? (
-          <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
+        {cardImageCandidates.length ? (
+          <ProductCardImage
+            candidates={cardImageCandidates}
+            alt={title}
+            height={210}
+            rounded={16}
+            fit="cover"
+          />
         ) : (
           <div
             style={{
@@ -1948,6 +1971,18 @@ function ProductCard({
       </div>
     </div>
   );
+
+  if (!isClickable) {
+    return <div style={{ height: "100%" }}>{content}</div>;
+  }
+
+  return (
+    <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+      {content}
+    </Link>
+  );
+}
+
 
   // Wrapper: Link solo si es clickeable
   if (!isClickable) {
