@@ -17,9 +17,83 @@ import {
 } from "react-router-dom";
 
 /* =========================================================
-   CONFIG (FIX: BRAND / useLang / LangProvider / WhatsApp consts)
+   CONFIG
 ========================================================= */
-const UI_SCALE = 0.8; // ✅ premisa oficial: “zoom out” equivalente a 80%
+// Ctrl+F: resolveProductGalleryImages
+type ResolveGalleryOptions = {
+  maxNumbered?: number;       // cuántas fotos numeradas buscar (01..max)
+  includeHero?: boolean;      // incluir hero.jpg al inicio
+  extensions?: string[];      // extensiones soportadas
+  timeoutMs?: number;         // timeout por imagen
+  cacheBust?: boolean;        // evita “fantasmas” en dev (recomendado true en StackBlitz)
+};
+
+function resolveProductGalleryImages(
+  publicFolder: string,
+  opts: ResolveGalleryOptions = {}
+): Promise<string[]> {
+  const {
+    maxNumbered = 12,
+    includeHero = true,
+    extensions = ["jpg", "jpeg", "png", "webp"],
+    timeoutMs = 2500,
+    cacheBust = true,
+  } = opts;
+
+  // Normaliza: "img/productos/x" -> "/img/productos/x"
+  const base = (publicFolder.startsWith("/") ? publicFolder : `/${publicFolder}`)
+    .replace(/\/+$/, "");
+
+  const candidates: string[] = [];
+
+  // Hero primero
+  if (includeHero) {
+    for (const ext of extensions) candidates.push(`${base}/hero.${ext}`);
+  }
+
+  // 01..maxNumbered
+  for (let i = 1; i <= maxNumbered; i++) {
+    const nn = String(i).padStart(2, "0");
+    for (const ext of extensions) candidates.push(`${base}/${nn}.${ext}`);
+  }
+
+  const uniqCandidates = Array.from(new Set(candidates));
+
+  const probe = (src: string) =>
+    new Promise<string | null>((resolve) => {
+      const img = new Image();
+      let done = false;
+
+      const finish = (ok: boolean) => {
+        if (done) return;
+        done = true;
+        resolve(ok ? src : null);
+      };
+
+      const t = window.setTimeout(() => finish(false), timeoutMs);
+
+      img.onload = () => {
+        window.clearTimeout(t);
+        finish(true);
+      };
+      img.onerror = () => {
+        window.clearTimeout(t);
+        finish(false);
+      };
+
+      if (!cacheBust) {
+        img.src = src;
+        return;
+      }
+
+      const bust = `__v=${Date.now()}`;
+      img.src = src.includes("?") ? `${src}&${bust}` : `${src}?${bust}`;
+    });
+
+  return Promise.all(uniqCandidates.map(probe)).then((found) => {
+    return found.filter((x): x is string => Boolean(x));
+  });
+}
 
 const BRAND = {
   primary: "#343E75",
@@ -27,57 +101,222 @@ const BRAND = {
   surface: "#D2E4EE",
   ink: "#0B1220",
   muted: "#64748b",
-  bg: "#F3F4F6",
-  panel: "#FFFFFF",
-  line: "rgba(15, 23, 42, 0.08)",
+  bg: "#F3F4F6", // fondo general
+  panel: "#FFFFFF", // cajas
+  line: "rgba(15, 23, 42, 0.08)", // bordes
+  // ✅ tu footer lo usa; si no existe rompe.
   lineSoft: "rgba(15, 23, 42, 0.08)",
 };
 
 const HEADER_H = 64;
-const CONTAINER_MAX = 1760;
+
+// ✅ PREMISA OFICIAL UI
+const UI_SCALE = 0.8;
+
+// ✅ Este es el ancho visual que tú quieres ver en pantalla
+const CONTAINER_MAX = 2048;
+
+// ✅ Compensación: como todo está escalado, el maxWidth real debe ser mayor
 const CONTAINER_MAX_SCALED = Math.round(CONTAINER_MAX / UI_SCALE);
 
-// Contact / WhatsApp
+// WhatsApp
 const WHATSAPP_PHONE_E164 = "+56968160062";
-const SALES_EMAIL = "ventas@tipytown.cl";
 
-// External links (ajusta si quieres)
+// Film
 const MERCADOLIBRE_FILM_URL = "https://www.mercadolibre.cl/";
-const MITILICULTURA_MAPS_URL = "https://www.google.com/maps";
+
+// Maps (solo landing Acuícola)
+const MITILICULTURA_MAPS_URL =
+  "https://www.google.com/maps?rlz=1C5CHFA_enCL1035CL1035&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRg8MgYIAhBFGDwyBggDEEUYPDIGCAQQRRhB0gEHODkyajBqN6gCALACAA&um=1&ie=UTF-8&fb=1&gl=cl&sa=X&geocode=KStJtgUAFyKWMW9SiiF6XN9R&daddr=5700000+Castro,+Los+Lagos";
+
+// Email destino
+const SALES_EMAIL = "martin@tipytown.cl";
 
 /* =========================================================
-   LANG
+   I18N (ES/EN)
 ========================================================= */
 type Lang = "es" | "en";
 type Bilingual = { es: string; en: string };
 
-const LangCtx = createContext<{
-  lang: Lang;
-  setLang: React.Dispatch<React.SetStateAction<Lang>>;
-  toggleLang: () => void;
-} | null>(null);
+const LangCtx = createContext<{ lang: Lang; toggleLang: () => void } | null>(
+  null
+);
 
-// Ctrl+F: function LangProvider
+function PageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",          // ✅ obliga layout a altura completa
+        display: "flex",
+        flexDirection: "column",
+        background: BRAND.bg,
+      }}
+    >
+      {/* Header (si ya lo renderizas fuera, elimina esta sección) */}
+      {/* <SiteHeader /> */}
+
+      <main style={{ flex: "1 1 auto" }}>
+        {children}
+      </main>
+
+      {/* ✅ footer siempre abajo */}
+      <div style={{ marginTop: "auto" }}>
+        <SiteFooter />
+      </div>
+    </div>
+  );
+}
+
+function ProductGallery({
+  publicFolder,
+  alt,
+  maxNumbered = 6,
+  includeHero = false,
+}: {
+  publicFolder: string;
+  alt: string;
+  maxNumbered?: number;
+  includeHero?: boolean;
+}) {
+  const [imgs, setImgs] = React.useState<string[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [idx, setIdx] = React.useState(0);
+  const [open, setOpen] = React.useState(false);
+  const [aspect, setAspect] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setIdx(0);
+    setOpen(false);
+    setAspect(null);
+
+    resolveProductGalleryImages(publicFolder, {
+      maxNumbered,
+      includeHero,
+      cacheBust: true,
+    })
+      .then((list) => {
+        if (!alive) return;
+        setImgs(list);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setImgs([]);
+        setLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [publicFolder, maxNumbered, includeHero]);
+
+  React.useEffect(() => {
+    const src = imgs[idx];
+    if (!src) return;
+
+    const img = new Image();
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        setAspect(img.naturalWidth / img.naturalHeight);
+      }
+    };
+    img.src = src;
+  }, [imgs, idx]);
+
+  const shellStyle: React.CSSProperties = {
+    width: "100%",
+    border: `1px solid ${BRAND.line}`,
+    borderRadius: 16,
+    background: "#fff",
+    overflow: "hidden",
+    boxShadow: "0 10px 26px rgba(2, 6, 23, 0.06)",
+  };
+
+  const mediaFrameStyle: React.CSSProperties = {
+    width: "100%",
+    background: "rgba(15, 23, 42, 0.03)",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "stretch",
+    aspectRatio: aspect ? `${aspect}` : "16 / 9",
+  };
+
+  if (loading || !imgs.length) {
+    return <div style={shellStyle} />;
+  }
+
+  return (
+    <>
+      <div style={shellStyle}>
+        <div style={mediaFrameStyle}>
+          <img
+            src={imgs[idx]}
+            alt={alt}
+            onClick={() => setOpen(true)}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+              cursor: "zoom-in",
+            }}
+          />
+        </div>
+      </div>
+
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(2,6,23,0.78)",
+            zIndex: 9999,
+            display: "grid",
+            placeItems: "center",
+            padding: 18,
+          }}
+        >
+          <img
+            src={imgs[idx]}
+            alt={alt}
+            style={{
+              maxWidth: "96vw",
+              maxHeight: "92vh",
+              objectFit: "contain",
+            }}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
+
+
+
 function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>(() => {
     const saved =
-      typeof window !== "undefined" ? window.localStorage.getItem("lang") : null;
-    return saved === "en" || saved === "es" ? saved : "es";
+      (typeof window !== "undefined" &&
+        (window.localStorage.getItem("tt_lang") as Lang | null)) ||
+      null;
+    return saved === "en" ? "en" : "es";
   });
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("lang", lang);
-  }, [lang]);
+  const toggleLang = () => {
+    setLang((p) => {
+      const next: Lang = p === "es" ? "en" : "es";
+      if (typeof window !== "undefined") window.localStorage.setItem("tt_lang", next);
+      return next;
+    });
+  };
 
-  const toggleLang = () => setLang((p) => (p === "en" ? "es" : "en"));
-
-  const value = useMemo(() => ({ lang, setLang, toggleLang }), [lang]);
-
-  return <LangCtx.Provider value={value}>{children}</LangCtx.Provider>;
+  return <LangCtx.Provider value={{ lang, toggleLang }}>{children}</LangCtx.Provider>;
 }
 
-// Ctrl+F: function useLang
 function useLang() {
   const ctx = useContext(LangCtx);
   if (!ctx) throw new Error("useLang must be used within LangProvider");
@@ -88,80 +327,13 @@ function pick(b: Bilingual, lang: Lang) {
   return lang === "en" ? b.en : b.es;
 }
 
-/* =========================================================
-   GALLERY RESOLVER (sync, NO Promise)
-========================================================= */
-// Ctrl+F: resolveProductGalleryImages
-type ResolveGalleryOptions = {
-  maxNumbered?: number; // cuántas fotos numeradas buscar (01..max)
-  includeHero?: boolean; // incluir hero.jpg al inicio
-  extensions?: string[]; // extensiones soportadas
-};
-
-function resolveProductGalleryImages(
-  publicFolder: string,
-  opts: ResolveGalleryOptions = {}
-): string[] {
-  const {
-    maxNumbered = 12,
-    includeHero = true,
-    extensions = ["jpg", "jpeg", "png", "webp"],
-  } = opts;
-
-  const folder = String(publicFolder || "").replace(/\/+$/, "");
-  if (!folder) return [];
-
-  const exts = extensions.map((e) => e.toLowerCase());
-  const globPattern = `${folder}/*.{${exts.join(",")}}`;
-
-  // ✅ EAGER + as:url => sincrónico
-  const modules = import.meta.glob(globPattern, {
-    eager: true,
-    as: "url",
-  }) as Record<string, string>;
-
-  const out: string[] = [];
-
-  const pickFile = (filename: string) => {
-    const full = `${folder}/${filename}`;
-    return modules[full] || "";
-  };
-
-  if (includeHero) {
-    for (const ext of exts) {
-      const hit = pickFile(`hero.${ext}`);
-      if (hit) {
-        out.push(hit);
-        break;
-      }
-    }
-  }
-
-  for (let n = 1; n <= maxNumbered; n++) {
-    const nn = String(n).padStart(2, "0");
-    let found = "";
-    for (const ext of exts) {
-      const hit = pickFile(`${nn}.${ext}`);
-      if (hit) {
-        found = hit;
-        break;
-      }
-    }
-    if (found) out.push(found);
-  }
-
-  return Array.from(new Set(out)).filter(Boolean);
-}
-
-/* =========================================================
-   UI STRINGS
-========================================================= */
 const UI = {
   brandTagline: {
     es: "Soluciones productivas para acuicultura, agro, packaging y logística.",
     en: "Operational solutions for aquaculture, agriculture, packaging, and logistics.",
   },
   homeCtaSales: { es: "Hablar con ventas", en: "Talk to Sales" },
+  
 
   divisionsLabel: { es: "", en: "" },
   divisionsHeadline: {
@@ -170,20 +342,11 @@ const UI = {
   },
 
   stat1Title: { es: "+50 años de experiencia", en: "50+ years of experience" },
-  stat1Desc: {
-    es: "Industria, operación y consistencia.",
-    en: "Industry, operations, and consistency.",
-  },
+  stat1Desc: { es: "Industria, operación y consistencia.", en: "Industry, operations, and consistency." },
   stat2Title: { es: "Fabricación en Chile", en: "Made in Chile" },
-  stat2Desc: {
-    es: "Control de proceso y especificación clara.",
-    en: "Process control and clear specification.",
-  },
+  stat2Desc: { es: "Control de proceso y especificación clara.", en: "Process control and clear specification." },
   stat3Title: { es: "Logística integrada", en: "Integrated logistics" },
-  stat3Desc: {
-    es: "Respuesta rápida y foco operativo.",
-    en: "Fast response and operational focus.",
-  },
+  stat3Desc: { es: "Respuesta rápida y foco operativo.", en: "Fast response and operational focus." },
 
   navAcuicola: { es: "Acuícola", en: "Aquaculture" },
   navAgro: { es: "Agro", en: "Agriculture" },
@@ -198,20 +361,50 @@ const UI = {
   btnComprarML: { es: "Comprar en Mercado Libre", en: "Buy on Mercado Libre" },
   btnVisitanos: { es: "Visítanos", en: "Visit us" },
 
+  calidadTitle1: { es: "Calidad verificable.", en: "Verifiable quality." },
+  calidadTitle2: { es: "Control y evidencia.", en: "Control and evidence." },
+  calidadIntro: {
+    es: "Estándares, control y documentación. Certificados, fichas técnicas y respaldos se publican por producto.",
+    en: "Standards, control, and documentation. Certificates, datasheets, and supporting evidence are published per product.",
+  },
+  calidadBtn: { es: "Solicitar información", en: "Request information" },
+  calidadPrincipios: { es: "Principios", en: "Principles" },
+  calidadPrincipiosText: {
+    es: "La calidad se ejecuta en operación y se respalda con evidencia. Esto reduce fricción comercial y aumenta confianza.",
+    en: "Quality is executed in operations and backed by evidence. This reduces commercial friction and increases trust.",
+  },
+  calidadProceso: { es: "Proceso de calidad", en: "Quality process" },
+  calidadProcesoText: {
+    es: "Flujo simple, auditable y diseñado para continuidad operacional.",
+    en: "A simple, auditable flow designed for operational continuity.",
+  },
+
   nosotrosTitle: { es: "Nosotros", en: "About" },
+
   nosotrosP1: {
     es: "Somos un partner operativo para industrias que no pueden fallar.",
     en: "We are an operational partner for industries that cannot afford to fail.",
   },
+  
   nosotrosP2: {
     es: "Trabajamos con foco en continuidad, claridad y cumplimiento.",
     en: "We operate with a focus on continuity, clarity, and execution.",
   },
+  
   nosotrosP3: {
     es: "Calidad en materiales, procesos y entregas. Los detalles hacen la diferencia.",
     en: "Quality in materials, processes, and deliveries. Details make the difference.",
+  
+
   },
   nosotrosBtn: { es: "Hablemos", en: "Let’s talk" },
+  nosotrosBlockTitle: { es: "Operación, infraestructura y control", en: "Operations, infrastructure, and control" },
+  nosotrosBlockText: {
+    es: "Somos un equipo industrial orientado a continuidad: operamos con procesos claros, control en terreno y foco en cumplir lo acordado. Trabajamos con tecnología de punta, obsesionados con la calidad y los buenos resultados.",
+    en: "We are an industrial team built for continuity: clear processes, field control, and a commitment to deliver what’s agreed. We back it with verifiable evidence.",
+  },
+  nosotrosGallery: { es: "", en: "" },
+  nosotrosHint: { es: "", en: "" },
 
   contactoTitle: { es: "Contacto", en: "Contact" },
   contactoIntro: {
@@ -219,10 +412,7 @@ const UI = {
     en: "Send your request including division, product, estimated volume, and destination. We respond with a clear, concrete proposal.",
   },
   contactoWABoxTitle: { es: "WhatsApp directo", en: "Direct WhatsApp" },
-  contactoWABoxText: {
-    es: "Para cotización rápida, escríbenos directamente.",
-    en: "For a quick quote, message us directly.",
-  },
+  contactoWABoxText: { es: "Para cotización rápida, escríbenos directamente.", en: "For a quick quote, message us directly." },
   contactoWATemplate: { es: "Mensaje sugerido", en: "Suggested message" },
   contactoWAOpen: { es: "Abrir WhatsApp", en: "Open WhatsApp" },
 
@@ -230,6 +420,28 @@ const UI = {
   contactoSalesBoxText: {
     es: "Contacto directo para proyectos, volúmenes y acuerdos comerciales.",
     en: "Direct contact for projects, volumes, and commercial agreements.",
+  },
+  contactoEmailBtn: { es: "Escribir email", en: "Write email" },
+
+  modalEmailTitle: { es: "Escribir email", en: "Write email" },
+
+  formName: { es: "Nombre *", en: "Name *" },
+  formCompany: { es: "Empresa", en: "Company" },
+  formEmail: { es: "Email *", en: "Email *" },
+  formPhone: { es: "Teléfono", en: "Phone" },
+  formDivision: { es: "División", en: "Division" },
+  formProduct: { es: "Producto", en: "Product" },
+  formVolume: { es: "Volumen estimado", en: "Estimated volume" },
+  formDestination: { es: "Destino", en: "Destination" },
+  formMessage: { es: "Mensaje *", en: "Message *" },
+
+  formSelect: { es: "Seleccionar", en: "Select" },
+  formCancel: { es: "Cancelar", en: "Cancel" },
+  formSend: { es: "Enviar email", en: "Send email" },
+
+  mailtoHint: {
+    es: "Esto abre tu cliente de correo con el mensaje prellenado (mailto). Si después quieres envío real desde web (sin cliente), se agrega backend.",
+    en: "This opens your email client with a prefilled message (mailto). If you want in-app sending later (no email client), we can add a backend.",
   },
 
   notFoundTitle: { es: "Página no encontrada", en: "Page not found" },
@@ -242,6 +454,30 @@ function buildWhatsAppPrefill(lang: Lang) {
     ? "Hi, I’d like to request a quote from Tipy Town.\nDivision:\nProduct:\nEstimated volume:\nDestination:"
     : "Hola, quiero cotizar un producto de Tipy Town.\nDivisión:\nProducto:\nVolumen estimado:\nDestino:";
 }
+
+/* =========================================================
+   IMAGES: conventions for /public
+   - Product hero:  /images/divisions/{division}/products/{slug}/hero.jpg
+   - Product gallery: /images/divisions/{division}/products/{slug}/01.jpg, 02.jpg, ...
+   - Division hero (optional): /images/divisions/{division}/hero.jpg
+========================================================= */
+
+function buildProductHeroSrc(divisionKey: string, productSlug: string) {
+  return `/images/divisions/${divisionKey}/products/${productSlug}/hero.jpg`;
+}
+
+function buildProductGallerySrcs(divisionKey: string, productSlug: string, maxCount: number) {
+  const base = `/images/divisions/${divisionKey}/products/${productSlug}`;
+  return Array.from({ length: maxCount }, (_, i) => `${base}/${String(i + 1).padStart(2, "0")}.jpg`);
+}
+
+function buildDivisionHeroSrc(divisionKey: string) {
+  return `/images/divisions/${divisionKey}/hero.jpg`;
+}
+
+
+
+
 
 /* =========================================================
    RESPONSIVE
@@ -284,7 +520,7 @@ function useBreakpoints() {
 function containerStyle(): React.CSSProperties {
   return {
     width: "100%",
-    maxWidth: CONTAINER_MAX_SCALED,
+   maxWidth: CONTAINER_MAX_SCALED,
     marginInline: "auto",
     paddingInline: "clamp(16px, 3vw, 48px)",
     boxSizing: "border-box",
@@ -317,12 +553,37 @@ function responsiveAutoGrid(minColPx: number): React.CSSProperties {
 }
 
 /* =========================================================
-   TEXT HELPERS
+   TEXT HELPERS (PÁRRAFOS)
 ========================================================= */
+
+function buildCardFirstImageCandidates(dir: string) {
+  // Normaliza: sin trailing slash
+  const base = (dir || "").replace(/\/+$/, "");
+
+  if (!base) return [];
+
+  // Cards: SOLO 01 (y fallback 1), sin hero jamás.
+  // Orden: primero lo más probable en tu repo.
+  const names = [
+    "01.jpg",
+    "01.jpeg",
+    "01.png",
+    "01.webp",
+    "1.jpg",
+    "1.jpeg",
+    "1.png",
+    "1.webp",
+  ];
+
+  return names.map((n) => `${base}/${n}`);
+}
+
+
 function toParagraphs(text: string): string[] {
   const raw = String(text || "").trim();
   if (!raw) return [];
 
+  // Si ya viene con párrafos separados, respeta.
   if (/\n\s*\n/.test(raw)) {
     return raw
       .split(/\n\s*\n/g)
@@ -330,6 +591,7 @@ function toParagraphs(text: string): string[] {
       .filter(Boolean);
   }
 
+  // Si viene como bloque, intenta separar cada ~2 frases.
   const sentences = raw
     .split(/(?<=[.!?])\s+/g)
     .map((s) => s.trim())
@@ -344,6 +606,102 @@ function toParagraphs(text: string): string[] {
   return out;
 }
 
+function ModalBasic({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 200,
+        background: "rgba(2,6,23,0.55)",
+        display: "grid",
+        placeItems: "center",
+        padding: 18,
+      }}
+    >
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{
+          width: "min(720px, 100%)",
+          background: "white",
+          borderRadius: 20,
+          border: `1px solid ${BRAND.line}`,
+          boxShadow: "0 24px 80px rgba(2,6,23,0.35)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: 16,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderBottom: `1px solid ${BRAND.line}`,
+            background: "#F8FAFC",
+          }}
+        >
+          <strong>{title}</strong>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              border: `1px solid ${BRAND.line}`,
+              background: "white",
+              cursor: "pointer",
+              fontWeight: 900,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ padding: 16 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function inputBase(): React.CSSProperties {
+  return {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 14,
+    border: `1px solid ${BRAND.line}`,
+    fontSize: 14,
+  };
+}
+
+function labelBase(): React.CSSProperties {
+  return {
+    fontSize: 12,
+    fontWeight: 900,
+    marginBottom: 6,
+    color: BRAND.muted,
+  };
+}
+
 /* =========================================================
    TYPES
 ========================================================= */
@@ -352,14 +710,22 @@ type Product = {
   datasheetUrl?: string;
 
   name: Bilingual;
+
+  // 🔧 CAMBIO CLAVE: ahora es opcional
   short?: Bilingual;
 
   descriptionText?: Bilingual;
   descriptionPlaceholder: Bilingual;
 
   imageLabel: Bilingual;
+
+  // Carpeta que contiene 01.jpg, 02.jpg, etc.
   imageDir?: string;
+
+  // Cantidad de imágenes 01..N
   imageCount?: number;
+
+  // Hero específico si existe
   heroSrc?: string;
 
   badges?: Bilingual[];
@@ -371,6 +737,7 @@ type Product = {
   cardMaxWidth?: number;
   cardVariant?: "default" | "wide-compact";
 
+  // Escape hatch para no volver a romper build por datos nuevos
   [extra: string]: any;
 };
 
@@ -381,6 +748,8 @@ type Division = {
   intro: Bilingual;
 
   heroImageLabel: Bilingual;
+
+  // ✅ NUEVO: hero real
   heroImageSrc?: string;
 
   productsTitle: Bilingual;
@@ -389,288 +758,128 @@ type Division = {
 };
 
 /* =========================================================
-   PRODUCT GALLERY (FIX: flechas + tamaño fit al texto)
+   SCROLL CHECK (Calidad)
 ========================================================= */
-// Ctrl+F: function ProductGallery(
-type ProductGalleryProps =
-  | {
-      publicFolder: string;
-      alt: string;
-      maxNumbered?: number;
-      includeHero?: boolean;
-      height?: number | string;
-      images?: never;
-    }
-  | {
-      images: string[];
-      alt: string;
-      height?: number | string;
-      publicFolder?: never;
-      maxNumbered?: never;
-      includeHero?: never;
-    };
-
-// Ctrl+F: function ProductGallery(
-function ProductGallery(props: ProductGalleryProps) {
-  const { isMd } = useBreakpoints();
-
-  const images = useMemo(() => {
-    if ("images" in props) return (props.images || []).filter(Boolean);
-
-    return resolveProductGalleryImages(props.publicFolder, {
-      maxNumbered: props.maxNumbered ?? 12,
-      includeHero: props.includeHero ?? true,
-    }).filter(Boolean);
-  }, [
-    "images" in props ? (props.images || []).join("|") : props.publicFolder,
-    "images" in props ? "" : String(props.maxNumbered ?? 12),
-    "images" in props ? "" : String(props.includeHero ?? true),
-  ]);
-
-  const alt = props.alt;
-  const forcedHeight = props.height;
-
-  const [idx, setIdx] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const [syncedHeightPx, setSyncedHeightPx] = useState<number | null>(null);
-
-  const hasMany = images.length > 1;
-  const currentIdx = Math.min(idx, Math.max(0, images.length - 1));
-  const currentSrc = images[currentIdx] || "";
+function useInViewOnce(options?: IntersectionObserverInit) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [seen, setSeen] = useState(false);
 
   useEffect(() => {
-    setIdx((p) => {
-      const max = Math.max(0, images.length - 1);
-      return Math.min(p, max);
-    });
-  }, [images.length]);
+    if (seen) return;
+    const el = ref.current;
+    if (!el) return;
 
-  const prev = () => {
-    if (!images.length) return;
-    setIdx((p) => (p - 1 + images.length) % images.length);
-  };
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting) setSeen(true);
+      },
+      { threshold: 0.35, ...options }
+    );
 
-  const next = () => {
-    if (!images.length) return;
-    setIdx((p) => (p + 1) % images.length);
-  };
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [seen, options]);
 
-  // ✅ Altura: calza con la columna de texto, con clamp para no explotar
-  useEffect(() => {
-    if (forcedHeight != null) {
-      setSyncedHeightPx(null);
-      return;
-    }
+  return { ref, seen };
+}
 
-    const wrapEl = wrapRef.current;
-    if (!wrapEl) return;
-
-    const clamp = (n: number, a: number, b: number) =>
-      Math.max(a, Math.min(b, n));
-
-    const findTextColumn = () => {
-      let el: HTMLElement | null = wrapEl;
-
-      for (let k = 0; k < 12 && el; k++) {
-        const p = el.parentElement as HTMLElement | null;
-        if (!p) break;
-
-        if (p.children && p.children.length >= 2) {
-          const first = p.children[0] as HTMLElement | undefined; // texto
-          const second = p.children[1] as HTMLElement | undefined; // galería
-
-          if (
-            second &&
-            second.contains(wrapEl) &&
-            first &&
-            !first.contains(wrapEl)
-          ) {
-            return first;
-          }
-        }
-
-        el = p;
-      }
-
-      return null;
-    };
-
-    const textEl = findTextColumn();
-    if (!textEl) return;
-
-    const compute = () => {
-      const h = textEl.getBoundingClientRect().height;
-      const minH = isMd ? 300 : 240;
-      const maxH = isMd ? 680 : 560;
-      setSyncedHeightPx(clamp(Math.round(h), minH, maxH));
-    };
-
-    compute();
-
-    const ro = new ResizeObserver(() => compute());
-    ro.observe(textEl);
-
-    const onResize = () => compute();
-    window.addEventListener("resize", onResize);
-
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", onResize);
-    };
-  }, [forcedHeight, isMd]);
-
-  const wrapH: string | number =
-    forcedHeight != null
-      ? typeof forcedHeight === "number"
-        ? `${forcedHeight}px`
-        : forcedHeight
-      : syncedHeightPx != null
-      ? `${syncedHeightPx}px`
-      : isMd
-      ? "420px"
-      : "340px";
-
-  const arrowBtnBase: React.CSSProperties = {
-    position: "absolute",
-    top: "50%",
-    transform: "translateY(-50%)",
-    width: isMd ? 44 : 40,
-    height: isMd ? 44 : 40,
-    borderRadius: 999,
-    border: `1px solid ${BRAND.line}`,
-    background: "rgba(255,255,255,0.92)",
-    boxShadow: "0 8px 24px rgba(15,23,42,0.10)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    zIndex: 5,
-    userSelect: "none",
-  };
+function GreenCheck({ show }: { show: boolean }) {
+  const prefersReduced = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const transition = prefersReduced
+    ? "none"
+    : "opacity 220ms ease, transform 220ms ease, background 220ms ease";
 
   return (
     <div
-      ref={wrapRef}
+      aria-hidden="true"
       style={{
-        width: "100%",
-        height: wrapH,
-        borderRadius: 18,
-        overflow: "hidden",
-        background: BRAND.panel,
+        width: 34,
+        height: 34,
+        borderRadius: 12,
         border: `1px solid ${BRAND.line}`,
-        position: "relative",
-        alignSelf: "flex-start",
+        background: show ? "rgba(22,163,74,0.10)" : "white",
+        display: "grid",
+        placeItems: "center",
+        transform: show ? "scale(1)" : "scale(0.88)",
+        opacity: show ? 1 : 0,
+        transition,
+        flex: "0 0 auto",
       }}
     >
-      <button
-        type="button"
-        onClick={() => currentSrc && setLightboxOpen(true)}
+      <span
         style={{
-          all: "unset",
-          display: "block",
-          width: "100%",
-          height: "100%",
-          cursor: currentSrc ? "zoom-in" : "default",
+          fontSize: 18,
+          fontWeight: 900,
+          color: "#16a34a",
+          transform: show ? "translateY(0)" : "translateY(2px)",
+          transition: prefersReduced ? "none" : "transform 220ms ease",
         }}
-        aria-label="Abrir imagen"
       >
-        {currentSrc ? (
-          <img
-            src={currentSrc}
-            alt={alt}
-            loading="eager"
-            style={{
-              width: "100%",
-              height: "100%",
-              display: "block",
-              objectFit: "cover",
-            }}
-          />
-        ) : (
-          <div style={{ width: "100%", height: "100%" }} />
-        )}
-      </button>
-
-      {hasMany && (
-        <>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              prev();
-            }}
-            style={{ ...arrowBtnBase, left: 14 }}
-            aria-label="Anterior"
-          >
-            <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>
-              ‹
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              next();
-            }}
-            style={{ ...arrowBtnBase, right: 14 }}
-            aria-label="Siguiente"
-          >
-            <span style={{ fontSize: 18, lineHeight: 1, color: BRAND.ink }}>
-              ›
-            </span>
-          </button>
-
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 12,
-              display: "flex",
-              gap: 6,
-              justifyContent: "center",
-              zIndex: 5,
-              pointerEvents: "none",
-            }}
-          >
-            {images.map((_: string, i: number) => (
-              <span
-                key={i}
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: 999,
-                  background:
-                    i === currentIdx ? BRAND.primary : "rgba(15,23,42,0.25)",
-                }}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      <ImageLightbox
-        open={lightboxOpen}
-        src={currentSrc}
-        alt={alt}
-        onClose={() => setLightboxOpen(false)}
-      />
+        ✓
+      </span>
     </div>
   );
 }
 
-/* =========================================================
-   ROUTE UX
-========================================================= */
-function ScrollToTopOnRouteChange() {
-  const loc = useLocation();
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" as any });
-  }, [loc.pathname]);
-  return null;
+function QualityStepRow({
+  step,
+}: {
+  step: { n: string; t: Bilingual; d: Bilingual };
+}) {
+  const { ref, seen } = useInViewOnce();
+  const { lang } = useLang();
+  const { isMd } = useBreakpoints();
+
+  const stepTitleSize = isMd ? 16 : 17; // antes 14
+  const stepDescSize = isMd ? 16 : 17;  // antes 14
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        border: `1px solid ${BRAND.line}`,
+        borderRadius: 18,
+        padding: 14,
+        background: "white",
+        display: "flex",
+        gap: 12,
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+      }}
+    >
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start", minWidth: 0 }}>
+        <div
+          style={{
+            minWidth: 44,
+            height: 44,
+            borderRadius: 14,
+            background: BRAND.primary,
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 900,
+            fontSize: 13,
+          }}
+        >
+          {step.n}
+        </div>
+
+        <div style={{ paddingTop: 2, minWidth: 0 }}>
+          <div style={{ fontSize: stepTitleSize, fontWeight: 900, color: BRAND.primary }}>
+            {pick(step.t, lang)}
+          </div>
+
+          <div style={{ marginTop: 6, fontSize: stepDescSize, lineHeight: 1.75, color: "#334155" }}>
+            {pick(step.d, lang)}
+          </div>
+        </div>
+      </div>
+
+      <GreenCheck show={seen} />
+    </div>
+  );
 }
 
 /* =========================================================
@@ -685,6 +894,11 @@ export default function App() {
 }
 
 function AppShell() {
+  // ✅ Control global tipo “zoom navegador”
+  // 0.80 = como el zoom 80% en Chrome
+  // 0.85–0.90 = más conservador
+  const UI_SCALE = 0.80;
+
   return (
     <div
       style={{
@@ -713,16 +927,21 @@ function AppShell() {
           font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
           line-height: 1.6;
 
-          /* ✅ Global UI scale */
+          /* ✅ Global UI scale (Chrome/Safari/Edge) */
           zoom: ${UI_SCALE};
+
+          /* ✅ Compensación del “zoom” para que no quede margen raro */
           zoom-origin: top center;
         }
 
+        /* ✅ Mantén assets fluidos */
         p { margin: 0; }
         a { color: inherit; }
         button, input, textarea, select { font: inherit; }
         img, video, canvas, svg { max-width: 100%; height: auto; }
 
+        /* ✅ En mobile NO aplicamos scale (si quieres, lo podemos dejar igual)
+           Esto evita que en pantallas chicas quede demasiado pequeño */
         @media (max-width: 720px) {
           body { zoom: 1; }
         }
@@ -758,6 +977,7 @@ function AppShell() {
     </div>
   );
 }
+
 
 
 /* =========================================================
