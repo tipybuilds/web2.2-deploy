@@ -1034,180 +1034,89 @@ export default function App() {
 }
 
 function AppShell() {
-  // ✅ PREMISA OFICIAL — escala global 80%
-  const UI_SCALE = 0.8;
-
-  const scaledW = `calc(100% / ${UI_SCALE})`;
-  const scaledH = `calc(100vh / ${UI_SCALE})`;
-
-  React.useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-
-    const prevHtmlOverflowX = html.style.overflowX;
-    const prevBodyOverflowX = body.style.overflowX;
-    const prevBodyMargin = body.style.margin;
-
-    html.style.overflowX = "hidden";
-    body.style.overflowX = "hidden";
-    body.style.margin = "0";
-
-    return () => {
-      html.style.overflowX = prevHtmlOverflowX;
-      body.style.overflowX = prevBodyOverflowX;
-      body.style.margin = prevBodyMargin;
-    };
-  }, []);
+  // ✅ Control global tipo “zoom navegador”
+  // 0.80 = como el zoom 80% en Chrome
+  // 0.85–0.90 = más conservador
+  const UI_SCALE = 0.80;
 
   return (
     <div
       style={{
-        width: "100%",
-        minHeight: "100vh",
         background: BRAND.bg,
         color: BRAND.ink,
-        overflowX: "hidden",
+        minHeight: "100vh",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      {/* Wrapper A: centra, sin transforms */}
-      <div
-        style={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          overflowX: "hidden",
-        }}
-      >
-        {/* Wrapper B: lienzo “inflado” que luego se escala */}
-        <div
-          style={{
-            width: scaledW, // 125% cuando scale=0.8
-            minHeight: scaledH,
-            transform: `scale(${UI_SCALE})`,
-            transformOrigin: "top center", // clave para que no se vaya a un lado
-          }}
-        >
-          <div
-            style={{
-              minHeight: scaledH,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <SiteHeader />
+      <style>{`
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body, #root { height: 100%; width: 100%; }
 
-            <main style={{ width: "100%", flex: "1 1 auto" }}>
-              <ScrollToTopOnRouteChange />
+        html {
+          -webkit-text-size-adjust: 100%;
+          text-rendering: optimizeLegibility;
+        }
 
-              <Routes>
-                <Route path="/" element={<Home />} />
+        body {
+          margin: 0;
+          overflow-x: hidden;
+          background: ${BRAND.bg};
+          color: ${BRAND.ink};
+          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+          line-height: 1.6;
 
-                <Route
-                  path="/acuicola"
-                  element={<DivisionOverview divisionKey="acuicola" />}
-                />
-                <Route
-                  path="/acuicola/:productKey"
-                  element={<ProductDetail divisionKey="acuicola" />}
-                />
+          /* ✅ Global UI scale (Chrome/Safari/Edge) */
+          zoom: ${UI_SCALE};
 
-                <Route
-                  path="/agro"
-                  element={<DivisionOverview divisionKey="agro" />}
-                />
-                <Route
-                  path="/agro/:productKey"
-                  element={<ProductDetail divisionKey="agro" />}
-                />
+          /* ✅ Compensación del “zoom” para que no quede margen raro */
+          zoom-origin: top center;
+        }
 
-                <Route
-                  path="/packaging"
-                  element={<DivisionOverview divisionKey="packaging" />}
-                />
-                <Route
-                  path="/packaging/:productKey"
-                  element={<ProductDetail divisionKey="packaging" />}
-                />
+        /* ✅ Mantén assets fluidos */
+        p { margin: 0; }
+        a { color: inherit; }
+        button, input, textarea, select { font: inherit; }
+        img, video, canvas, svg { max-width: 100%; height: auto; }
 
-                <Route
-                  path="/transporte"
-                  element={<DivisionOverview divisionKey="transporte" />}
-                />
+        /* ✅ En mobile NO aplicamos scale (si quieres, lo podemos dejar igual)
+           Esto evita que en pantallas chicas quede demasiado pequeño */
+        @media (max-width: 720px) {
+          body { zoom: 1; }
+        }
+      `}</style>
 
-                <Route path="/calidad" element={<Calidad />} />
-                <Route path="/nosotros" element={<Nosotros />} />
-                <Route path="/contacto" element={<Contacto />} />
+      <SiteHeader />
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
+      <main id="content" style={{ width: "100%", flex: "1 0 auto" }}>
+        <ScrollToTopOnRouteChange />
+        <Routes>
+          <Route path="/" element={<Home />} />
 
-            <footer
-              style={{
-                marginTop: "auto",
-                flex: "0 0 auto",
-                borderTop: `1px solid ${BRAND.lineSoft}`,
-                background: BRAND.panel,
-              }}
-            >
-              <div
-                style={{
-                  maxWidth: CONTAINER_MAX_SCALED,
-                  margin: "0 auto",
-                  padding: "18px 20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                }}
-              >
-                <div style={{ fontSize: 12, color: BRAND.muted }}>
-                  © {new Date().getFullYear()} Tipy Town.
-                </div>
+          <Route path="/acuicola" element={<DivisionOverview divisionKey="acuicola" />} />
+          <Route path="/acuicola/:productKey" element={<ProductDetail divisionKey="acuicola" />} />
 
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <a
-                    href="/contacto"
-                    style={{
-                      fontSize: 12,
-                      color: BRAND.primary,
-                      textDecoration: "none",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Contacto
-                  </a>
+          <Route path="/agro" element={<DivisionOverview divisionKey="agro" />} />
+          <Route path="/agro/:productKey" element={<ProductDetail divisionKey="agro" />} />
 
-                  <a
-                    href="https://www.linkedin.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 8,
-                      border: `1px solid ${BRAND.lineSoft}`,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      textDecoration: "none",
-                      color: BRAND.primary,
-                      background: "#fff",
-                    }}
-                    aria-label="LinkedIn"
-                  >
-                    in
-                  </a>
-                </div>
-              </div>
-            </footer>
-          </div>
-        </div>
-      </div>
+          <Route path="/packaging" element={<DivisionOverview divisionKey="packaging" />} />
+          <Route path="/packaging/:productKey" element={<ProductDetail divisionKey="packaging" />} />
+
+          <Route path="/transporte" element={<DivisionOverview divisionKey="transporte" />} />
+
+          <Route path="/calidad" element={<Calidad />} />
+          <Route path="/nosotros" element={<Nosotros />} />
+          <Route path="/contacto" element={<Contacto />} />
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+
+      <SiteFooter />
     </div>
   );
 }
-
 
 
 
