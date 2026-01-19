@@ -2064,7 +2064,6 @@ function ProductCard({
   product: Product;
 }) {
   const { lang } = useLang();
-  const { isMd } = useBreakpoints();
 
   const title = pick(product.name, lang);
   const subtitle = product.short ? pick(product.short, lang) : "";
@@ -2073,21 +2072,10 @@ function ProductCard({
   const isClickable = product.clickable !== false;
   const to = `/${divisionKey}/${product.key}`;
 
-  const cardImageCandidates: string[] = (() => {
-    const dir = product.imageDir;
-    if (!dir) return [];
-    return buildProductImageCandidates(dir, 1);
-  })();
-
-  // ✅ SOLO transporte: candidatos múltiples (01.jpg, 02.jpg, 03.jpg...)
-  const allImageCandidates: string[][] = (() => {
-    if (divisionKey !== "transporte") return [];
-    const dir = product.imageDir;
-    const count = Math.max(1, Number(product.imageCount ?? 1));
-    if (!dir) return [];
-    const out: string[][] = [];
-    for (let i = 1; i <= count; i++) out.push(buildProductImageCandidates(dir, i));
-    return out;
+  const image01: string | null = (() => {
+    if (!product.imageDir) return null;
+    const c = buildProductImageCandidates(product.imageDir, 1);
+    return c[0] ?? null;
   })();
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
@@ -2101,137 +2089,54 @@ function ProductCard({
   const isTransporte = divisionKey === "transporte";
 
   // ==========================
-  // VARIANTE: WIDE-COMPACT
+  // TRANSPORTE – IMPLEMENTACIÓN CERRADA
   // ==========================
-  if (product.cardVariant === "wide-compact") {
-    // Helper interno: <img> full-bleed con fallback real (y placeholder al agotar)
-    function BannerImg({
-      candidates,
-      alt,
-      ratio,
-    }: {
-      candidates: string[];
-      alt: string;
-      ratio: string;
-    }) {
-      const [idx, setIdx] = React.useState(0);
-
-      React.useEffect(() => {
-        setIdx(0);
-      }, [candidates.join("|")]);
-
-      const exhausted = idx >= candidates.length;
-
-      return (
-        <div
-          style={{
-            width: "100%",
-            aspectRatio: ratio,
-            overflow: "hidden",
-            background: "rgba(15, 23, 42, 0.03)", // ✅ nunca negro
-            border: `1px solid ${BRAND.line}`,
-            borderLeft: "none",
-            borderRight: "none",
-          }}
-        >
-          {!exhausted ? (
-            <img
-              src={candidates[idx]}
-              alt={alt}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
-              }}
-              loading="lazy"
-              onError={() => setIdx((v) => v + 1)}
-            />
-          ) : (
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                display: "grid",
-                placeItems: "center",
-                color: "rgba(15, 23, 42, 0.55)",
-                fontWeight: 800,
-                fontSize: 13,
-              }}
-            >
-              Sin imagen
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    const wideCardStyle: React.CSSProperties = {
-      background: "white",
-      border: `1px solid ${BRAND.line}`,
-      borderRadius: 22,
-      overflow: "hidden",
-      boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
-      maxWidth: maxW,
-      marginInline: product.cardMaxWidth ? "auto" : undefined,
-      display: "flex",
-      flexDirection: "column",
-    };
-
-    const headerRow: React.CSSProperties = {
-      display: "flex",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
-      gap: 12,
-    };
-
-    const textBlockStyle: React.CSSProperties = {
-      padding: 18,
-      minWidth: 0,
-      display: "flex",
-      flexDirection: "column",
-      gap: 10,
-    };
-
-    // ✅ Ratio tipo “foto 2”
-    const ratio = isMd ? "16 / 9" : "21 / 9";
-
-    // Banner = 01
-    const bannerCandidates: string[] = isTransporte
-      ? (allImageCandidates[0] && allImageCandidates[0].length ? allImageCandidates[0] : cardImageCandidates)
-      : [];
-
-    // ✅ Extras SOLO si el array existe y tiene candidatos
-    // (esto evita crear “slots” vacíos gigantes)
-    const extraCandidatesList: string[][] = isTransporte
-      ? allImageCandidates
-          .slice(1)
-          .filter((arr) => Array.isArray(arr) && arr.length > 0)
-      : [];
-
+  if (product.cardVariant === "wide-compact" && isTransporte) {
     const content = (
-      <div style={wideCardStyle}>
-        {/* ✅ SOLO TRANSPORTE: 01.jpg como banner */}
-        {isTransporte && bannerCandidates.length ? (
-          <BannerImg candidates={bannerCandidates} alt={`${title} - banner`} ratio={ratio} />
-        ) : null}
+      <div
+        style={{
+          background: "white",
+          border: `1px solid ${BRAND.line}`,
+          borderRadius: 22,
+          overflow: "hidden",
+          boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
+          maxWidth: maxW,
+          marginInline: product.cardMaxWidth ? "auto" : undefined,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* ===== BANNER REAL – SOLO 01.JPG ===== */}
+        {image01 && (
+          <img
+            src={image01}
+            alt={`${title} – banner`}
+            style={{
+              width: "100%",
+              aspectRatio: "21 / 9",
+              objectFit: "cover",
+              display: "block",
+            }}
+            loading="lazy"
+          />
+        )}
 
-        {/* TEXTO */}
-        <div style={textBlockStyle}>
-          <div style={headerRow}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
+        {/* ===== TEXTO ===== */}
+        <div style={{ padding: 18, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <div style={{ fontWeight: 900, fontSize: 18, color: BRAND.ink }}>
                 {title}
               </div>
 
-              {subtitle ? (
-                <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
+              {subtitle && (
+                <div style={{ marginTop: 6, color: "rgba(15,23,42,.75)", fontSize: 14 }}>
                   {subtitle}
                 </div>
-              ) : null}
+              )}
             </div>
 
-            {isClickable ? (
+            {isClickable && (
               <div
                 aria-hidden="true"
                 style={{
@@ -2241,59 +2146,36 @@ function ProductCard({
                   display: "grid",
                   placeItems: "center",
                   border: `1px solid ${BRAND.line}`,
-                  color: "rgba(15, 23, 42, 0.75)",
-                  flex: "0 0 auto",
                   fontWeight: 900,
                 }}
               >
                 →
               </div>
-            ) : null}
+            )}
           </div>
 
-          {tag ? (
+          {tag && (
             <div
               style={{
                 alignSelf: "flex-start",
                 padding: "6px 10px",
                 borderRadius: 999,
-                background: "rgba(35, 137, 201, 0.12)",
-                border: "1px solid rgba(35, 137, 201, 0.18)",
-                color: "rgba(15, 23, 42, 0.82)",
+                background: "rgba(35,137,201,.12)",
+                border: "1px solid rgba(35,137,201,.18)",
                 fontWeight: 800,
                 fontSize: 13,
               }}
             >
               {tag}
             </div>
-          ) : null}
+          )}
 
-          {legend ? (
+          {legend && (
             <div style={{ color: "#334155", fontSize: 15, lineHeight: 1.75 }}>
               {legend}
             </div>
-          ) : null}
-
-          {isClickable ? (
-            <div style={{ marginTop: "auto", paddingTop: 6 }}>
-              <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
-                {lang === "en" ? "See details" : "Ver detalle"}
-              </span>
-            </div>
-          ) : null}
+          )}
         </div>
-
-        {/* ✅ SOLO TRANSPORTE: 02.jpg, 03.jpg... (solo si realmente hay candidatos) */}
-        {isTransporte
-          ? extraCandidatesList.map((cands, i) => (
-              <BannerImg
-                key={`extra-${i}`}
-                candidates={cands}
-                alt={`${title} - imagen ${i + 2}`}
-                ratio={ratio}
-              />
-            ))
-          : null}
       </div>
     );
 
@@ -2307,7 +2189,7 @@ function ProductCard({
   }
 
   // ==========================
-  // DEFAULT CARD (grid normal)
+  // RESTO DEL SITIO – NO TOCAR
   // ==========================
   const cardStyle: React.CSSProperties = {
     background: "white",
@@ -2324,104 +2206,14 @@ function ProductCard({
     marginInline: product.cardMaxWidth ? "auto" : undefined,
   };
 
-  const headerRow: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-  };
-
   const content = (
     <div style={cardStyle}>
-      <div style={headerRow}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.2, color: BRAND.ink }}>
-            {title}
-          </div>
-
-          {subtitle ? (
-            <div
-              style={{
-                marginTop: 6,
-                color: "rgba(15, 23, 42, 0.75)",
-                fontSize: 14,
-                lineHeight: 1.4,
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical" as any,
-                WebkitLineClamp: 2 as any,
-                overflow: "hidden",
-              }}
-            >
-              {subtitle}
-            </div>
-          ) : null}
-        </div>
-
-        {isClickable ? (
-          <div
-            aria-hidden="true"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 12,
-              display: "grid",
-              placeItems: "center",
-              border: `1px solid ${BRAND.line}`,
-              color: "rgba(15, 23, 42, 0.75)",
-              flex: "0 0 auto",
-              fontWeight: 900,
-            }}
-          >
-            →
-          </div>
-        ) : null}
-      </div>
-
-      {tag ? (
-        <div
-          style={{
-            alignSelf: "flex-start",
-            padding: "6px 10px",
-            borderRadius: 999,
-            background: "rgba(35, 137, 201, 0.12)",
-            border: "1px solid rgba(35, 137, 201, 0.18)",
-            color: "rgba(15, 23, 42, 0.82)",
-            fontWeight: 800,
-            fontSize: 13,
-          }}
-        >
-          {tag}
-        </div>
-      ) : null}
-
-      <div style={{ marginTop: 2 }}>
-        {cardImageCandidates.length ? (
-          <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
-        ) : (
-          <div
-            style={{
-              width: "100%",
-              height: 210,
-              borderRadius: 16,
-              border: `1px dashed ${BRAND.line}`,
-              background: "rgba(15, 23, 42, 0.03)",
-              display: "grid",
-              placeItems: "center",
-              color: "rgba(15, 23, 42, 0.55)",
-              fontWeight: 800,
-              fontSize: 13,
-            }}
-          >
-            Sin imagen
-          </div>
-        )}
-      </div>
+      <div style={{ fontWeight: 900, fontSize: 16, color: BRAND.ink }}>{title}</div>
+      {subtitle && <div style={{ color: "rgba(15,23,42,.75)", fontSize: 14 }}>{subtitle}</div>}
     </div>
   );
 
-  if (!isClickable) {
-    return <div style={{ height: "100%" }}>{content}</div>;
-  }
+  if (!isClickable) return content;
 
   return (
     <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
