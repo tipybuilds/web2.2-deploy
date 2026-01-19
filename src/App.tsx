@@ -137,11 +137,11 @@ const LangCtx = createContext<{ lang: Lang; toggleLang: () => void } | null>(
 function ProductGallery({
   publicFolder,
   alt,
-  maxNumbered = 6,       // 01..06
-  includeHero = false,   // ✅ productos: por defecto NO hero
-  maxH = 560,            // ✅ límite visual para que no se descontrole (antes era “acotado”)
+  maxNumbered = 6,
+  includeHero = false,
+  maxH = 420, // ✅ límite razonable (como “antes”)
 }: {
-  publicFolder: string;  // Ej: "/images/divisions/acuicola/products/manga"
+  publicFolder: string;
   alt: string;
   maxNumbered?: number;
   includeHero?: boolean;
@@ -151,10 +151,14 @@ function ProductGallery({
   const [loading, setLoading] = React.useState(true);
   const [idx, setIdx] = React.useState(0);
 
+  // ✅ Lightbox (expansible)
+  const [open, setOpen] = React.useState(false);
+
   React.useEffect(() => {
     let alive = true;
     setLoading(true);
     setIdx(0);
+    setOpen(false);
 
     resolveProductGalleryImages(publicFolder, {
       maxNumbered,
@@ -182,8 +186,26 @@ function ProductGallery({
   const total = imgs.length;
   const canNav = total > 1;
 
-  const prev = () => setIdx((v) => (total ? (v - 1 + total) % total : 0));
-  const next = () => setIdx((v) => (total ? (v + 1) % total : 0));
+  const prev = React.useCallback(() => {
+    setIdx((v) => (total ? (v - 1 + total) % total : 0));
+  }, [total]);
+
+  const next = React.useCallback(() => {
+    setIdx((v) => (total ? (v + 1) % total : 0));
+  }, [total]);
+
+  React.useEffect(() => {
+    if (!open) return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, prev, next]);
 
   const shellStyle: React.CSSProperties = {
     width: "100%",
@@ -218,7 +240,7 @@ function ProductGallery({
   const btnBase: React.CSSProperties = {
     padding: "8px 12px",
     borderRadius: 12,
-    border: `1px solid ${BRAND.line}`,
+    border: `1px solid rgba(2, 6, 23, 0.10)`,
     fontWeight: 900,
     fontSize: 13,
     lineHeight: 1,
@@ -229,14 +251,12 @@ function ProductGallery({
     WebkitUserSelect: "none",
   };
 
-  // ✅ Diferenciación real (no blanco sobre blanco)
   const btnActive: React.CSSProperties = {
     ...btnBase,
     background: BRAND.primary,
     color: "#fff",
-    border: `1px solid rgba(2, 6, 23, 0.10)`,
-    boxShadow: "0 8px 18px rgba(52, 62, 117, 0.25)",
     cursor: "pointer",
+    boxShadow: "0 8px 18px rgba(52, 62, 117, 0.25)",
   };
 
   const btnDisabled: React.CSSProperties = {
@@ -248,8 +268,7 @@ function ProductGallery({
 
   const mediaFrameStyle: React.CSSProperties = {
     width: "100%",
-    maxHeight: maxH,                 // ✅ límite duro
-    height: maxH,                    // ✅ mantiene el “formato” sin crecer infinito
+    height: maxH,
     display: "grid",
     placeItems: "center",
     background: "rgba(15, 23, 42, 0.03)",
@@ -291,54 +310,123 @@ function ProductGallery({
   }
 
   return (
-    <div style={shellStyle}>
-      {/* ✅ Flechas ARRIBA (fuera de la foto) + contraste real */}
-      <div style={topBarStyle}>
-        <div style={chipStyle}>
-          {idx + 1}/{total}
+    <>
+      <div style={shellStyle}>
+        {/* ✅ Flechas ARRIBA, visibles */}
+        <div style={topBarStyle}>
+          <div style={chipStyle}>
+            {idx + 1}/{total}
+          </div>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" onClick={prev} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+              ← <span style={{ opacity: 0.95 }}>Anterior</span>
+            </button>
+
+            <button type="button" onClick={next} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+              <span style={{ opacity: 0.95 }}>Siguiente</span> →
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            onClick={prev}
-            disabled={!canNav}
-            style={canNav ? btnActive : btnDisabled}
-            aria-label="Anterior"
-            title="Anterior"
-          >
-            ← <span style={{ opacity: 0.95 }}>Anterior</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={next}
-            disabled={!canNav}
-            style={canNav ? btnActive : btnDisabled}
-            aria-label="Siguiente"
-            title="Siguiente"
-          >
-            <span style={{ opacity: 0.95 }}>Siguiente</span> →
-          </button>
+        {/* ✅ Imagen acotada + click abre lightbox */}
+        <div style={mediaFrameStyle}>
+          <img
+            src={imgs[idx]}
+            alt={alt}
+            loading="eager"
+            decoding="async"
+            onClick={() => setOpen(true)}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover", // ✅ se ve “pro” y no queda aire raro
+              display: "block",
+              cursor: "zoom-in",
+            }}
+          />
         </div>
       </div>
 
-      {/* ✅ Foto con límite (antes estaba “acotado”), sin desbordarse */}
-      <div style={mediaFrameStyle}>
-        <img
-          src={imgs[idx]}
-          alt={alt}
-          loading="eager"
-          decoding="async"
+      {/* ✅ Lightbox expansible */}
+      {open ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setOpen(false)}
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",     // ✅ no “zoom” agresivo; queda encuadrado
-            display: "block",
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(2, 6, 23, 0.78)",
+            display: "grid",
+            placeItems: "center",
+            padding: 18,
           }}
-        />
-      </div>
-    </div>
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(1100px, 96vw)",
+              borderRadius: 16,
+              overflow: "hidden",
+              background: "#0b1220",
+              border: "1px solid rgba(255,255,255,0.10)",
+              boxShadow: "0 30px 90px rgba(0,0,0,0.45)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 10,
+                padding: 10,
+                background: "rgba(255,255,255,0.06)",
+                borderBottom: "1px solid rgba(255,255,255,0.10)",
+              }}
+            >
+              <div style={{ color: "rgba(255,255,255,0.78)", fontWeight: 900, fontSize: 13 }}>
+                {idx + 1}/{total}
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" onClick={prev} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                  ← Anterior
+                </button>
+                <button type="button" onClick={next} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                  Siguiente →
+                </button>
+                <button type="button" onClick={() => setOpen(false)} style={btnActive}>
+                  Cerrar ✕
+                </button>
+              </div>
+            </div>
+
+            <div
+              style={{
+                width: "100%",
+                height: "min(74vh, 780px)",
+                display: "grid",
+                placeItems: "center",
+                background: "#0b1220",
+              }}
+            >
+              <img
+                src={imgs[idx]}
+                alt={alt}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -939,11 +1027,6 @@ export default function App() {
 }
 
 function AppShell() {
-  // ✅ Control global tipo “zoom navegador”
-  // 0.80 = como el zoom 80% en Chrome
-  // 0.85–0.90 = más conservador
-  const UI_SCALE = 0.80;
-
   return (
     <div
       style={{
@@ -972,28 +1055,20 @@ function AppShell() {
           font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
           line-height: 1.6;
 
-          /* ✅ Global UI scale (Chrome/Safari/Edge) */
-          zoom: ${UI_SCALE};
-
-        
+          /* ✅ Importante: sin zoom global para evitar “vacíos” y descuadres de altura */
+          zoom: 1;
         }
 
-        /* ✅ Mantén assets fluidos */
         p { margin: 0; }
         a { color: inherit; }
         button, input, textarea, select { font: inherit; }
         img, video, canvas, svg { max-width: 100%; height: auto; }
-
-        /* ✅ En mobile NO aplicamos scale (si quieres, lo podemos dejar igual)
-           Esto evita que en pantallas chicas quede demasiado pequeño */
-        @media (max-width: 720px) {
-          body { zoom: 1; }
-        }
       `}</style>
 
       <SiteHeader />
 
-      <main id="content" style={{ width: "100%", flex: "1 0 auto" }}>
+      {/* ✅ SIN sticky-footer: esto elimina el “vacío” enorme antes del footer */}
+      <main id="content" style={{ width: "100%" }}>
         <ScrollToTopOnRouteChange />
         <Routes>
           <Route path="/" element={<Home />} />
