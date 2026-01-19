@@ -2199,6 +2199,8 @@ function ProductCard({
   const { lang } = useLang();
   const { isMd } = useBreakpoints();
 
+  const [hover, setHover] = React.useState(false);
+
   const title = pick(product.name, lang);
   const subtitle = product.short ? pick(product.short, lang) : "";
   const tag = product.badges?.[0] ? pick(product.badges[0], lang) : undefined;
@@ -2222,11 +2224,26 @@ function ProductCard({
 
   const isTransporte = divisionKey === "transporte";
 
+  // ✅ Hover borde negro SOLO para cards clickeables (excepto banner Transporte)
+  const shouldHoverBorder =
+    isClickable && !(isTransporte && product.cardVariant === "wide-compact");
+
+  const onEnter = shouldHoverBorder ? () => setHover(true) : undefined;
+  const onLeave = shouldHoverBorder ? () => setHover(false) : undefined;
+
+  const hoverBorderColor = hover ? "#0B1220" : BRAND.line;
+  const hoverShadowWide = hover
+    ? "0 10px 32px rgba(15, 23, 42, 0.12)"
+    : "0 8px 26px rgba(15, 23, 42, 0.08)";
+  const hoverShadowDefault = hover
+    ? "0 10px 28px rgba(15, 23, 42, 0.10)"
+    : "0 6px 24px rgba(15, 23, 42, 0.06)";
+
   /* =========================================================
      VARIANTE: WIDE-COMPACT
   ========================================================= */
   if (product.cardVariant === "wide-compact") {
-    // === TRANSPORTE: BANNER FULL WIDTH (como tu referencia) ===
+    // === TRANSPORTE: BANNER FULL WIDTH (NO TOCAR) ===
     if (isTransporte) {
       const H = isMd ? 260 : 320;
 
@@ -2236,9 +2253,9 @@ function ProductCard({
         borderRadius: 22,
         overflow: "hidden",
         boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
-        width: "100%", // ✅ full ancho del contenedor
-        maxWidth: undefined, // ✅ no limitar
-        marginInline: undefined, // ✅ no centrar con maxW
+        width: "100%",
+        maxWidth: undefined,
+        marginInline: undefined,
         display: "flex",
         flexDirection: "column",
         transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
@@ -2251,11 +2268,10 @@ function ProductCard({
         display: "flex",
         flexDirection: "column",
         gap: 6,
-        minHeight: 84, // ✅ evita “bloque vacío” raro
+        minHeight: 84,
       };
 
-      const oneLiner =
-        (legend || subtitle || "").trim();
+      const oneLiner = (legend || subtitle || "").trim();
 
       const content = (
         <div
@@ -2296,15 +2312,15 @@ function ProductCard({
       );
     }
 
-    // === RESTO (sin cambios de layout) ===
+    // === RESTO: WIDE-COMPACT CON HOVER BORDE NEGRO ===
     const H = isMd ? 240 : 320;
 
     const wideCardStyle: React.CSSProperties = {
       background: "white",
-      border: `1px solid ${BRAND.line}`,
+      border: `1px solid ${hoverBorderColor}`, // ✅ hover
       borderRadius: 22,
       overflow: "hidden",
-      boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
+      boxShadow: hoverShadowWide, // ✅ hover
       maxWidth: maxW,
       marginInline: product.cardMaxWidth ? "auto" : undefined,
       display: "flex",
@@ -2347,6 +2363,8 @@ function ProductCard({
       <div
         className={`tt-productcard ${isClickable ? "is-clickable" : ""}`}
         style={wideCardStyle}
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}
       >
         <div style={topSectionStyle}>
           <div style={leftStyle}>
@@ -2427,17 +2445,17 @@ function ProductCard({
   }
 
   /* =========================================================
-     DEFAULT CARD (grid normal)
+     DEFAULT CARD (grid normal) CON HOVER BORDE NEGRO
   ========================================================= */
   const cardStyle: React.CSSProperties = {
     background: "white",
-    border: `1px solid ${BRAND.line}`,
+    border: `1px solid ${hoverBorderColor}`, // ✅ hover
     borderRadius: 18,
     padding: 16,
     display: "flex",
     flexDirection: "column",
     gap: 12,
-    boxShadow: "0 6px 24px rgba(15, 23, 42, 0.06)",
+    boxShadow: hoverShadowDefault, // ✅ hover
     height: "100%",
     cursor: isClickable ? "pointer" : "default",
     maxWidth: maxW,
@@ -2456,6 +2474,8 @@ function ProductCard({
     <div
       className={`tt-productcard ${isClickable ? "is-clickable" : ""}`}
       style={cardStyle}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
     >
       <div style={headerRow}>
         <div>
@@ -2487,6 +2507,7 @@ function ProductCard({
     </Link>
   );
 }
+
 
 
 
