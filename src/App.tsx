@@ -1780,8 +1780,11 @@ function Home() {
         <div style={{ ...containerStyle(), ...sectionPad(52, 52) }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
             <div>
-              <div style={{ fontSize: 15, letterSpacing: 1.2, textTransform: "uppercase", color: BRAND.muted }}>
-                {pick(UI.divisionsLabel, lang)}
+              <div style={{ fontSize: 20, letterSpacing: 1.2, textTransform: "uppercase", color: BRAND.muted }}>
+                {pick(UI.divisionsLabel, lang)} 
+
+
+            
               </div>
               <h2 style={{ marginTop: 8, fontSize: 30, fontWeight: 350, color: BRAND.primary, letterSpacing: -0.2 }}>
                 {pick(UI.divisionsHeadline, lang)}
@@ -2041,7 +2044,7 @@ function ProductCardImage({
             placeItems: "center",
             color: "rgba(15, 23, 42, 0.55)",
             fontWeight: 800,
-            fontSize: 13,
+            fontSize: 16,
           }}
         >
           Sin imagen
@@ -2164,7 +2167,7 @@ function DivisionOverview({ divisionKey }: { divisionKey: Division["key"] }) {
             }}
           >
             <div>
-              <h2 style={{ marginTop: 0, fontSize: 20, fontWeight: 900, color: BRAND.primary }}>
+              <h2 style={{ marginTop: 0, fontSize: 24, fontWeight: 900, color: BRAND.primary }}>
                 {pick(division.productsTitle, lang)}
               </h2>
             </div>
@@ -2390,7 +2393,7 @@ function ProductCard({
           <div style={{ ...leftStyle, borderBottom: `1px solid ${BRAND.line}` }}>
             <div style={headerRow}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
+                <div style={{ fontWeight: 900, fontSize: 22, lineHeight: 1.2, color: BRAND.ink }}>
                   {title}
                 </div>
 
@@ -2431,7 +2434,7 @@ function ProductCard({
                   border: "1px solid rgba(35, 137, 201, 0.18)",
                   color: "rgba(15, 23, 42, 0.82)",
                   fontWeight: 800,
-                  fontSize: 13,
+                  fontSize: 16,
                 }}
               >
                 {tag}
@@ -2442,7 +2445,7 @@ function ProductCard({
               <div
                 style={{
                   color: "#334155",
-                  fontSize: 15,
+                  fontSize: 16,
                   lineHeight: 1.75,
                   display: "-webkit-box",
                   WebkitBoxOrient: "vertical" as any,
@@ -2456,7 +2459,7 @@ function ProductCard({
 
             {isClickable ? (
               <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
+                <span style={{ fontSize: 16, color: BRAND.muted, fontWeight: 800 }}>
                   {lang === "en" ? "See details" : "Ver detalle"}
                 </span>
               </div>
@@ -2468,12 +2471,12 @@ function ProductCard({
             <div style={leftStyle}>
               <div style={headerRow}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
+                  <div style={{ fontWeight: 900, fontSize: 22, lineHeight: 1.2, color: BRAND.ink }}>
                     {title}
                   </div>
 
                   {subtitle ? (
-                    <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
+                    <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 17, lineHeight: 1.5 }}>
                       {subtitle}
                     </div>
                   ) : null}
@@ -2509,7 +2512,7 @@ function ProductCard({
                     border: "1px solid rgba(35, 137, 201, 0.18)",
                     color: "rgba(15, 23, 42, 0.82)",
                     fontWeight: 800,
-                    fontSize: 13,
+                    fontSize: 16,
                   }}
                 >
                   {tag}
@@ -3643,7 +3646,7 @@ function AboutCarousel({
     color: "rgba(15, 23, 42, 0.75)",
     background: "rgba(255,255,255,0.92)",
     fontWeight: 900,
-    fontSize: 12,
+    fontSize: 16,
   };
 
   const controlsRow: React.CSSProperties = {
