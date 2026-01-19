@@ -1589,17 +1589,6 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
   const dir = product.imageDir || `/images/divisions/${divisionKey}/products/${product.key}`;
   const count = Math.max(1, Number(product.imageCount ?? 1));
 
-  const slides: string[][] = [];
-
-  const heroCandidates = product.heroSrc
-    ? buildHeroCandidates(product.heroSrc)
-    : buildHeroCandidates(`${dir}/hero`);
-  slides.push(heroCandidates);
-
-  for (let i = 1; i <= count; i++) {
-    slides.push(buildIndexedImageCandidates(dir, i));
-  }
-
   const heroGridStyle: React.CSSProperties = {
     ...twoColGrid(isMd, isXl),
     alignItems: "start",
@@ -1607,8 +1596,6 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
   };
 
   const titleSize = isMd ? 34 : isXl ? 52 : 44;
-
-  // ✅ +3px SOLO texto largo
   const detailBodyFont = isMd ? 17 : 18;
 
   return (
@@ -1616,6 +1603,7 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
       <section style={{ borderBottom: `1px solid ${BRAND.line}` }}>
         <div style={{ ...containerStyle(), ...sectionPad(44, 26) }}>
           <div style={heroGridStyle}>
+            {/* LEFT: texto */}
             <div style={{ minWidth: 0 }}>
               <BackToDivision divisionKey={divisionKey} />
 
@@ -1637,7 +1625,7 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
                     key={idx}
                     style={{
                       marginTop: idx === 0 ? 0 : 12,
-                      fontSize: detailBodyFont, // antes 15
+                      fontSize: detailBodyFont,
                       lineHeight: 1.78,
                       color: "#334155",
                     }}
@@ -1665,28 +1653,14 @@ function ProductDetail({ divisionKey }: { divisionKey: Division["key"] }) {
               </div>
             </div>
 
-           <div style={{ marginTop: 2 }}>
-  {Array.isArray(images) && images.length ? (
-    <ProductCardImage candidates={images[0]} alt={title} height={210} rounded={16} fit="cover" />
-  ) : (
-    <div
-      style={{
-        width: "100%",
-        height: 210,
-        borderRadius: 16,
-        border: `1px dashed ${BRAND.line}`,
-        background: "rgba(15, 23, 42, 0.03)",
-        display: "grid",
-        placeItems: "center",
-        color: "rgba(15, 23, 42, 0.55)",
-        fontWeight: 800,
-        fontSize: 13,
-      }}
-    >
-      Sin imagen
+            {/* RIGHT: galería real desde /public */}
+            <div style={{ minWidth: 0 }}>
+              <ProductGallery publicFolder={dir} alt={title} maxNumbered={count} />
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
-  )}
-</div>
   );
 }
 
