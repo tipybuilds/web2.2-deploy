@@ -2198,7 +2198,6 @@ function ProductCard({
 }) {
   const { lang } = useLang();
   const { isMd } = useBreakpoints();
-  const [isHover, setIsHover] = useState(false);
 
   const title = pick(product.name, lang);
   const subtitle = product.short ? pick(product.short, lang) : "";
@@ -2213,10 +2212,7 @@ function ProductCard({
     return buildProductImageCandidates(dir, 1);
   })();
 
-  const isTransporte = divisionKey === "transporte";
-
-  // Importante: NO limitar ni centrar ancho en Transporte.
-  const maxW = !isTransporte && product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
+  const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
   const longTextRaw =
     (product.descriptionText ? pick(product.descriptionText, lang) : "") ||
@@ -2224,30 +2220,93 @@ function ProductCard({
 
   const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
 
-  // Hover: borde negro (solo hover)
-  const hoverBorder = isClickable && isHover ? "rgba(15, 23, 42, 0.92)" : BRAND.line;
-  const hoverShadow =
-    isClickable && isHover ? "0 10px 30px rgba(15, 23, 42, 0.12)" : undefined;
+  const isTransporte = divisionKey === "transporte";
 
   /* =========================================================
      VARIANTE: WIDE-COMPACT
   ========================================================= */
   if (product.cardVariant === "wide-compact") {
-    // Mantén tu altura original (puedes ajustar después si quieres)
-    const H = isMd ? 240 : 320;
+    // === TRANSPORTE: BANNER FULL WIDTH (como tu referencia) ===
+    if (isTransporte) {
+      const H = isMd ? 260 : 320;
 
-    // ✅ Transporte: NUNCA apilar (aunque isMd sea true por UI_SCALE)
-    const stack = isMd && !isTransporte;
+      const transporteBannerStyle: React.CSSProperties = {
+        background: "white",
+        border: `1px solid ${BRAND.line}`,
+        borderRadius: 22,
+        overflow: "hidden",
+        boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
+        width: "100%", // ✅ full ancho del contenedor
+        maxWidth: undefined, // ✅ no limitar
+        marginInline: undefined, // ✅ no centrar con maxW
+        display: "flex",
+        flexDirection: "column",
+        transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+        cursor: isClickable ? "pointer" : "default",
+      };
+
+      const footerStyle: React.CSSProperties = {
+        padding: 16,
+        borderTop: `1px solid ${BRAND.line}`,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        minHeight: 84, // ✅ evita “bloque vacío” raro
+      };
+
+      const oneLiner =
+        (legend || subtitle || "").trim();
+
+      const content = (
+        <div
+          className={`tt-productcard ${isClickable ? "is-clickable" : ""}`}
+          style={transporteBannerStyle}
+        >
+          {cardImageCandidates.length ? (
+            <ProductCardImage
+              candidates={cardImageCandidates}
+              alt={title}
+              height={H}
+              rounded={0}
+              fit="cover"
+              borderless
+            />
+          ) : null}
+
+          <div style={footerStyle}>
+            <div style={{ fontWeight: 900, fontSize: 16, lineHeight: 1.2, color: BRAND.ink }}>
+              {title}
+            </div>
+
+            {oneLiner ? (
+              <div style={{ fontSize: 13, lineHeight: 1.55, color: "#475569" }}>
+                {oneLiner}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      );
+
+      if (!isClickable) return content;
+
+      return (
+        <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+          {content}
+        </Link>
+      );
+    }
+
+    // === RESTO (sin cambios de layout) ===
+    const H = isMd ? 240 : 320;
 
     const wideCardStyle: React.CSSProperties = {
       background: "white",
-      border: `1px solid ${hoverBorder}`,
+      border: `1px solid ${BRAND.line}`,
       borderRadius: 22,
       overflow: "hidden",
-      boxShadow: hoverShadow ?? "0 8px 26px rgba(15, 23, 42, 0.08)",
-      width: isTransporte ? "100%" : undefined,
+      boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
       maxWidth: maxW,
-      marginInline: !isTransporte && product.cardMaxWidth ? "auto" : undefined,
+      marginInline: product.cardMaxWidth ? "auto" : undefined,
       display: "flex",
       flexDirection: "column",
       transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
@@ -2255,9 +2314,7 @@ function ProductCard({
 
     const topSectionStyle: React.CSSProperties = {
       display: "grid",
-      gridTemplateColumns: stack
-        ? "1fr"
-        : "minmax(0, 0.95fr) minmax(0, 1.05fr)",
+      gridTemplateColumns: isMd ? "1fr" : "minmax(0, 0.95fr) minmax(0, 1.05fr)",
       alignItems: "stretch",
     };
 
@@ -2274,8 +2331,8 @@ function ProductCard({
       display: "flex",
       alignItems: "stretch",
       justifyContent: "stretch",
-      borderTop: stack ? `1px solid ${BRAND.line}` : undefined,
-      borderLeft: !stack ? `1px solid ${BRAND.line}` : undefined,
+      borderTop: isMd ? `1px solid ${BRAND.line}` : undefined,
+      borderLeft: !isMd ? `1px solid ${BRAND.line}` : undefined,
       background: "#0B1220",
     };
 
@@ -2290,8 +2347,6 @@ function ProductCard({
       <div
         className={`tt-productcard ${isClickable ? "is-clickable" : ""}`}
         style={wideCardStyle}
-        onMouseEnter={() => setIsHover(true)}
-        onMouseLeave={() => setIsHover(false)}
       >
         <div style={topSectionStyle}>
           <div style={leftStyle}>
@@ -2376,17 +2431,17 @@ function ProductCard({
   ========================================================= */
   const cardStyle: React.CSSProperties = {
     background: "white",
-    border: `1px solid ${hoverBorder}`,
+    border: `1px solid ${BRAND.line}`,
     borderRadius: 18,
     padding: 16,
     display: "flex",
     flexDirection: "column",
     gap: 12,
-    boxShadow: hoverShadow ?? "0 6px 24px rgba(15, 23, 42, 0.06)",
+    boxShadow: "0 6px 24px rgba(15, 23, 42, 0.06)",
     height: "100%",
     cursor: isClickable ? "pointer" : "default",
     maxWidth: maxW,
-    marginInline: !isTransporte && product.cardMaxWidth ? "auto" : undefined,
+    marginInline: product.cardMaxWidth ? "auto" : undefined,
     transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
   };
 
@@ -2401,8 +2456,6 @@ function ProductCard({
     <div
       className={`tt-productcard ${isClickable ? "is-clickable" : ""}`}
       style={cardStyle}
-      onMouseEnter={() => setIsHover(true)}
-      onMouseLeave={() => setIsHover(false)}
     >
       <div style={headerRow}>
         <div>
@@ -2415,7 +2468,13 @@ function ProductCard({
       {tag ? <div style={{ fontSize: 13, fontWeight: 800 }}>{tag}</div> : null}
 
       {cardImageCandidates.length ? (
-        <ProductCardImage candidates={cardImageCandidates} alt={title} height={210} rounded={16} fit="cover" />
+        <ProductCardImage
+          candidates={cardImageCandidates}
+          alt={title}
+          height={210}
+          rounded={16}
+          fit="cover"
+        />
       ) : null}
     </div>
   );
@@ -2428,6 +2487,7 @@ function ProductCard({
     </Link>
   );
 }
+
 
 
 function Calidad() {
