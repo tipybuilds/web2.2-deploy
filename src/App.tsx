@@ -139,7 +139,7 @@ function ProductGallery({
   alt,
   maxNumbered = 6,
   includeHero = false,
-  maxH = 420, // ✅ límite razonable (como “antes”)
+  maxH = 420,
 }: {
   publicFolder: string;
   alt: string;
@@ -312,7 +312,6 @@ function ProductGallery({
   return (
     <>
       <div style={shellStyle}>
-        {/* ✅ Flechas ARRIBA, visibles */}
         <div style={topBarStyle}>
           <div style={chipStyle}>
             {idx + 1}/{total}
@@ -329,7 +328,7 @@ function ProductGallery({
           </div>
         </div>
 
-        {/* ✅ Imagen acotada + click abre lightbox */}
+        {/* ✅ Zoom-out: contain (no recorta / no “zoom in”) */}
         <div style={mediaFrameStyle}>
           <img
             src={imgs[idx]}
@@ -340,7 +339,7 @@ function ProductGallery({
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover", // ✅ se ve “pro” y no queda aire raro
+              objectFit: "contain",
               display: "block",
               cursor: "zoom-in",
             }}
@@ -348,7 +347,6 @@ function ProductGallery({
         </div>
       </div>
 
-      {/* ✅ Lightbox expansible */}
       {open ? (
         <div
           role="dialog"
@@ -429,6 +427,7 @@ function ProductGallery({
     </>
   );
 }
+
 
 function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>(() => {
@@ -1031,6 +1030,9 @@ function AppShell() {
   const UI_SCALE = 0.8;
   const INV_SCALE = 1 / UI_SCALE; // 1.25
 
+  // ✅ Clave: el viewport (100vh visible) equivale a (100vh / scale) dentro del wrapper escalado
+  const SCALED_VH = `calc(100vh / ${UI_SCALE})`;
+
   return (
     <div
       style={{
@@ -1046,14 +1048,15 @@ function AppShell() {
         style={{
           transform: `scale(${UI_SCALE})`,
           transformOrigin: "top center",
-          width: `${INV_SCALE * 100}%`,     // 125%
-          minHeight: `${INV_SCALE * 100}vh`, // 125vh
+          width: `${INV_SCALE * 100}%`, // 125%
+          minHeight: SCALED_VH,
           marginInline: "auto",
         }}
       >
+        {/* ✅ IMPORTANTE: este contenedor también debe medir SCALED_VH (no 100vh) */}
         <div
           style={{
-            minHeight: "100vh",
+            minHeight: SCALED_VH,
             display: "flex",
             flexDirection: "column",
           }}
@@ -1061,11 +1064,11 @@ function AppShell() {
           {/* HEADER */}
           <SiteHeader />
 
-          {/* MAIN — ocupa solo lo necesario */}
+          {/* MAIN */}
           <main
             style={{
               width: "100%",
-              flex: "1 0 auto",
+              flex: "1 1 auto",
             }}
           >
             <ScrollToTopOnRouteChange />
@@ -1073,37 +1076,16 @@ function AppShell() {
             <Routes>
               <Route path="/" element={<Home />} />
 
-              <Route
-                path="/acuicola"
-                element={<DivisionOverview divisionKey="acuicola" />}
-              />
-              <Route
-                path="/acuicola/:productKey"
-                element={<ProductDetail divisionKey="acuicola" />}
-              />
+              <Route path="/acuicola" element={<DivisionOverview divisionKey="acuicola" />} />
+              <Route path="/acuicola/:productKey" element={<ProductDetail divisionKey="acuicola" />} />
 
-              <Route
-                path="/agro"
-                element={<DivisionOverview divisionKey="agro" />}
-              />
-              <Route
-                path="/agro/:productKey"
-                element={<ProductDetail divisionKey="agro" />}
-              />
+              <Route path="/agro" element={<DivisionOverview divisionKey="agro" />} />
+              <Route path="/agro/:productKey" element={<ProductDetail divisionKey="agro" />} />
 
-              <Route
-                path="/packaging"
-                element={<DivisionOverview divisionKey="packaging" />}
-              />
-              <Route
-                path="/packaging/:productKey"
-                element={<ProductDetail divisionKey="packaging" />}
-              />
+              <Route path="/packaging" element={<DivisionOverview divisionKey="packaging" />} />
+              <Route path="/packaging/:productKey" element={<ProductDetail divisionKey="packaging" />} />
 
-              <Route
-                path="/transporte"
-                element={<DivisionOverview divisionKey="transporte" />}
-              />
+              <Route path="/transporte" element={<DivisionOverview divisionKey="transporte" />} />
 
               <Route path="/calidad" element={<Calidad />} />
               <Route path="/nosotros" element={<Nosotros />} />
@@ -1113,9 +1095,10 @@ function AppShell() {
             </Routes>
           </main>
 
-          {/* FOOTER — SIEMPRE ABAJO, SIN VACÍOS */}
+          {/* FOOTER — SIEMPRE ABAJO */}
           <footer
             style={{
+              marginTop: "auto",
               flex: "0 0 auto",
               borderTop: `1px solid ${BRAND.lineSoft}`,
               background: BRAND.panel,
@@ -1177,6 +1160,7 @@ function AppShell() {
     </div>
   );
 }
+
 
 
 /* =========================================================
@@ -1883,12 +1867,14 @@ function ProductCardImage({
   height = 210,
   rounded = 16,
   fit = "cover",
+  borderless = false,
 }: {
   candidates: string | string[];
   alt: string;
   height?: number;
   rounded?: number;
   fit?: "cover" | "contain";
+  borderless?: boolean;
 }) {
   const [src, setSrc] = React.useState<string>("");
 
@@ -1897,7 +1883,6 @@ function ProductCardImage({
 
     const list = (Array.isArray(candidates) ? candidates : [candidates]).filter(Boolean);
 
-    // Helper: check if an image URL loads
     const loads = (url: string) =>
       new Promise<boolean>((resolve) => {
         const img = new Image();
@@ -1908,7 +1893,6 @@ function ProductCardImage({
           resolve(ok);
         };
 
-        // Timeout defensivo para no colgarse con URLs raras
         const t = window.setTimeout(() => done(false), 2500);
 
         img.onload = () => {
@@ -1929,7 +1913,6 @@ function ProductCardImage({
         return;
       }
 
-      // Prueba en orden hasta encontrar la primera que carga
       for (const url of list) {
         const ok = await loads(url);
         if (cancelled) return;
@@ -1939,7 +1922,6 @@ function ProductCardImage({
         }
       }
 
-      // Si ninguna carga, deja vacío
       if (!cancelled) setSrc("");
     }
 
@@ -1958,7 +1940,7 @@ function ProductCardImage({
         borderRadius: rounded,
         overflow: "hidden",
         background: "rgba(15, 23, 42, 0.04)",
-        border: `1px solid ${BRAND.line}`,
+        border: borderless ? "none" : `1px solid ${BRAND.line}`,
       }}
     >
       {src ? (
@@ -1973,7 +1955,7 @@ function ProductCardImage({
             objectFit: fit,
             display: "block",
             userSelect: "none",
-            pointerEvents: "none", // ✅ no expansible en card
+            pointerEvents: "none",
           }}
         />
       ) : (
@@ -1997,6 +1979,7 @@ function ProductCardImage({
 
 
 
+
 function ProductCard({
   divisionKey,
   product,
@@ -2005,6 +1988,7 @@ function ProductCard({
   product: Product;
 }) {
   const { lang } = useLang();
+  const { isMd } = useBreakpoints();
 
   const title = pick(product.name, lang);
   const subtitle = product.short ? pick(product.short, lang) : "";
@@ -2013,7 +1997,6 @@ function ProductCard({
   const isClickable = product.clickable !== false;
   const to = `/${divisionKey}/${product.key}`;
 
-  // ✅ Card: solo primera numerada (01.*), nunca hero
   const cardImageCandidates: string[] = (() => {
     const dir = product.imageDir;
     if (!dir) return [];
@@ -2022,6 +2005,178 @@ function ProductCard({
 
   const maxW = product.cardMaxWidth ? `${product.cardMaxWidth}px` : undefined;
 
+  // Texto “leyenda” para wide-compact (Transporte)
+  const longTextRaw =
+    (product.descriptionText ? pick(product.descriptionText, lang) : "") ||
+    pick(product.descriptionPlaceholder, lang);
+
+  const legend = (toParagraphs(longTextRaw)[0] || longTextRaw || "").trim();
+
+  // ==========================
+  // VARIANTE: WIDE-COMPACT
+  // ==========================
+  if (product.cardVariant === "wide-compact") {
+    const H = isMd ? 240 : 320;
+
+    const wideCardStyle: React.CSSProperties = {
+      background: "white",
+      border: `1px solid ${BRAND.line}`,
+      borderRadius: 22,
+      overflow: "hidden",
+      boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
+      maxWidth: maxW,
+      marginInline: product.cardMaxWidth ? "auto" : undefined,
+      display: "grid",
+      gridTemplateColumns: isMd ? "1fr" : "minmax(0, 0.95fr) minmax(0, 1.05fr)",
+      alignItems: "stretch",
+    };
+
+    const leftStyle: React.CSSProperties = {
+      padding: 18,
+      minWidth: 0,
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
+    };
+
+    const rightStyle: React.CSSProperties = {
+      minWidth: 0,
+      display: "flex",
+      alignItems: "stretch",
+      justifyContent: "stretch",
+      borderTop: isMd ? `1px solid ${BRAND.line}` : undefined,
+      borderLeft: !isMd ? `1px solid ${BRAND.line}` : undefined,
+      background: "#0B1220",
+    };
+
+    const headerRow: React.CSSProperties = {
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 12,
+    };
+
+    const content = (
+      <div style={wideCardStyle}>
+        {/* LEFT (leyenda) */}
+        <div style={leftStyle}>
+          <div style={headerRow}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.2, color: BRAND.ink }}>
+                {title}
+              </div>
+
+              {subtitle ? (
+                <div style={{ marginTop: 6, color: "rgba(15, 23, 42, 0.75)", fontSize: 14, lineHeight: 1.5 }}>
+                  {subtitle}
+                </div>
+              ) : null}
+            </div>
+
+            {isClickable ? (
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 12,
+                  display: "grid",
+                  placeItems: "center",
+                  border: `1px solid ${BRAND.line}`,
+                  color: "rgba(15, 23, 42, 0.75)",
+                  flex: "0 0 auto",
+                  fontWeight: 900,
+                }}
+              >
+                →
+              </div>
+            ) : null}
+          </div>
+
+          {tag ? (
+            <div
+              style={{
+                alignSelf: "flex-start",
+                padding: "6px 10px",
+                borderRadius: 999,
+                background: "rgba(35, 137, 201, 0.12)",
+                border: "1px solid rgba(35, 137, 201, 0.18)",
+                color: "rgba(15, 23, 42, 0.82)",
+                fontWeight: 800,
+                fontSize: 13,
+              }}
+            >
+              {tag}
+            </div>
+          ) : null}
+
+          {legend ? (
+            <div
+              style={{
+                color: "#334155",
+                fontSize: 15,
+                lineHeight: 1.75,
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical" as any,
+                WebkitLineClamp: 5 as any,
+                overflow: "hidden",
+              }}
+            >
+              {legend}
+            </div>
+          ) : null}
+
+          {isClickable ? (
+            <div style={{ marginTop: "auto", paddingTop: 6 }}>
+              <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 800 }}>
+                {lang === "en" ? "See details" : "Ver detalle"}
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        {/* RIGHT (imagen edge-to-edge) */}
+        <div style={rightStyle}>
+          {cardImageCandidates.length ? (
+            <ProductCardImage
+              candidates={cardImageCandidates}
+              alt={title}
+              height={H}
+              rounded={0}
+              fit="cover"
+              borderless
+            />
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                height: H,
+                display: "grid",
+                placeItems: "center",
+                color: "rgba(226,232,240,0.75)",
+                fontWeight: 800,
+                fontSize: 13,
+              }}
+            >
+              Sin imagen
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
+    if (!isClickable) return content;
+
+    return (
+      <Link to={to} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+        {content}
+      </Link>
+    );
+  }
+
+  // ==========================
+  // DEFAULT CARD (grid normal)
+  // ==========================
   const cardStyle: React.CSSProperties = {
     background: "white",
     border: `1px solid ${BRAND.line}`,
@@ -2142,6 +2297,7 @@ function ProductCard({
     </Link>
   );
 }
+
 
 
 
@@ -3120,11 +3276,16 @@ function AboutCarousel({
   text: string;
   images: { src: string; alt: string }[];
 }) {
+  const { isMd } = useBreakpoints();
   const [i, setI] = React.useState(0);
 
-  // seguridad
-  const safeImages = images?.length ? images : [];
+  const safeImages = (images || []).filter((x) => x?.src);
   const canNav = safeImages.length > 1;
+
+  // Si cambian las imágenes, resetea índice
+  React.useEffect(() => {
+    setI(0);
+  }, [safeImages.map((x) => x.src).join("|")]);
 
   const next = () => {
     if (!canNav) return;
@@ -3136,9 +3297,8 @@ function AboutCarousel({
     setI((v) => (v - 1 + safeImages.length) % safeImages.length);
   };
 
-  // === layout: control duro de altura para que NO se estire ===
-  const CARD_H_DESKTOP = 320; // “pequeño” como tu referencia
-  const CARD_H_MOBILE = 220;
+  const H = isMd ? 240 : 320;
+  const current = safeImages[i] || safeImages[0];
 
   return (
     <section
@@ -3149,120 +3309,107 @@ function AboutCarousel({
         borderBottom: `1px solid ${BRAND.lineSoft}`,
       }}
     >
-      <div style={{ ...containerStyle(), ...sectionPad(28, 22) }}>
+      <div style={{ ...containerStyle(), ...sectionPad(28, 28) }}>
         <div
           style={{
             background: BRAND.panel,
             border: `1px solid ${BRAND.lineSoft}`,
             borderRadius: 22,
-            padding: 18,
-            boxShadow: "0 6px 18px rgba(15, 23, 42, 0.06)",
+            boxShadow: "0 8px 26px rgba(15, 23, 42, 0.08)",
+            overflow: "hidden",
+            display: "grid",
+            gridTemplateColumns: isMd ? "1fr" : "minmax(0, 0.95fr) minmax(0, 1.05fr)",
+            alignItems: "stretch",
           }}
         >
-          {/* HEADER: título + flechas alineadas */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-              marginBottom: 10,
-            }}
-          >
-            <div style={{ minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 20,
-                  fontWeight: 650,
-                  color: BRAND.primary,
-                  lineHeight: 1.15,
-                  marginBottom: 6,
-                }}
-              >
-                {title}
-              </div>
-              <div style={{ color: BRAND.muted, fontSize: 14, lineHeight: 1.6, maxWidth: 720 }}>
-                {text}
-              </div>
+          {/* LEFT: leyenda */}
+          <div style={{ padding: 18, minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 900,
+                color: BRAND.primary,
+                lineHeight: 1.15,
+              }}
+            >
+              {title}
             </div>
 
-            {/* botones: tamaño fijo y centrados */}
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button
-                type="button"
-                onClick={prev}
-                aria-label="Previous"
-                disabled={!canNav}
-                style={carouselNavBtn(!canNav)}
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                onClick={next}
-                aria-label="Next"
-                disabled={!canNav}
-                style={carouselNavBtn(!canNav)}
-              >
-                ›
-              </button>
+            <div style={{ marginTop: 10, color: "#334155", fontSize: 15, lineHeight: 1.75, maxWidth: 720 }}>
+              {text}
+            </div>
+
+            <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              {safeImages.length ? (
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 900,
+                    color: "rgba(15, 23, 42, 0.72)",
+                    background: "rgba(15, 23, 42, 0.06)",
+                    border: `1px solid ${BRAND.lineSoft}`,
+                    borderRadius: 999,
+                    padding: "6px 10px",
+                  }}
+                >
+                  {i + 1}/{safeImages.length}
+                </div>
+              ) : null}
+
+              {canNav ? (
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <button type="button" onClick={prev} aria-label="Previous" style={carouselNavBtn(false)}>
+                    ‹
+                  </button>
+                  <button type="button" onClick={next} aria-label="Next" style={carouselNavBtn(false)}>
+                    ›
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
 
-          {/* CONTENIDO: 2 cards, altura fija */}
+          {/* RIGHT: 1 sola imagen (no se repite) */}
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 14,
-              alignItems: "stretch",
+              minWidth: 0,
+              borderLeft: !isMd ? `1px solid ${BRAND.lineSoft}` : undefined,
+              borderTop: isMd ? `1px solid ${BRAND.lineSoft}` : undefined,
+              background: "#0B1220",
+              height: H,
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            {/* Imagen 1 */}
-            <div style={carouselImageCard(CARD_H_DESKTOP, CARD_H_MOBILE)}>
-              {safeImages[0] ? (
-                <img
-                  src={safeImages[0].src}
-                  alt={safeImages[0].alt}
-                  loading="lazy"
-                  decoding="async"
-                  style={carouselImgStyle()}
-                />
-              ) : (
-                <div style={carouselFallback()} />
-              )}
-            </div>
-
-            {/* Imagen 2 = la imagen “rotatoria” */}
-            <div style={carouselImageCard(CARD_H_DESKTOP, CARD_H_MOBILE)}>
-              {safeImages[i] ? (
-                <img
-                  key={safeImages[i].src}
-                  src={safeImages[i].src}
-                  alt={safeImages[i].alt}
-                  loading="lazy"
-                  decoding="async"
-                  style={carouselImgStyle()}
-                />
-              ) : (
-                <div style={carouselFallback()} />
-              )}
-            </div>
+            {current ? (
+              <img
+                src={current.src}
+                alt={current.alt}
+                loading="lazy"
+                decoding="async"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background: "linear-gradient(135deg, #0B1220 0%, #111827 60%, #0B1220 100%)",
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
-
-      {/* responsive simple */}
-      <style>{`
-        @media (max-width: 900px) {
-          section > div > div > div[style*="grid-template-columns: 1fr 1fr"] {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }
+
 
 /** Ctrl+F: carouselNavBtn */
 function carouselNavBtn(disabled: boolean): React.CSSProperties {
