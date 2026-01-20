@@ -1162,6 +1162,35 @@ function AppShell() {
         @media (max-width: 720px) {
           body { zoom: 1; }
         }
+
+        /* ===== RESPONSIVE HEADER ===== */
+.desktop-header {
+  display: flex !important;
+}
+
+.mobile-header {
+  display: none !important;
+}
+
+@media (max-width: 980px) {
+  .desktop-header {
+    display: none !important;
+  }
+  .mobile-header {
+    display: flex !important;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
       `}</style>
 
       <SiteHeader />
@@ -1469,6 +1498,25 @@ function findProduct(division: Division, productKey: string) {
 function SiteHeader() {
   const { isMd } = useBreakpoints();
   const { lang, toggleLang } = useLang();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Cerrar menú mobile al cambiar ruta
+  const location = useLocation();
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Prevenir scroll cuando menú está abierto
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   const btnLangToggle: React.CSSProperties = {
     padding: "10px 14px",
@@ -1476,148 +1524,475 @@ function SiteHeader() {
     border: "1px solid #E5E7EB",
     background: "#F3F4F6",
     color: "#374151",
-    fontSize: 15, // +2 (antes 13)
+    fontSize: 15,
     fontWeight: 700,
     cursor: "pointer",
     transition: "background 160ms ease, color 160ms ease, border-color 160ms ease",
   };
 
   return (
-    <header
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 60,
-        height: HEADER_H,
-        background: "#FEFEFE",
-        borderBottom: "none",
-        display: "flex",
-        alignItems: "center",
-        width: "100%",
-      }}
-    >
-      <div
+    <>
+      {/* ===== HEADER DESKTOP (visible solo >980px) ===== */}
+      <header
+        className="desktop-header"
         style={{
-          ...containerStyle(),
+          position: "sticky",
+          top: 0,
+          zIndex: 60,
+          height: HEADER_H,
+          background: "#FEFEFE",
+          borderBottom: "none",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
+          width: "100%",
         }}
       >
-        {/* LOGO */}
-        <Link
-          to="/"
+        <div
           style={{
+            ...containerStyle(),
             display: "flex",
-            gap: 12,
             alignItems: "center",
-            textDecoration: "none",
+            justifyContent: "space-between",
+            gap: 16,
           }}
         >
-          <div
+          {/* LOGO */}
+          <Link
+            to="/"
             style={{
-              width: 120,
-              height: 36,
-              borderRadius: 12,
-              overflow: "hidden",
-              flexShrink: 0,
-              background: "transparent",
-              border: "none",
-              boxShadow: "none",
-              outline: "none",
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              textDecoration: "none",
             }}
           >
-            <video
-              src="/logo-animado.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              style={{
-                width: "100%",
-                height: "100%",
-                display: "block",
-                objectFit: "contain",
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                boxShadow: "none",
-              }}
-            />
-          </div>
-
-          <div style={{ lineHeight: 1.05 }}>
             <div
               style={{
-                fontSize: 28,
+                width: 120,
+                height: 36,
+                borderRadius: 12,
+                overflow: "hidden",
+                flexShrink: 0,
+                background: "transparent",
+                border: "none",
+                boxShadow: "none",
+                outline: "none",
+              }}
+            >
+              <video
+                src="/logo-animado.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "block",
+                  objectFit: "contain",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  boxShadow: "none",
+                }}
+              />
+            </div>
+
+            <div style={{ lineHeight: 1.05 }}>
+              <div
+                style={{
+                  fontSize: 28,
+                  fontWeight: 800,
+                  letterSpacing: 0.4,
+                  color: BRAND.primary,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                TIPY TOWN
+              </div>
+            </div>
+          </Link>
+
+          {/* NAV DESKTOP */}
+          <nav
+            aria-label={lang === "en" ? "Primary navigation" : "Navegación principal"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: isMd ? 10 : 18,
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+            }}
+          >
+            <TopNavLink to="/acuicola" label={pick(UI.navAcuicola, lang)} />
+            <TopNavLink to="/agro" label={pick(UI.navAgro, lang)} />
+            <TopNavLink to="/packaging" label={pick(UI.navPackaging, lang)} />
+            <TopNavLink to="/transporte" label={pick(UI.navTransporte, lang)} />
+            <TopNavLink to="/calidad" label={pick(UI.navCalidad, lang)} />
+            <TopNavLink to="/nosotros" label={pick(UI.navNosotros, lang)} />
+
+            <div style={{ width: 1, height: 18, background: BRAND.line, margin: "0 6px" }} />
+
+            
+              href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
+              target="_blank"
+              rel="noreferrer"
+              style={btnOutlineSm()}
+            >
+              {pick(UI.btnWhatsApp, lang)}
+            </a>
+
+            <Link to="/contacto" style={btnPrimarySm()}>
+              {pick(UI.btnContacto, lang)}
+            </Link>
+
+            <button
+              type="button"
+              onClick={toggleLang}
+              aria-label={lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}
+              style={btnLangToggle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#E5E7EB";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#F3F4F6";
+              }}
+            >
+              {lang === "en" ? "ES" : "EN"}
+            </button>
+          </nav>
+        </div>
+      </header>
+
+      {/* ===== HEADER MOBILE (visible solo ≤980px) ===== */}
+      <header
+        className="mobile-header"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 60,
+          height: HEADER_H,
+          background: "#FEFEFE",
+          borderBottom: `1px solid ${BRAND.line}`,
+          display: "none",
+          alignItems: "center",
+          width: "100%",
+        }}
+      >
+        <div
+          style={{
+            ...containerStyle(),
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <Link
+            to="/"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              textDecoration: "none",
+            }}
+          >
+            <div
+              style={{
+                width: 90,
+                height: 28,
+                borderRadius: 10,
+                overflow: "hidden",
+                flexShrink: 0,
+              }}
+            >
+              <video
+                src="/logo-animado.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "block",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                fontSize: 22,
                 fontWeight: 800,
-                letterSpacing: 0.4,
+                letterSpacing: 0.3,
                 color: BRAND.primary,
                 whiteSpace: "nowrap",
               }}
             >
               TIPY TOWN
             </div>
-          </div>
-        </Link>
-
-        {/* NAV */}
-        <nav
-          aria-label={lang === "en" ? "Primary navigation" : "Navegación principal"}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: isMd ? 10 : 18,
-            flexWrap: "wrap",
-            justifyContent: "flex-end",
-          }}
-        >
-          <TopNavLink to="/acuicola" label={pick(UI.navAcuicola, lang)} />
-          <TopNavLink to="/agro" label={pick(UI.navAgro, lang)} />
-          <TopNavLink to="/packaging" label={pick(UI.navPackaging, lang)} />
-          <TopNavLink to="/transporte" label={pick(UI.navTransporte, lang)} />
-          <TopNavLink to="/calidad" label={pick(UI.navCalidad, lang)} />
-          <TopNavLink to="/nosotros" label={pick(UI.navNosotros, lang)} />
-
-          <div style={{ width: 1, height: 18, background: BRAND.line, margin: "0 6px" }} />
-
-          {/* WhatsApp */}
-          <a
-            href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
-            target="_blank"
-            rel="noreferrer"
-            style={btnOutlineSm()}
-          >
-            {pick(UI.btnWhatsApp, lang)}
-          </a>
-
-          {/* Contact (CTA principal) */}
-          <Link to="/contacto" style={btnPrimarySm()}>
-            {pick(UI.btnContacto, lang)}
           </Link>
 
-          {/* ES / EN */}
           <button
             type="button"
-            onClick={toggleLang}
-            aria-label={lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}
-            style={btnLangToggle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#E5E7EB";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#F3F4F6";
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Menú"
+            aria-expanded={mobileMenuOpen}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              border: `1px solid ${BRAND.line}`,
+              background: "white",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 5,
+              padding: 0,
             }}
           >
-            {lang === "en" ? "ES" : "EN"}
+            <span
+              style={{
+                width: 20,
+                height: 2,
+                background: BRAND.primary,
+                borderRadius: 2,
+                transition: "transform 0.3s ease, opacity 0.3s ease",
+                transform: mobileMenuOpen ? "rotate(45deg) translateY(7px)" : "none",
+              }}
+            />
+            <span
+              style={{
+                width: 20,
+                height: 2,
+                background: BRAND.primary,
+                borderRadius: 2,
+                transition: "opacity 0.3s ease",
+                opacity: mobileMenuOpen ? 0 : 1,
+              }}
+            />
+            <span
+              style={{
+                width: 20,
+                height: 2,
+                background: BRAND.primary,
+                borderRadius: 2,
+                transition: "transform 0.3s ease, opacity 0.3s ease",
+                transform: mobileMenuOpen ? "rotate(-45deg) translateY(-7px)" : "none",
+              }}
+            />
           </button>
-        </nav>
-      </div>
-    </header>
+        </div>
+      </header>
+
+      {/* ===== MENÚ MOBILE OVERLAY ===== */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 70,
+            background: "rgba(2, 6, 23, 0.6)",
+            backdropFilter: "blur(4px)",
+            animation: "fadeIn 0.3s ease-out",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: "min(85vw, 360px)",
+              background: "white",
+              boxShadow: "-4px 0 24px rgba(2, 6, 23, 0.15)",
+              display: "flex",
+              flexDirection: "column",
+              overflowY: "auto",
+              animation: "slideIn 0.3s ease-out",
+            }}
+          >
+            <div
+              style={{
+                padding: "20px 18px",
+                borderBottom: `1px solid ${BRAND.line}`,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 900,
+                  color: BRAND.primary,
+                }}
+              >
+                {lang === "en" ? "Menu" : "Menú"}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Cerrar"
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  border: `1px solid ${BRAND.line}`,
+                  background: "white",
+                  cursor: "pointer",
+                  fontSize: 20,
+                  fontWeight: 900,
+                  color: BRAND.primary,
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <nav
+              style={{
+                flex: "1 1 auto",
+                padding: "12px 0",
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+              }}
+            >
+              <MobileNavLink
+                to="/acuicola"
+                label={pick(UI.navAcuicola, lang)}
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <MobileNavLink
+                to="/agro"
+                label={pick(UI.navAgro, lang)}
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <MobileNavLink
+                to="/packaging"
+                label={pick(UI.navPackaging, lang)}
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <MobileNavLink
+                to="/transporte"
+                label={pick(UI.navTransporte, lang)}
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <MobileNavLink
+                to="/calidad"
+                label={pick(UI.navCalidad, lang)}
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <MobileNavLink
+                to="/nosotros"
+                label={pick(UI.navNosotros, lang)}
+                onClick={() => setMobileMenuOpen(false)}
+              />
+
+              <div
+                style={{
+                  height: 1,
+                  background: BRAND.line,
+                  margin: "12px 18px",
+                }}
+              />
+
+              <MobileNavLink
+                to="/contacto"
+                label={pick(UI.btnContacto, lang)}
+                onClick={() => setMobileMenuOpen(false)}
+                highlight
+              />
+            </nav>
+
+            <div
+              style={{
+                padding: 18,
+                borderTop: `1px solid ${BRAND.line}`,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
+            >
+              
+                href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  ...btnPrimarySm(),
+                  width: "100%",
+                  justifyContent: "center",
+                }}
+              >
+                {pick(UI.btnWhatsApp, lang)}
+              </a>
+
+              <button
+                type="button"
+                onClick={toggleLang}
+                style={{
+                  ...btnLangToggle,
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {lang === "en" ? "Cambiar a español (ES)" : "Switch to English (EN)"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
+
+function MobileNavLink({
+  to,
+  label,
+  onClick,
+  highlight = false,
+}: {
+  to: string;
+  label: string;
+  onClick: () => void;
+  highlight?: boolean;
+}) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onClick}
+      style={({ isActive }) => ({
+        textDecoration: "none",
+        color: highlight ? "white" : isActive ? BRAND.primary : "#0f172a",
+        fontSize: 16,
+        fontWeight: isActive || highlight ? 900 : 700,
+        padding: "14px 18px",
+        borderRadius: 0,
+        transition: "background 0.2s ease, color 0.2s ease",
+        background: highlight
+          ? BRAND.primary
+          : isActive
+          ? "rgba(52, 62, 117, 0.1)"
+          : "transparent",
+        display: "block",
+      })}
+    >
+      {label}
+    </NavLink>
+  );
+}
+      
 function SiteFooter() {
   const FOOTER_H = 56; // ALTO FIJO, NO CAMBIA
 
