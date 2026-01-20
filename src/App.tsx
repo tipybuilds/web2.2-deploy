@@ -1466,9 +1466,22 @@ function findProduct(division: Division, productKey: string) {
 /* =========================================================
    HEADER / FOOTER
 ========================================================= */
+/* =========================================================
+   HEADER / FOOTER
+========================================================= */
+// Ctrl+F: function SiteHeader()
 function SiteHeader() {
-  const { isMd } = useBreakpoints();
+  const { isMd } = useBreakpoints(); // isMd = <= 980px (tu breakpoint)
   const { lang, toggleLang } = useLang();
+  const location = useLocation();
+
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  // ✅ Cierra drawer al cambiar de ruta
+  React.useEffect(() => {
+    setMobileOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   const btnLangToggle: React.CSSProperties = {
     padding: "10px 14px",
@@ -1476,7 +1489,7 @@ function SiteHeader() {
     border: "1px solid #E5E7EB",
     background: "#F3F4F6",
     color: "#374151",
-    fontSize: 15, // +2 (antes 13)
+    fontSize: 15,
     fontWeight: 700,
     cursor: "pointer",
     transition: "background 160ms ease, color 160ms ease, border-color 160ms ease",
@@ -1513,6 +1526,7 @@ function SiteHeader() {
             gap: 12,
             alignItems: "center",
             textDecoration: "none",
+            minWidth: 0,
           }}
         >
           <div
@@ -1547,7 +1561,7 @@ function SiteHeader() {
             />
           </div>
 
-          <div style={{ lineHeight: 1.05 }}>
+          <div style={{ lineHeight: 1.05, minWidth: 0 }}>
             <div
               style={{
                 fontSize: 28,
@@ -1562,60 +1576,339 @@ function SiteHeader() {
           </div>
         </Link>
 
+        {/* DESKTOP NAV (sin cambios visuales) */}
+        {!isMd ? (
+          <nav
+            aria-label={lang === "en" ? "Primary navigation" : "Navegación principal"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 18,
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+            }}
+          >
+            <TopNavLink to="/acuicola" label={pick(UI.navAcuicola, lang)} />
+            <TopNavLink to="/agro" label={pick(UI.navAgro, lang)} />
+            <TopNavLink to="/packaging" label={pick(UI.navPackaging, lang)} />
+            <TopNavLink to="/transporte" label={pick(UI.navTransporte, lang)} />
+            <TopNavLink to="/calidad" label={pick(UI.navCalidad, lang)} />
+            <TopNavLink to="/nosotros" label={pick(UI.navNosotros, lang)} />
+
+            <div style={{ width: 1, height: 18, background: BRAND.line, margin: "0 6px" }} />
+
+            <a
+              href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
+              target="_blank"
+              rel="noreferrer"
+              style={btnOutlineSm()}
+            >
+              {pick(UI.btnWhatsApp, lang)}
+            </a>
+
+            <Link to="/contacto" style={btnPrimarySm()}>
+              {pick(UI.btnContacto, lang)}
+            </Link>
+
+            <button
+              type="button"
+              onClick={toggleLang}
+              aria-label={lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}
+              style={btnLangToggle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#E5E7EB";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#F3F4F6";
+              }}
+            >
+              {lang === "en" ? "ES" : "EN"}
+            </button>
+          </nav>
+        ) : (
+          /* MOBILE: CTA + HAMBURGER */
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* WhatsApp compacto */}
+            <a
+              href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                ...btnOutlineSm(),
+                padding: "10px 12px",
+              }}
+            >
+              {pick(UI.btnWhatsApp, lang)}
+            </a>
+
+            {/* Contacto compacto */}
+            <Link
+              to="/contacto"
+              style={{
+                ...btnPrimarySm(),
+                padding: "10px 12px",
+              }}
+            >
+              {pick(UI.btnContacto, lang)}
+            </Link>
+
+            {/* Hamburguesa */}
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              aria-label={lang === "en" ? "Open menu" : "Abrir menú"}
+              style={hamburgerButtonStyle()}
+            >
+              <HamburgerIcon />
+            </button>
+
+            <MobileNavDrawer
+              open={mobileOpen}
+              onClose={() => setMobileOpen(false)}
+              lang={lang}
+              toggleLang={toggleLang}
+            />
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
+
+/* =========================================================
+   MOBILE NAV DRAWER
+========================================================= */
+// Ctrl+F: function MobileNavDrawer(
+function MobileNavDrawer({
+  open,
+  onClose,
+  lang,
+  toggleLang,
+}: {
+  open: boolean;
+  onClose: () => void;
+  lang: Lang;
+  toggleLang: () => void;
+}) {
+  React.useEffect(() => {
+    if (!open) return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", onKey);
+    // evita scroll detrás
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const itemStyle: React.CSSProperties = {
+    textDecoration: "none",
+    color: "#0f172a",
+    fontSize: 16,
+    fontWeight: 850,
+    padding: "12px 12px",
+    borderRadius: 14,
+    border: `1px solid ${BRAND.line}`,
+    background: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  };
+
+  const sectionTitle: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 900,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: BRAND.muted,
+    marginTop: 8,
+    marginBottom: 10,
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={lang === "en" ? "Menu" : "Menú"}
+      onMouseDown={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        background: "rgba(2,6,23,0.55)",
+        display: "flex",
+        justifyContent: "flex-end",
+      }}
+    >
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{
+          width: "min(420px, 92vw)",
+          height: "100%",
+          background: "#FFFFFF",
+          borderLeft: `1px solid ${BRAND.line}`,
+          boxShadow: "-20px 0 80px rgba(2,6,23,0.28)",
+          padding: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
+        {/* HEADER */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ fontSize: 16, fontWeight: 950, color: BRAND.primary }}>
+            {lang === "en" ? "Menu" : "Menú"}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={lang === "en" ? "Close" : "Cerrar"}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 14,
+              border: `1px solid ${BRAND.line}`,
+              background: "white",
+              cursor: "pointer",
+              fontWeight: 950,
+              color: BRAND.primary,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ height: 1, background: BRAND.line }} />
+
         {/* NAV */}
-        <nav
-          aria-label={lang === "en" ? "Primary navigation" : "Navegación principal"}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: isMd ? 10 : 18,
-            flexWrap: "wrap",
-            justifyContent: "flex-end",
-          }}
-        >
-          <TopNavLink to="/acuicola" label={pick(UI.navAcuicola, lang)} />
-          <TopNavLink to="/agro" label={pick(UI.navAgro, lang)} />
-          <TopNavLink to="/packaging" label={pick(UI.navPackaging, lang)} />
-          <TopNavLink to="/transporte" label={pick(UI.navTransporte, lang)} />
-          <TopNavLink to="/calidad" label={pick(UI.navCalidad, lang)} />
-          <TopNavLink to="/nosotros" label={pick(UI.navNosotros, lang)} />
+        <div style={sectionTitle}>{lang === "en" ? "Sections" : "Secciones"}</div>
 
-          <div style={{ width: 1, height: 18, background: BRAND.line, margin: "0 6px" }} />
+        <div style={{ display: "grid", gap: 10 }}>
+          <Link to="/acuicola" style={itemStyle}>
+            <span>{pick(UI.navAcuicola, lang)}</span>
+            <span style={{ fontWeight: 950 }}>→</span>
+          </Link>
+          <Link to="/agro" style={itemStyle}>
+            <span>{pick(UI.navAgro, lang)}</span>
+            <span style={{ fontWeight: 950 }}>→</span>
+          </Link>
+          <Link to="/packaging" style={itemStyle}>
+            <span>{pick(UI.navPackaging, lang)}</span>
+            <span style={{ fontWeight: 950 }}>→</span>
+          </Link>
+          <Link to="/transporte" style={itemStyle}>
+            <span>{pick(UI.navTransporte, lang)}</span>
+            <span style={{ fontWeight: 950 }}>→</span>
+          </Link>
+          <Link to="/calidad" style={itemStyle}>
+            <span>{pick(UI.navCalidad, lang)}</span>
+            <span style={{ fontWeight: 950 }}>→</span>
+          </Link>
+          <Link to="/nosotros" style={itemStyle}>
+            <span>{pick(UI.navNosotros, lang)}</span>
+            <span style={{ fontWeight: 950 }}>→</span>
+          </Link>
+        </div>
 
-          {/* WhatsApp */}
+        <div style={{ height: 1, background: BRAND.line, marginTop: 6 }} />
+
+        {/* ACTIONS */}
+        <div style={sectionTitle}>{lang === "en" ? "Actions" : "Acciones"}</div>
+
+        <div style={{ display: "grid", gap: 10 }}>
           <a
             href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
             target="_blank"
             rel="noreferrer"
-            style={btnOutlineSm()}
+            style={{
+              ...itemStyle,
+              border: `1px solid rgba(35,137,201,0.22)`,
+              background: "rgba(35,137,201,0.08)",
+            }}
           >
-            {pick(UI.btnWhatsApp, lang)}
+            <span>{pick(UI.btnWhatsApp, lang)}</span>
+            <span style={{ fontWeight: 950 }}>↗</span>
           </a>
 
-          {/* Contact (CTA principal) */}
-          <Link to="/contacto" style={btnPrimarySm()}>
-            {pick(UI.btnContacto, lang)}
+          <Link
+            to="/contacto"
+            style={{
+              ...itemStyle,
+              border: `1px solid rgba(52,62,117,0.22)`,
+              background: "rgba(52,62,117,0.06)",
+            }}
+          >
+            <span>{pick(UI.btnContacto, lang)}</span>
+            <span style={{ fontWeight: 950 }}>→</span>
           </Link>
 
-          {/* ES / EN */}
           <button
             type="button"
             onClick={toggleLang}
-            aria-label={lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}
-            style={btnLangToggle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#E5E7EB";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#F3F4F6";
+            style={{
+              ...itemStyle,
+              cursor: "pointer",
             }}
           >
-            {lang === "en" ? "ES" : "EN"}
+            <span>{lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}</span>
+            <span style={{ fontWeight: 950 }}>{lang === "en" ? "ES" : "EN"}</span>
           </button>
-        </nav>
+        </div>
+
+        {/* spacer */}
+        <div style={{ flex: "1 1 auto" }} />
+
+        <div style={{ fontSize: 12, color: BRAND.muted, lineHeight: 1.5 }}>
+          © 2026 Tipy Town.
+        </div>
       </div>
-    </header>
+    </div>
   );
+}
+
+/* =========================================================
+   HAMBURGER UI
+========================================================= */
+// Ctrl+F: function HamburgerIcon(
+function HamburgerIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// Ctrl+F: function hamburgerButtonStyle(
+function hamburgerButtonStyle(): React.CSSProperties {
+  return {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    border: `1px solid ${BRAND.line}`,
+    background: "white",
+    color: BRAND.primary,
+    cursor: "pointer",
+    display: "grid",
+    placeItems: "center",
+    boxShadow: "0 8px 20px rgba(15, 23, 42, 0.08)",
+  };
 }
 
 function SiteFooter() {
