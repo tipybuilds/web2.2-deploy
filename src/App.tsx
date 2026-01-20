@@ -1499,9 +1499,9 @@ function SiteHeader() {
   const { isMd } = useBreakpoints();
   const { lang, toggleLang } = useLang();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   // Cerrar menú mobile al cambiar ruta
-  const location = useLocation();
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
@@ -1955,7 +1955,6 @@ function SiteHeader() {
     </>
   );
 }
-
 
 function MobileNavLink({
   to,
