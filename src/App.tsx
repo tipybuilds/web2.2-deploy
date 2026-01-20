@@ -167,6 +167,47 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function TransporteMobileImagePatch() {
+  // Ctrl+F: TRANSPORTE_MOBILE_IMAGE_PATCH
+  const { isMd } = useBreakpoints();
+  const location = useLocation();
+
+  const isTransportRoute = /\/transporte(\/|$)/i.test(location.pathname || "");
+  if (!isMd || !isTransportRoute) return null;
+
+  return (
+    <style>
+      {`
+        /* ================================
+           TRANSPORTE MOBILE ONLY PATCH
+           - NO afecta escritorio
+           - NO afecta otras divisiones
+        ================================= */
+
+        @media (max-width: 900px) {
+          /* Contenedores que usan aria-label="Transporte" (los que tú mismo pegaste) */
+          div[aria-label="Transporte"]{
+            position: relative !important;
+            overflow: hidden !important;
+            background: rgb(11, 18, 32) !important;
+          }
+
+          /* Fuerza FULL COVER a cualquier imagen del folder transporte (hero + 01 + otras) */
+          div[aria-label="Transporte"] > img[src^="/images/divisions/transporte/"],
+          div[aria-label="Transporte"] img[src^="/images/divisions/transporte/"]{
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+            object-fit: cover !important;
+            object-position: 50% 50% !important;
+          }
+        }
+      `}
+    </style>
+  );
+}
 
 
 function ProductGallery({
