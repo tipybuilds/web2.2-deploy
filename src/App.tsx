@@ -2018,6 +2018,8 @@ function hamburgerButtonStyle(): React.CSSProperties {
   };
 }
 
+
+
 function MenuGlyph({ open }: { open: boolean }) {
   // Ctrl+F: MenuGlyph
   const stroke = BRAND.primary;
