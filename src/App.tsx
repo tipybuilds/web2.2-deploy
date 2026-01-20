@@ -167,6 +167,8 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+
+
 function ProductGallery({
   publicFolder,
   alt,
@@ -180,17 +182,22 @@ function ProductGallery({
   includeHero?: boolean;
   maxH?: number;
 }) {
-  const { isMd } = useBreakpoints();
-  const isMobile = !isMd; // ✅ SOLO para condicionar estilos mobile (no afecta desktop)
+  const { isMd } = useBreakpoints(); // ✅ mobile-only switch
+  const location = useLocation(); // ✅ para detectar /transporte sin depender del nombre de carpeta
+
+  // ✅ SOLO Transporte + SOLO Mobile (NO toca nada más)
+  // Ctrl+F: TRANSPORTE_MOBILE_FORCE_COVER
+  const isTransportRoute = /\/transporte(\/|$)/i.test(location.pathname || "");
+  const transportMobileForceCover = isMd && isTransportRoute;
 
   const [imgs, setImgs] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [idx, setIdx] = React.useState(0);
 
-  // ✅ Lightbox (expansible)
+  // ✅ Lightbox
   const [open, setOpen] = React.useState(false);
 
-  // ✅ Medimos la proporción real (si ya la usabas)
+  // ✅ Aspect ratio real (se mantiene para TODAS las otras divisiones en mobile)
   const [aspect, setAspect] = React.useState<number | null>(null);
 
   React.useEffect(() => {
@@ -234,7 +241,7 @@ function ProductGallery({
     setIdx((v) => (total ? (v + 1) % total : 0));
   }, [total]);
 
-  // ✅ recalcula aspect por imagen (si no lo necesitas, no rompe igual)
+  // ✅ Recalcular aspect ratio real cuando cambia la imagen (para otras divisiones en mobile)
   React.useEffect(() => {
     const src = imgs[idx];
     if (!src) {
@@ -262,8 +269,10 @@ function ProductGallery({
     };
   }, [imgs, idx]);
 
+  // ✅ Teclado SOLO desktop lightbox (mobile no necesita)
   React.useEffect(() => {
     if (!open) return;
+    if (isMd) return;
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -273,7 +282,29 @@ function ProductGallery({
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, prev, next]);
+  }, [open, isMd, prev, next]);
+
+  // ✅ Swipe (mobile)
+  const touchStartX = React.useRef<number | null>(null);
+  const swipeStart = (e: React.TouchEvent) => {
+    if (!isMd || !canNav) return;
+    touchStartX.current = e.touches?.[0]?.clientX ?? null;
+  };
+  const swipeEnd = (e: React.TouchEvent) => {
+    if (!isMd || !canNav) return;
+
+    const start = touchStartX.current;
+    touchStartX.current = null;
+
+    const end = e.changedTouches?.[0]?.clientX ?? null;
+    if (start == null || end == null) return;
+
+    const dx = end - start;
+    if (Math.abs(dx) < 48) return;
+
+    if (dx < 0) next();
+    else prev();
+  };
 
   const shellStyle: React.CSSProperties = {
     width: "100%",
@@ -317,7 +348,6 @@ function ProductGallery({
     gap: 8,
     userSelect: "none",
     WebkitUserSelect: "none",
-    whiteSpace: "nowrap",
   };
 
   const btnActive: React.CSSProperties = {
@@ -335,35 +365,60 @@ function ProductGallery({
     cursor: "not-allowed",
   };
 
-  // ✅ Caja de la galería (no tocamos desktop)
-  const mediaFrameStyle: React.CSSProperties = {
-    width: "100%",
-    background: "rgba(15, 23, 42, 0.03)",
-    overflow: "hidden",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: Math.max(maxH, 300),
-    aspectRatio: aspect && maxH < 500 ? `${aspect}` : undefined,
-  };
+  /**
+   * ✅ Frame
+   * - SOLO Transporte Mobile: frame FIJO + imagen ABSOLUTA + cover => nunca queda “fondo” visible.
+   * - Mobile resto: aspectRatio real (como estaba).
+   * - Desktop: igual que antes.
+   */
+  const mediaFrameStyle: React.CSSProperties = isMd
+    ? transportMobileForceCover
+      ? {
+          // Ctrl+F: TRANSPORTE_MOBILE_FORCE_COVER
+          width: "100%",
+          position: "relative",
+          overflow: "hidden",
+          display: "block",
+          aspectRatio: "16 / 9",
+          background: "transparent", // no queremos “color de relleno”
+          touchAction: "pan-y",
+        }
+      : {
+          width: "100%",
+          background: "rgba(15, 23, 42, 0.03)",
+          overflow: "hidden",
+          display: "block",
+          aspectRatio: aspect ? `${aspect}` : "16 / 10",
+          touchAction: "pan-y",
+        }
+    : {
+        width: "100%",
+        background: "rgba(15, 23, 42, 0.03)",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: Math.max(maxH, 300),
+      };
+
+  // ✅ Transporte mobile: NO lightbox. El resto: igual.
+  const canOpenLightboxMobile = isMd ? !transportMobileForceCover : true;
 
   if (loading) {
     return (
       <div style={shellStyle}>
         <div style={topBarStyle}>
           <div style={chipStyle}>…</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div style={btnDisabled}>←</div>
-            <div style={btnDisabled}>→</div>
-          </div>
+          {!isMd ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              <div style={btnDisabled}>←</div>
+              <div style={btnDisabled}>→</div>
+            </div>
+          ) : (
+            <div />
+          )}
         </div>
-        <div
-          style={{
-            padding: 16,
-            color: "rgba(15, 23, 42, 0.70)",
-            fontWeight: 800,
-          }}
-        >
+        <div style={{ padding: 16, color: "rgba(15, 23, 42, 0.70)", fontWeight: 800 }}>
           Cargando imágenes…
         </div>
       </div>
@@ -375,18 +430,16 @@ function ProductGallery({
       <div style={shellStyle}>
         <div style={topBarStyle}>
           <div style={chipStyle}>0/0</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <div style={btnDisabled}>←</div>
-            <div style={btnDisabled}>→</div>
-          </div>
+          {!isMd ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              <div style={btnDisabled}>←</div>
+              <div style={btnDisabled}>→</div>
+            </div>
+          ) : (
+            <div />
+          )}
         </div>
-        <div
-          style={{
-            padding: 16,
-            color: "rgba(15, 23, 42, 0.70)",
-            fontWeight: 800,
-          }}
-        >
+        <div style={{ padding: 16, color: "rgba(15, 23, 42, 0.70)", fontWeight: 800 }}>
           No se encontraron imágenes en: <code>{publicFolder}</code>
         </div>
       </div>
@@ -401,46 +454,64 @@ function ProductGallery({
             {idx + 1}/{total}
           </div>
 
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              type="button"
-              onClick={prev}
-              disabled={!canNav}
-              style={canNav ? btnActive : btnDisabled}
-            >
-              ← <span style={{ opacity: 0.95 }}>Anterior</span>
-            </button>
+          {/* ✅ Desktop botones | ✅ Mobile NO botones */}
+          {!isMd ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="button" onClick={prev} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                ← <span style={{ opacity: 0.95 }}>Anterior</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={next}
-              disabled={!canNav}
-              style={canNav ? btnActive : btnDisabled}
-            >
-              <span style={{ opacity: 0.95 }}>Siguiente</span> →
-            </button>
-          </div>
+              <button type="button" onClick={next} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                <span style={{ opacity: 0.95 }}>Siguiente</span> →
+              </button>
+            </div>
+          ) : (
+            <div />
+          )}
         </div>
 
-        <div style={mediaFrameStyle}>
+        <div style={mediaFrameStyle} onTouchStart={swipeStart} onTouchEnd={swipeEnd}>
           <img
             src={imgs[idx]}
             alt={alt}
             loading="eager"
             decoding="async"
-            onClick={() => setOpen(true)}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-              cursor: "zoom-in",
+            onClick={() => {
+              if (!canOpenLightboxMobile) return;
+              setOpen(true);
             }}
+            style={
+              transportMobileForceCover
+                ? {
+                    // ✅ Transporte mobile: ABSOLUTO + COVER => cero “fondo” visible
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                    cursor: "default",
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                    WebkitTouchCallout: "none",
+                  }
+                : {
+                    // ✅ Resto: como estaba
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                    cursor: canOpenLightboxMobile ? "zoom-in" : "default",
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                    WebkitTouchCallout: "none",
+                  }
+            }
           />
         </div>
       </div>
 
-      {/* ✅ Lightbox: DESKTOP INTACTO. SOLO MOBILE: centrado real para fotos verticales */}
+      {/* LIGHTBOX (solo si se puede abrir) */}
       {open ? (
         <div
           role="dialog"
@@ -453,100 +524,127 @@ function ProductGallery({
             background: "rgba(2, 6, 23, 0.78)",
             display: "grid",
             placeItems: "center",
-            padding: 18, // desktop igual que antes
+            padding: isMd ? 0 : 18,
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "min(96vw, 1600px)", // ✅ NO TOCAR (desktop)
-              height: "min(92vh, 920px)", // ✅ NO TOCAR (desktop)
-              borderRadius: 16, // ✅ NO TOCAR (desktop)
-              overflow: "hidden",
-              background: "#0b1220",
-              border: "1px solid rgba(255,255,255,0.10)",
-              boxShadow: "0 30px 90px rgba(0,0,0,0.45)",
-              display: "flex",
-              flexDirection: "column",
-            }}
+            style={
+              isMd
+                ? {
+                    position: "relative",
+                    width: "100vw",
+                    height: "100vh",
+                    background: "#0b1220",
+                    overflow: "hidden",
+                    touchAction: "pan-y",
+                  }
+                : {
+                    width: "min(96vw, 1600px)",
+                    height: "min(92vh, 920px)",
+                    borderRadius: 16,
+                    overflow: "hidden",
+                    background: "#0b1220",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    boxShadow: "0 30px 90px rgba(0,0,0,0.45)",
+                    display: "flex",
+                    flexDirection: "column",
+                  }
+            }
+            onTouchStart={isMd ? swipeStart : undefined}
+            onTouchEnd={isMd ? swipeEnd : undefined}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 10,
-                padding: 10,
-                background: "rgba(255,255,255,0.06)",
-                borderBottom: "1px solid rgba(255,255,255,0.10)",
-                flex: "0 0 auto",
-              }}
-            >
-              <div
+            {isMd ? (
+              <button
+                type="button"
+                aria-label="Cerrar"
+                onClick={() => setOpen(false)}
                 style={{
-                  color: "rgba(255,255,255,0.78)",
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  zIndex: 5,
+                  height: 44,
+                  width: 44,
+                  borderRadius: 999,
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  background: "rgba(2,6,23,0.20)",
+                  color: "rgba(255,255,255,0.92)",
+                  fontSize: 26,
                   fontWeight: 900,
-                  fontSize: 13,
+                  lineHeight: 1,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  backdropFilter: "blur(8px)",
                 }}
               >
-                {idx + 1}/{total}
-              </div>
+                ×
+              </button>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: 10,
+                  background: "rgba(255,255,255,0.06)",
+                  borderBottom: "1px solid rgba(255,255,255,0.10)",
+                  flex: "0 0 auto",
+                }}
+              >
+                <div style={{ color: "rgba(255,255,255,0.78)", fontWeight: 900, fontSize: 13 }}>
+                  {idx + 1}/{total}
+                </div>
 
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={prev}
-                  disabled={!canNav}
-                  style={canNav ? btnActive : btnDisabled}
-                >
-                  ← Anterior
-                </button>
-                <button
-                  type="button"
-                  onClick={next}
-                  disabled={!canNav}
-                  style={canNav ? btnActive : btnDisabled}
-                >
-                  Siguiente →
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  style={btnActive}
-                >
-                  Cerrar ✕
-                </button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="button" onClick={prev} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                    ← Anterior
+                  </button>
+                  <button type="button" onClick={next} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                    Siguiente →
+                  </button>
+                  <button type="button" onClick={() => setOpen(false)} style={btnActive}>
+                    Cerrar ✕
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Ctrl+F: LIGHTBOX_MEDIA_CONTAINER */}
             <div
-              style={{
-                flex: "1 1 auto",
-                minHeight: 0,
-                display: "flex",
-                background: "#0b1220",
-                padding: 12, // ✅ NO TOCAR (desktop)
-
-                // ✅ FIX SOLO MOBILE (no afecta desktop):
-                justifyContent: isMobile ? "center" : "center",
-                alignItems: isMobile ? "center" : "center",
-                width: isMobile ? "100%" : undefined,
-              }}
+              style={
+                isMd
+                  ? {
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 0,
+                    }
+                  : {
+                      flex: "1 1 auto",
+                      minHeight: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "#0b1220",
+                      padding: 12,
+                    }
+              }
             >
               <img
                 src={imgs[idx]}
                 alt={alt}
                 style={{
-                  width: "auto",
-                  height: "auto",
-                  maxWidth: "100%",
-                  maxHeight: "100%",
+                  width: "100%",
+                  height: "100%",
                   objectFit: "contain",
                   display: "block",
-
-                  // ✅ FIX SOLO MOBILE:
-                  margin: isMobile ? "0 auto" : undefined,
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
                 }}
               />
             </div>
@@ -556,8 +654,6 @@ function ProductGallery({
     </>
   );
 }
-
-
 
 
 
@@ -1516,9 +1612,8 @@ function findProduct(division: Division, productKey: string) {
 /* =========================================================
    HEADER / FOOTER
 ========================================================= */
-// Ctrl+F: function SiteHeader()
 function SiteHeader() {
-  // Ctrl+F: MOBILE_HAMBURGER_HEADER_FINAL
+  // Ctrl+F: SITEHEADER_BASEURL_LOGO_ANIMADO
   const { isMd } = useBreakpoints();
   const { lang, toggleLang } = useLang();
   const location = useLocation();
@@ -1528,6 +1623,16 @@ function SiteHeader() {
   React.useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  // ✅ CLAVE: en host ajeno / subpath, los assets deben colgar de BASE_URL
+  // Ej: BASE_URL="/web/" => "/web/logo-animado.mp4"
+  const baseUrl =
+    (typeof import.meta !== "undefined" &&
+      (import.meta as any).env &&
+      (import.meta as any).env.BASE_URL) ||
+    "/";
+
+  const logoVideoSrc = `${String(baseUrl).replace(/\/?$/, "/")}logo-animado.mp4`;
 
   return (
     <header
@@ -1562,12 +1667,20 @@ function SiteHeader() {
         >
           <div style={{ width: 120, height: 36 }}>
             <video
-              src="/logo-animado.mp4"
+              src={logoVideoSrc}
               autoPlay
               loop
               muted
               playsInline
-              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              preload="auto"
+              disablePictureInPicture
+              controls={false}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                display: "block",
+              }}
             />
           </div>
 
@@ -1640,6 +1753,9 @@ function SiteHeader() {
     </header>
   );
 }
+
+
+
 
 /* =========================================================
    MOBILE NAV DRAWER
@@ -1902,22 +2018,26 @@ function DrawerLink({
 ========================================================= */
 // Ctrl+F: function HamburgerIcon(
 function HamburgerIcon() {
-  // Ctrl+F: HAMBURGER_ICON_3_LINES
+  // Ctrl+F: HAMBURGER_ICON_SOLID_BARS_FINAL
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M4 7h16M4 12h16M4 17h16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      style={{ display: "block" }}
+    >
+      <rect x="4" y="6.6" width="16" height="2.8" rx="1.4" fill="currentColor" />
+      <rect x="4" y="10.6" width="16" height="2.8" rx="1.4" fill="currentColor" />
+      <rect x="4" y="14.6" width="16" height="2.8" rx="1.4" fill="currentColor" />
     </svg>
   );
 }
+
 // Ctrl+F: function hamburgerButtonStyle(
 function hamburgerButtonStyle(): React.CSSProperties {
-  // Ctrl+F: HAMBURGER_BUTTON_STYLE_MOBILE
+  // Ctrl+F: HAMBURGER_BUTTON_STYLE_MOBILE_FINAL
   return {
     height: 44,
     width: 44,
@@ -1930,8 +2050,14 @@ function hamburgerButtonStyle(): React.CSSProperties {
     color: BRAND.primary,
     cursor: "pointer",
     boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
+
+    // ✅ Blindaje anti “punto” (si algún carácter se cuela, queda invisible)
+    fontSize: 0,
+    lineHeight: 0,
+    padding: 0,
   };
 }
+
 
 
 function SiteFooter() {
@@ -1963,9 +2089,9 @@ function SiteFooter() {
       </div>
 
       {/* SOLO ICONOS / ELEMENTOS PASIVOS — SIN CONTACTO */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
         <a
-          href="https://www.linkedin.com"
+          href="https://www.linkedin.com/company/tipy-town"
           target="_blank"
           rel="noreferrer"
           aria-label="LinkedIn"
@@ -1973,14 +2099,14 @@ function SiteFooter() {
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 28,
-            height: 28,
-            borderRadius: 6,
+            width: 40,
+            height: 40,
+            borderRadius: 12,
             border: `1px solid ${BRAND.lineSoft}`,
             textDecoration: "none",
           }}
         >
-          <span style={{ fontSize: 12, fontWeight: 800, color: BRAND.muted }}>
+          <span style={{ fontSize: 25, fontWeight: 800, color: BRAND.muted }}>
             in
           </span>
         </a>
