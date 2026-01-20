@@ -180,6 +180,9 @@ function ProductGallery({
   includeHero?: boolean;
   maxH?: number;
 }) {
+  const { isMd } = useBreakpoints();
+  const isMobile = !isMd; // ✅ SOLO para condicionar estilos mobile (no afecta desktop)
+
   const [imgs, setImgs] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [idx, setIdx] = React.useState(0);
@@ -187,7 +190,7 @@ function ProductGallery({
   // ✅ Lightbox (expansible)
   const [open, setOpen] = React.useState(false);
 
-  // ✅ Medimos la proporción real de la imagen (para que el frame se vea armónico)
+  // ✅ Medimos la proporción real (si ya la usabas)
   const [aspect, setAspect] = React.useState<number | null>(null);
 
   React.useEffect(() => {
@@ -231,7 +234,7 @@ function ProductGallery({
     setIdx((v) => (total ? (v + 1) % total : 0));
   }, [total]);
 
-  // ✅ Cada vez que cambia la imagen activa, recalculamos aspect ratio real
+  // ✅ recalcula aspect por imagen (si no lo necesitas, no rompe igual)
   React.useEffect(() => {
     const src = imgs[idx];
     if (!src) {
@@ -314,6 +317,7 @@ function ProductGallery({
     gap: 8,
     userSelect: "none",
     WebkitUserSelect: "none",
+    whiteSpace: "nowrap",
   };
 
   const btnActive: React.CSSProperties = {
@@ -331,12 +335,7 @@ function ProductGallery({
     cursor: "not-allowed",
   };
 
-  /**
-   * ✅ FIX: Frame que se adapta dinámicamente a la altura del texto
-   * - Usa la altura pasada desde ProductDetail (textHeight)
-   * - Mantiene aspect ratio cuando es posible
-   * - Altura mínima de seguridad
-   */
+  // ✅ Caja de la galería (no tocamos desktop)
   const mediaFrameStyle: React.CSSProperties = {
     width: "100%",
     background: "rgba(15, 23, 42, 0.03)",
@@ -344,9 +343,7 @@ function ProductGallery({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    // ✅ Usa la altura exacta del texto, con mínimo de seguridad
     height: Math.max(maxH, 300),
-    // Si tenemos aspect ratio, respetarlo solo si no rompe la altura objetivo
     aspectRatio: aspect && maxH < 500 ? `${aspect}` : undefined,
   };
 
@@ -360,7 +357,13 @@ function ProductGallery({
             <div style={btnDisabled}>→</div>
           </div>
         </div>
-        <div style={{ padding: 16, color: "rgba(15, 23, 42, 0.70)", fontWeight: 800 }}>
+        <div
+          style={{
+            padding: 16,
+            color: "rgba(15, 23, 42, 0.70)",
+            fontWeight: 800,
+          }}
+        >
           Cargando imágenes…
         </div>
       </div>
@@ -377,7 +380,13 @@ function ProductGallery({
             <div style={btnDisabled}>→</div>
           </div>
         </div>
-        <div style={{ padding: 16, color: "rgba(15, 23, 42, 0.70)", fontWeight: 800 }}>
+        <div
+          style={{
+            padding: 16,
+            color: "rgba(15, 23, 42, 0.70)",
+            fontWeight: 800,
+          }}
+        >
           No se encontraron imágenes en: <code>{publicFolder}</code>
         </div>
       </div>
@@ -393,17 +402,26 @@ function ProductGallery({
           </div>
 
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" onClick={prev} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+            <button
+              type="button"
+              onClick={prev}
+              disabled={!canNav}
+              style={canNav ? btnActive : btnDisabled}
+            >
               ← <span style={{ opacity: 0.95 }}>Anterior</span>
             </button>
 
-            <button type="button" onClick={next} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+            <button
+              type="button"
+              onClick={next}
+              disabled={!canNav}
+              style={canNav ? btnActive : btnDisabled}
+            >
               <span style={{ opacity: 0.95 }}>Siguiente</span> →
             </button>
           </div>
         </div>
 
-        {/* ✅ Vista que se adapta a la altura del texto */}
         <div style={mediaFrameStyle}>
           <img
             src={imgs[idx]}
@@ -414,7 +432,7 @@ function ProductGallery({
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover", // ✅ llena el frame completamente
+              objectFit: "cover",
               display: "block",
               cursor: "zoom-in",
             }}
@@ -422,7 +440,7 @@ function ProductGallery({
         </div>
       </div>
 
-      {/* ✅ Lightbox sin cambios */}
+      {/* ✅ Lightbox: DESKTOP INTACTO. SOLO MOBILE: centrado real para fotos verticales */}
       {open ? (
         <div
           role="dialog"
@@ -435,15 +453,15 @@ function ProductGallery({
             background: "rgba(2, 6, 23, 0.78)",
             display: "grid",
             placeItems: "center",
-            padding: 18,
+            padding: 18, // desktop igual que antes
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: "min(96vw, 1600px)",
-              height: "min(92vh, 920px)",
-              borderRadius: 16,
+              width: "min(96vw, 1600px)", // ✅ NO TOCAR (desktop)
+              height: "min(92vh, 920px)", // ✅ NO TOCAR (desktop)
+              borderRadius: 16, // ✅ NO TOCAR (desktop)
               overflow: "hidden",
               background: "#0b1220",
               border: "1px solid rgba(255,255,255,0.10)",
@@ -464,32 +482,56 @@ function ProductGallery({
                 flex: "0 0 auto",
               }}
             >
-              <div style={{ color: "rgba(255,255,255,0.78)", fontWeight: 900, fontSize: 13 }}>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.78)",
+                  fontWeight: 900,
+                  fontSize: 13,
+                }}
+              >
                 {idx + 1}/{total}
               </div>
 
               <div style={{ display: "flex", gap: 8 }}>
-                <button type="button" onClick={prev} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                <button
+                  type="button"
+                  onClick={prev}
+                  disabled={!canNav}
+                  style={canNav ? btnActive : btnDisabled}
+                >
                   ← Anterior
                 </button>
-                <button type="button" onClick={next} disabled={!canNav} style={canNav ? btnActive : btnDisabled}>
+                <button
+                  type="button"
+                  onClick={next}
+                  disabled={!canNav}
+                  style={canNav ? btnActive : btnDisabled}
+                >
                   Siguiente →
                 </button>
-                <button type="button" onClick={() => setOpen(false)} style={btnActive}>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  style={btnActive}
+                >
                   Cerrar ✕
                 </button>
               </div>
             </div>
 
+            {/* Ctrl+F: LIGHTBOX_MEDIA_CONTAINER */}
             <div
               style={{
                 flex: "1 1 auto",
                 minHeight: 0,
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 background: "#0b1220",
-                padding: 12,
+                padding: 12, // ✅ NO TOCAR (desktop)
+
+                // ✅ FIX SOLO MOBILE (no afecta desktop):
+                justifyContent: isMobile ? "center" : "center",
+                alignItems: isMobile ? "center" : "center",
+                width: isMobile ? "100%" : undefined,
               }}
             >
               <img
@@ -502,6 +544,9 @@ function ProductGallery({
                   maxHeight: "100%",
                   objectFit: "contain",
                   display: "block",
+
+                  // ✅ FIX SOLO MOBILE:
+                  margin: isMobile ? "0 auto" : undefined,
                 }}
               />
             </div>
@@ -511,6 +556,8 @@ function ProductGallery({
     </>
   );
 }
+
+
 
 
 
@@ -1594,86 +1641,6 @@ function SiteHeader() {
   );
 }
 
-function FooterBar({
-  drawerOpen,
-}: {
-  drawerOpen: boolean;
-}) {
-  // Ctrl+F: FooterBar
-  const { isMd } = useBreakpoints();
-  const { lang } = useLang();
-
-  // En móvil, si el drawer está abierto, evitamos duplicar "Contacto"
-  const hideFooterActions = !isMd && drawerOpen;
-
-  return (
-    <footer
-      style={{
-        width: "100%",
-        borderTop: `1px solid ${BRAND.line}`,
-        background: "#FFFFFF",
-        padding: "10px 14px",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: CONTAINER_MAX,
-          margin: "0 auto",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-        }}
-      >
-        <div style={{ color: BRAND.muted, fontWeight: 700 }}>
-          © 2026 Tipy Town.
-        </div>
-
-        {hideFooterActions ? (
-          <div style={{ height: 1 }} />
-        ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <Link
-              to="/contacto"
-              style={{
-                color: BRAND.primary,
-                fontWeight: 900,
-                textDecoration: "none",
-              }}
-            >
-              {lang === "en" ? "Contact" : "Contacto"}
-            </Link>
-
-            <a
-              href="https://www.linkedin.com/"
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                border: `1px solid ${BRAND.line}`,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textDecoration: "none",
-                color: BRAND.primary,
-                fontWeight: 900,
-                background: "#fff",
-              }}
-              aria-label="LinkedIn"
-              title="LinkedIn"
-            >
-              in
-            </a>
-          </div>
-        )}
-      </div>
-    </footer>
-  );
-}
-
-
 /* =========================================================
    MOBILE NAV DRAWER
 ========================================================= */
@@ -1750,13 +1717,13 @@ function MobileNavDrawer({
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: BRAND.primary }}>
+              <div
+                style={{ fontSize: 22, fontWeight: 900, color: BRAND.primary }}
+              >
                 {lang === "en" ? "Menu" : "Menú"}
               </div>
               <div style={{ fontSize: 12, color: BRAND.muted }}>
-                {lang === "en"
-                  ? "Sections and actions"
-                  : "Secciones y acciones"}
+                {lang === "en" ? "Sections and actions" : "Secciones y acciones"}
               </div>
             </div>
 
@@ -1766,10 +1733,15 @@ function MobileNavDrawer({
                 {lang === "en" ? "ES" : "EN"}
               </button>
 
-              {/* Contacto */}
-              <Link to="/contacto" onClick={onClose} style={btnPrimarySm()}>
-                {pick(UI.btnContacto, lang)}
-              </Link>
+              {/* WhatsApp arriba */}
+              <a
+                href={goWhatsApp}
+                target="_blank"
+                rel="noreferrer"
+                style={btnPrimarySm()}
+              >
+                WhatsApp
+              </a>
 
               {/* Close */}
               <button
@@ -1819,56 +1791,56 @@ function MobileNavDrawer({
           </div>
 
           <div style={{ display: "grid", gap: 12 }}>
-            <DrawerLink to="/acuicola" label={pick(UI.navAcuicola, lang)} onClick={onClose} />
-            <DrawerLink to="/agro" label={pick(UI.navAgro, lang)} onClick={onClose} />
-            <DrawerLink to="/packaging" label={pick(UI.navPackaging, lang)} onClick={onClose} />
-            <DrawerLink to="/transporte" label={pick(UI.navTransporte, lang)} onClick={onClose} />
-            <DrawerLink to="/calidad" label={pick(UI.navCalidad, lang)} onClick={onClose} />
-            <DrawerLink to="/nosotros" label={pick(UI.navNosotros, lang)} onClick={onClose} />
+            <DrawerLink
+              to="/acuicola"
+              label={pick(UI.navAcuicola, lang)}
+              onClick={onClose}
+            />
+            <DrawerLink
+              to="/agro"
+              label={pick(UI.navAgro, lang)}
+              onClick={onClose}
+            />
+            <DrawerLink
+              to="/packaging"
+              label={pick(UI.navPackaging, lang)}
+              onClick={onClose}
+            />
+            <DrawerLink
+              to="/transporte"
+              label={pick(UI.navTransporte, lang)}
+              onClick={onClose}
+            />
+            <DrawerLink
+              to="/calidad"
+              label={pick(UI.navCalidad, lang)}
+              onClick={onClose}
+            />
+            <DrawerLink
+              to="/nosotros"
+              label={pick(UI.navNosotros, lang)}
+              onClick={onClose}
+            />
+
+            {/* ✅ NUEVO: Contacto debajo de Nosotros */}
+            <DrawerLink
+              to="/contacto"
+              label={lang === "en" ? "Contact" : "Contacto"}
+              onClick={onClose}
+            />
           </div>
 
-          <div
-            style={{
-              fontSize: 12,
-              letterSpacing: 2,
-              color: BRAND.muted,
-              fontWeight: 800,
-              margin: "22px 0 12px",
-            }}
-          >
-            {lang === "en" ? "ACTIONS" : "ACCIONES"}
-          </div>
-
-          <div style={{ display: "grid", gap: 12 }}>
-            <a
-              href={goWhatsApp}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                ...drawerActionCard(),
-                borderColor: "rgba(35, 137, 201, 0.35)",
-                background: "rgba(35, 137, 201, 0.08)",
-              }}
-            >
-              <span style={{ fontWeight: 900, color: BRAND.ink }}>WhatsApp</span>
-              <span style={{ color: BRAND.primary, fontWeight: 900 }}>↗</span>
-            </a>
-
-            <Link to="/contacto" onClick={onClose} style={drawerActionCard()}>
-              <span style={{ fontWeight: 900, color: BRAND.ink }}>
-                {pick(UI.btnContacto, lang)}
-              </span>
-              <span style={{ color: BRAND.primary, fontWeight: 900 }}>→</span>
-            </Link>
-          </div>
+          {/* ACCIONES: no van (WhatsApp ya está arriba) */}
         </div>
 
-        {/* Bottom safe area spacer (prevents Safari bottom bar overlap) */}
+        {/* Bottom safe area spacer */}
         <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
       </div>
     </div>
   );
 }
+
+
 
 function drawerActionCard(): React.CSSProperties {
   // Ctrl+F: DRAWER_ACTION_CARD_STYLE
@@ -1888,550 +1860,135 @@ function drawerActionCard(): React.CSSProperties {
 }
 
 function DrawerLink({
-  label,
   to,
+  label,
   onClick,
 }: {
-  label: string;
   to: string;
+  label: string;
   onClick: () => void;
 }) {
-  // Ctrl+F: DrawerLink
+  // Ctrl+F: DRAWER_LINK_COMPONENT
   return (
     <Link
       to={to}
       onClick={onClick}
       style={{
         width: "100%",
+        textDecoration: "none",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 10,
+        gap: 12,
         padding: "18px 18px",
-        borderRadius: 18,
-        background: "#FFFFFF",
+        borderRadius: 22,
         border: `1px solid ${BRAND.line}`,
-        textDecoration: "none",
-        color: BRAND.ink,
-        boxShadow: "0 1px 0 rgba(15, 23, 42, 0.03)",
+        background: "#FFFFFF",
+        boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
       }}
     >
-      <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.3 }}>
+      <span style={{ fontSize: 22, fontWeight: 900, color: BRAND.ink }}>
         {label}
       </span>
-      <span
-        aria-hidden="true"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: BRAND.primary,
-          border: `1px solid ${BRAND.line}`,
-          background: "#fff",
-          fontSize: 22,
-          fontWeight: 900,
-        }}
-      >
+      <span style={{ fontSize: 22, fontWeight: 900, color: BRAND.primary }}>
         →
       </span>
     </Link>
   );
 }
 
-function drawerActionCard({
-  label,
-  href,
-  icon,
-}: {
-  label: string;
-  href: string;
-  icon?: "wa" | "ext";
-}) {
-  // Ctrl+F: drawerActionCard
-  const Icon = () => {
-    if (icon === "wa") return <span style={{ fontWeight: 900 }}>WhatsApp</span>;
-    return <span style={{ fontWeight: 900 }}>↗</span>;
-  };
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        width: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 10,
-        padding: "18px 18px",
-        borderRadius: 18,
-        background: "#EAF4FF",
-        border: "1px solid rgba(35, 137, 201, 0.35)",
-        textDecoration: "none",
-        color: BRAND.ink,
-      }}
-    >
-      <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: -0.3 }}>
-        {label}
-      </span>
-      <span
-        aria-hidden="true"
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 16,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: BRAND.primary,
-          border: `1px solid rgba(35, 137, 201, 0.35)`,
-          background: "#fff",
-          fontSize: 18,
-          fontWeight: 900,
-        }}
-      >
-        <Icon />
-      </span>
-    </a>
-  );
-}
-
-function hamburgerButtonStyle(): React.CSSProperties {
-  // Ctrl+F: HAMBURGER_BUTTON_STYLE_MOBILE
-  return {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    border: `1px solid ${BRAND.line}`,
-    background: "#FFFFFF",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    color: BRAND.primary,
-    boxShadow: "0 6px 16px rgba(15, 23, 42, 0.08)",
-    padding: 0,
-  };
-}
-
-
-
-function MenuGlyph({ open }: { open: boolean }) {
-  // Ctrl+F: MenuGlyph
-  const stroke = BRAND.primary;
-
-  if (open) {
-    return (
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M6 6L18 18M18 6L6 18"
-          fill="none"
-          stroke={stroke}
-          strokeWidth="2.6"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
-  }
-
+/* =========================================================
+   HAMBURGER UI
+========================================================= */
+// Ctrl+F: function HamburgerIcon(
+function HamburgerIcon() {
+  // Ctrl+F: HAMBURGER_ICON_3_LINES
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
       <path
-        d="M4 7H20M4 12H20M4 17H20"
+        d="M4 7h16M4 12h16M4 17h16"
         fill="none"
-        stroke={stroke}
-        strokeWidth="2.6"
+        stroke="currentColor"
+        strokeWidth="2.2"
         strokeLinecap="round"
       />
     </svg>
   );
 }
-
-function SiteHeader() {
-  // Ctrl+F: SiteHeader
-  const { isMd } = useBreakpoints();
-  const { lang, setLang } = useLang();
-  const [drawerOpen, setDrawerOpen] = React.useState(false);
-
-  // Helpers
-  const closeDrawer = () => setDrawerOpen(false);
-
-  // iOS: cuando el drawer está abierto, evita scroll del body (reduce “saltos” con la barra del navegador)
-  React.useEffect(() => {
-    if (!drawerOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [drawerOpen]);
-
-  const contactLabel = lang === "en" ? "Contact" : "Contacto";
-
-  // Tus secciones (ajusta rutas si las tuyas son distintas)
-  const sections = [
-    { label: lang === "en" ? "Aquaculture" : "Acuícola", to: "/acuicola" },
-    { label: lang === "en" ? "Agro" : "Agro", to: "/agro" },
-    { label: lang === "en" ? "Packaging" : "Packaging", to: "/packaging" },
-    { label: lang === "en" ? "Transport" : "Transporte", to: "/transporte" },
-    { label: lang === "en" ? "Quality" : "Calidad", to: "/calidad" },
-    { label: lang === "en" ? "About" : "Nosotros", to: "/nosotros" },
-  ];
-
-  const whatsappHref = `https://wa.me/${String(WHATSAPP_PHONE_E164 || "").replace(
-    "+",
-    ""
-  )}`;
-
-  return (
-    <>
-      {/* HEADER (barra superior del sitio) */}
-      <header
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          background: "#FFFFFF",
-          borderBottom: `1px solid ${BRAND.line}`,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: CONTAINER_MAX,
-            margin: "0 auto",
-            height: HEADER_H,
-            padding: "0 14px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          {/* Logo */}
-          <Link to="/" style={{ display: "flex", alignItems: "center" }}>
-            {/* reemplaza por tu logo real */}
-            <div
-              style={{
-                width: 88,
-                height: 28,
-                borderRadius: 10,
-                background: "transparent",
-              }}
-            />
-          </Link>
-
-          {/* Derecha: en móvil solo hamburguesa */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {!isMd && (
-              <button
-                onClick={() => setDrawerOpen(true)}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 14,
-                  border: `1px solid ${BRAND.line}`,
-                  background: "#fff",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
-                aria-label="Open menu"
-              >
-                <MenuGlyph open={false} />
-              </button>
-            )}
-
-            {/* En desktop puedes mantener tus botones normales */}
-            {isMd && (
-              <>
-                <button
-                  onClick={() => setLang(lang === "en" ? "es" : "en")}
-                  style={{
-                    height: 40,
-                    padding: "0 14px",
-                    borderRadius: 14,
-                    border: `1px solid ${BRAND.line}`,
-                    background: "#fff",
-                    fontWeight: 900,
-                    cursor: "pointer",
-                    color: BRAND.primary,
-                  }}
-                >
-                  {lang === "en" ? "ES" : "EN"}
-                </button>
-
-                <Link
-                  to="/contacto"
-                  style={{
-                    height: 40,
-                    padding: "0 16px",
-                    borderRadius: 14,
-                    background: BRAND.primary,
-                    color: "#fff",
-                    fontWeight: 900,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    textDecoration: "none",
-                  }}
-                >
-                  {contactLabel}
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* DRAWER MOBILE */}
-      {drawerOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 200,
-            background: "rgba(11, 18, 32, 0.35)",
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
-          onClick={closeDrawer}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "min(560px, 92vw)",
-              height: "100dvh",
-              background: "#F7FAFC",
-              borderLeft: `1px solid ${BRAND.line}`,
-              boxShadow: "-10px 0 30px rgba(0,0,0,0.10)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            {/* Top bar sticky (para que iOS no te lo “coma” al hacer scroll) */}
-            <div
-              style={{
-                position: "sticky",
-                top: 0,
-                zIndex: 5,
-                background: "#F7FAFC",
-                paddingTop: "env(safe-area-inset-top)",
-                borderBottom: `1px solid ${BRAND.line}`,
-              }}
-            >
-              <div
-                style={{
-                  padding: "16px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: 38,
-                      fontWeight: 1000,
-                      color: BRAND.primary,
-                      letterSpacing: -0.6,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {lang === "en" ? "Menu" : "Menú"}
-                  </div>
-                  <div style={{ color: BRAND.muted, fontWeight: 700, marginTop: 6 }}>
-                    {lang === "en" ? "Sections and actions" : "Secciones y acciones"}
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <button
-                    onClick={() => setLang(lang === "en" ? "es" : "en")}
-                    style={{
-                      height: 46,
-                      width: 64,
-                      borderRadius: 16,
-                      border: `1px solid ${BRAND.line}`,
-                      background: "#fff",
-                      fontWeight: 1000,
-                      cursor: "pointer",
-                      color: BRAND.primary,
-                    }}
-                    aria-label="Toggle language"
-                  >
-                    {lang === "en" ? "ES" : "EN"}
-                  </button>
-
-                  <Link
-                    to="/contacto"
-                    onClick={closeDrawer}
-                    style={{
-                      height: 46,
-                      padding: "0 18px",
-                      borderRadius: 16,
-                      background: BRAND.primary,
-                      color: "#fff",
-                      fontWeight: 1000,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      textDecoration: "none",
-                    }}
-                  >
-                    {contactLabel}
-                  </Link>
-
-                  <button
-                    onClick={closeDrawer}
-                    style={{
-                      width: 46,
-                      height: 46,
-                      borderRadius: 16,
-                      border: `1px solid ${BRAND.line}`,
-                      background: "#fff",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                    }}
-                    aria-label="Close menu"
-                  >
-                    <MenuGlyph open={true} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Scroll interno del drawer */}
-            <div
-              style={{
-                padding: "18px 16px 20px",
-                overflowY: "auto",
-                WebkitOverflowScrolling: "touch",
-              }}
-            >
-              <div style={{ color: BRAND.muted, fontWeight: 900, letterSpacing: 3 }}>
-                {lang === "en" ? "SECTIONS" : "SECCIONES"}
-              </div>
-
-              <div style={{ display: "grid", gap: 14, marginTop: 12 }}>
-                {sections.map((s) => (
-                  <DrawerLink key={s.to} label={s.label} to={s.to} onClick={closeDrawer} />
-                ))}
-              </div>
-
-              <div style={{ height: 22 }} />
-
-              <div style={{ color: BRAND.muted, fontWeight: 900, letterSpacing: 3 }}>
-                {lang === "en" ? "ACTIONS" : "ACCIONES"}
-              </div>
-
-              <div style={{ display: "grid", gap: 14, marginTop: 12 }}>
-                {drawerActionCard({
-                  label: "WhatsApp",
-                  href: whatsappHref,
-                  icon: "wa",
-                })}
-
-                {/* IMPORTANTE:
-                    Ya NO listamos "Contacto" aquí, porque ya está arriba fijo.
-                    Eso elimina la duplicación. */}
-              </div>
-
-              <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+// Ctrl+F: function hamburgerButtonStyle(
+function hamburgerButtonStyle(): React.CSSProperties {
+  // Ctrl+F: HAMBURGER_BUTTON_STYLE_MOBILE
+  return {
+    height: 44,
+    width: 44,
+    borderRadius: 12,
+    border: `1px solid ${BRAND.line}`,
+    background: "#FFFFFF",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: BRAND.primary,
+    cursor: "pointer",
+    boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
+  };
 }
 
 
-
-
 function SiteFooter() {
-  // Ctrl+F: SITE_FOOTER_BASE_LAYER
-  const { isMd } = useBreakpoints();
-  const { lang } = useLang();
+  const FOOTER_H = 56;
 
   return (
     <footer
       style={{
-        position: "relative",      // ❗ NUNCA fixed
-        zIndex: 1,                  // ❗ layer más bajo que header/drawer
         width: "100%",
-        background: "#FFFFFF",
-        borderTop: `1px solid ${BRAND.line}`,
-        marginTop: 40,
+        height: FOOTER_H,
+        background: BRAND.panel,
+        borderTop: `1px solid ${BRAND.lineSoft}`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 18px",
+        boxSizing: "border-box",
       }}
     >
       <div
         style={{
-          maxWidth: CONTAINER_MAX,
-          margin: "0 auto",
-          padding: isMd ? "16px 14px" : "28px 18px",
-          display: "flex",
-          flexDirection: isMd ? "column" : "row",
-          alignItems: isMd ? "flex-start" : "center",
-          justifyContent: "space-between",
-          gap: 16,
+          fontSize: 12,
+          color: BRAND.muted,
+          fontWeight: 600,
+          whiteSpace: "nowrap",
         }}
       >
-        {/* Left */}
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: BRAND.muted,
-          }}
-        >
-          © {new Date().getFullYear()} Tipy Town
-        </div>
+        © 2026 Tipy Town.
+      </div>
 
-        {/* Right */}
-        <div
+      {/* SOLO ICONOS / ELEMENTOS PASIVOS — SIN CONTACTO */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <a
+          href="https://www.linkedin.com"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="LinkedIn"
           style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 16,
+            display: "inline-flex",
             alignItems: "center",
+            justifyContent: "center",
+            width: 28,
+            height: 28,
+            borderRadius: 6,
+            border: `1px solid ${BRAND.lineSoft}`,
+            textDecoration: "none",
           }}
         >
-          <Link
-            to="/contacto"
-            style={{
-              textDecoration: "none",
-              fontWeight: 800,
-              color: BRAND.primary,
-            }}
-          >
-            {lang === "en" ? "Contact" : "Contacto"}
-          </Link>
-
-          <a
-            href="https://www.linkedin.com/"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              textDecoration: "none",
-              fontWeight: 800,
-              color: BRAND.primary,
-            }}
-          >
-            LinkedIn
-          </a>
-        </div>
+          <span style={{ fontSize: 12, fontWeight: 800, color: BRAND.muted }}>
+            in
+          </span>
+        </a>
       </div>
     </footer>
   );
 }
+
 
 /* =========================================================
    HOME
@@ -4281,95 +3838,118 @@ function carouselFallback(): React.CSSProperties {
 
 function ImageLightbox({
   open,
-  src,
-  alt,
+  imgs,
+  idx,
+  setIdx,
   onClose,
+  alt,
 }: {
   open: boolean;
-  src?: string;
-  alt?: string;
+  imgs: string[];
+  idx: number;
+  setIdx: (n: number) => void;
   onClose: () => void;
+  alt: string;
 }) {
-  useEffect(() => {
-    if (!open) return;
+  const { isMobile } = useBreakpoints();
 
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+  if (!open) return null;
 
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
-
-  if (!open || !src) return null;
+  const total = imgs.length;
 
   return (
     <div
-      onClick={onClose}
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(2,6,23,0.88)",
         zIndex: 9999,
-        display: "grid",
-        placeItems: "center",
-        padding: 24,
+        background: "rgba(11,18,32,0.85)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      {/* STOP click bubbling */}
       <div
-        onClick={(e) => e.stopPropagation()}
         style={{
-          position: "relative",
-          maxWidth: "95vw",
-          maxHeight: "95vh",
+          width: isMobile ? "100vw" : "min(96vw, 1600px)",
+          height: isMobile ? "100vh" : "min(92vh, 920px)",
+          background: "#0b1220",
+          borderRadius: isMobile ? 0 : 16,
+          overflow: "hidden",
+          display: "flex",
+
+          // 🔒 DESKTOP: 2 columnas
+          // 📱 MOBILE: 1 columna
+          flexDirection: isMobile ? "column" : "row",
         }}
       >
-        {/* Close */}
-        <button
-          onClick={onClose}
-          aria-label="Cerrar"
+        {/* ================= LEFT PANEL (DESKTOP ONLY) ================= */}
+        {!isMobile && (
+          <div
+            style={{
+              flex: "0 0 38%",
+              background: "linear-gradient(180deg,#0b1220,#020617)",
+            }}
+          />
+        )}
+
+        {/* ================= IMAGE PANEL ================= */}
+        <div
           style={{
-            position: "absolute",
-            top: -14,
-            right: -14,
-            width: 36,
-            height: 36,
-            borderRadius: 999,
-            border: "none",
-            background: "#fff",
-            color: "#0B1220",
-            fontSize: 20,
-            fontWeight: 900,
-            cursor: "pointer",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+            flex: "1 1 auto",
+            minHeight: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: isMobile ? 0 : 12,
           }}
         >
-          ×
-        </button>
+          <img
+            src={imgs[idx]}
+            alt={alt}
+            style={{
+              width: isMobile ? "100%" : "auto",
+              height: isMobile ? "100%" : "100%",
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
+        </div>
 
-        <img
-          src={src}
-          alt={alt}
+        {/* ================= TOP CONTROLS ================= */}
+        <div
           style={{
-            maxWidth: "95vw",
-            maxHeight: "95vh",
-            objectFit: "contain",
-            display: "block",
-            borderRadius: 12,
-            boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
-            background: "#0B1220",
+            position: "absolute",
+            top: 12,
+            left: 12,
+            right: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            zIndex: 2,
           }}
-        />
+        >
+          <div style={{ color: "#fff", fontWeight: 700 }}>
+            {idx + 1}/{total}
+          </div>
+
+          <button onClick={() => setIdx(Math.max(0, idx - 1))}>
+            ← Anterior
+          </button>
+
+          <button onClick={() => setIdx(Math.min(total - 1, idx + 1))}>
+            Siguiente →
+          </button>
+
+          <button onClick={onClose}>Cerrar ✕</button>
+        </div>
       </div>
     </div>
   );
 }
+
 
 
 function FigurePlaceholder({
