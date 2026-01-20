@@ -2333,41 +2333,7 @@ function SiteHeader() {
   );
 }
 
-/* =========================================================
-   HAMBURGER UI
-========================================================= */
-// Ctrl+F: function HamburgerIcon(
-function HamburgerIcon() {
-  // Ctrl+F: HAMBURGER_ICON_3_LINES
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M4 7h16M4 12h16M4 17h16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-// Ctrl+F: function hamburgerButtonStyle(
-function hamburgerButtonStyle(): React.CSSProperties {
-  // Ctrl+F: HAMBURGER_BUTTON_STYLE_MOBILE
-  return {
-    height: 44,
-    width: 44,
-    borderRadius: 12,
-    border: `1px solid ${BRAND.line}`,
-    background: "#FFFFFF",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: BRAND.primary,
-    cursor: "pointer",
-    boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
-  };
-}
+
 
 
 function SiteFooter() {
