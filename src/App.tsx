@@ -1609,226 +1609,222 @@ function MobileNavDrawer({
   lang: Lang;
   toggleLang: () => void;
 }) {
-  React.useEffect(() => {
-    if (!open) return;
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-
-    window.addEventListener("keydown", onKey);
-    // evita scroll detrás
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open, onClose]);
-
+  // Ctrl+F: MOBILE_NAV_DRAWER_SAFE_AREA_DVH
   if (!open) return null;
 
-  const itemStyle: React.CSSProperties = {
-    textDecoration: "none",
-    color: "#0f172a",
-    fontSize: 16,
-    fontWeight: 850,
-    padding: "12px 12px",
-    borderRadius: 14,
-    border: `1px solid ${BRAND.line}`,
-    background: "white",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  };
-
-  const sectionTitle: React.CSSProperties = {
-    fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    color: BRAND.muted,
-    marginTop: 8,
-    marginBottom: 10,
-  };
+  const goWhatsApp = getWhatsAppLink(buildWhatsAppPrefill(lang));
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={lang === "en" ? "Menu" : "Menú"}
-      onMouseDown={onClose}
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 1000,
-        background: "rgba(2,6,23,0.55)",
-        display: "flex",
-        justifyContent: "flex-end",
+        zIndex: 120,
       }}
     >
+      {/* Backdrop */}
       <div
-        onMouseDown={(e) => e.stopPropagation()}
+        onClick={onClose}
         style={{
-          width: "min(420px, 92vw)",
-          height: "100%",
+          position: "absolute",
+          inset: 0,
+          background: "rgba(2, 6, 23, 0.42)",
+        }}
+      />
+
+      {/* Panel */}
+      <div
+        style={{
+          position: "absolute",
+          right: 0,
+          top: 0,
+          height: "100dvh", // clave para iOS Safari (no usar 100vh)
+          width: "min(92vw, 520px)",
           background: "#FFFFFF",
-          borderLeft: `1px solid ${BRAND.line}`,
-          boxShadow: "-20px 0 80px rgba(2,6,23,0.28)",
-          padding: 16,
+          boxShadow: "-20px 0 60px rgba(2,6,23,0.25)",
           display: "flex",
           flexDirection: "column",
-          gap: 12,
+          overflow: "hidden",
         }}
       >
-        {/* HEADER */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ fontSize: 16, fontWeight: 950, color: BRAND.primary }}>
-            {lang === "en" ? "Menu" : "Menú"}
+        {/* Top bar (sticky) */}
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 2,
+            background: "#FFFFFF",
+            borderBottom: `1px solid ${BRAND.line}`,
+            paddingTop: "env(safe-area-inset-top)",
+          }}
+        >
+          <div
+            style={{
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: BRAND.primary }}>
+                {lang === "en" ? "Menu" : "Menú"}
+              </div>
+              <div style={{ fontSize: 12, color: BRAND.muted }}>
+                {lang === "en"
+                  ? "Sections and actions"
+                  : "Secciones y acciones"}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {/* Idioma */}
+              <button onClick={toggleLang} style={btnOutlineSm()}>
+                {lang === "en" ? "ES" : "EN"}
+              </button>
+
+              {/* Contacto */}
+              <Link to="/contacto" onClick={onClose} style={btnPrimarySm()}>
+                {pick(UI.btnContacto, lang)}
+              </Link>
+
+              {/* Close */}
+              <button
+                type="button"
+                aria-label={lang === "en" ? "Close" : "Cerrar"}
+                onClick={onClose}
+                style={{
+                  height: 44,
+                  width: 44,
+                  borderRadius: 14,
+                  border: `1px solid ${BRAND.line}`,
+                  background: "#FFFFFF",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 20,
+                  fontWeight: 900,
+                  color: BRAND.primary,
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content (scrollable) */}
+        <div
+          style={{
+            padding: "16px",
+            overflow: "auto",
+            WebkitOverflowScrolling: "touch",
+            flex: 1,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              letterSpacing: 2,
+              color: BRAND.muted,
+              fontWeight: 800,
+              margin: "10px 0 12px",
+            }}
+          >
+            {lang === "en" ? "SECTIONS" : "SECCIONES"}
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={lang === "en" ? "Close" : "Cerrar"}
+          <div style={{ display: "grid", gap: 12 }}>
+            <DrawerLink to="/acuicola" label={pick(UI.navAcuicola, lang)} onClick={onClose} />
+            <DrawerLink to="/agro" label={pick(UI.navAgro, lang)} onClick={onClose} />
+            <DrawerLink to="/packaging" label={pick(UI.navPackaging, lang)} onClick={onClose} />
+            <DrawerLink to="/transporte" label={pick(UI.navTransporte, lang)} onClick={onClose} />
+            <DrawerLink to="/calidad" label={pick(UI.navCalidad, lang)} onClick={onClose} />
+            <DrawerLink to="/nosotros" label={pick(UI.navNosotros, lang)} onClick={onClose} />
+          </div>
+
+          <div
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 14,
-              border: `1px solid ${BRAND.line}`,
-              background: "white",
-              cursor: "pointer",
-              fontWeight: 950,
-              color: BRAND.primary,
+              fontSize: 12,
+              letterSpacing: 2,
+              color: BRAND.muted,
+              fontWeight: 800,
+              margin: "22px 0 12px",
             }}
           >
-            ×
-          </button>
+            {lang === "en" ? "ACTIONS" : "ACCIONES"}
+          </div>
+
+          <div style={{ display: "grid", gap: 12 }}>
+            <a
+              href={goWhatsApp}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                ...drawerActionCard(),
+                borderColor: "rgba(35, 137, 201, 0.35)",
+                background: "rgba(35, 137, 201, 0.08)",
+              }}
+            >
+              <span style={{ fontWeight: 900, color: BRAND.ink }}>WhatsApp</span>
+              <span style={{ color: BRAND.primary, fontWeight: 900 }}>↗</span>
+            </a>
+
+            <Link to="/contacto" onClick={onClose} style={drawerActionCard()}>
+              <span style={{ fontWeight: 900, color: BRAND.ink }}>
+                {pick(UI.btnContacto, lang)}
+              </span>
+              <span style={{ color: BRAND.primary, fontWeight: 900 }}>→</span>
+            </Link>
+          </div>
         </div>
 
-        <div style={{ height: 1, background: BRAND.line }} />
-
-        {/* NAV */}
-        <div style={sectionTitle}>{lang === "en" ? "Sections" : "Secciones"}</div>
-
-        <div style={{ display: "grid", gap: 10 }}>
-          <Link to="/acuicola" style={itemStyle}>
-            <span>{pick(UI.navAcuicola, lang)}</span>
-            <span style={{ fontWeight: 950 }}>→</span>
-          </Link>
-          <Link to="/agro" style={itemStyle}>
-            <span>{pick(UI.navAgro, lang)}</span>
-            <span style={{ fontWeight: 950 }}>→</span>
-          </Link>
-          <Link to="/packaging" style={itemStyle}>
-            <span>{pick(UI.navPackaging, lang)}</span>
-            <span style={{ fontWeight: 950 }}>→</span>
-          </Link>
-          <Link to="/transporte" style={itemStyle}>
-            <span>{pick(UI.navTransporte, lang)}</span>
-            <span style={{ fontWeight: 950 }}>→</span>
-          </Link>
-          <Link to="/calidad" style={itemStyle}>
-            <span>{pick(UI.navCalidad, lang)}</span>
-            <span style={{ fontWeight: 950 }}>→</span>
-          </Link>
-          <Link to="/nosotros" style={itemStyle}>
-            <span>{pick(UI.navNosotros, lang)}</span>
-            <span style={{ fontWeight: 950 }}>→</span>
-          </Link>
-        </div>
-
-        <div style={{ height: 1, background: BRAND.line, marginTop: 6 }} />
-
-        {/* ACTIONS */}
-        <div style={sectionTitle}>{lang === "en" ? "Actions" : "Acciones"}</div>
-
-        <div style={{ display: "grid", gap: 10 }}>
-          <a
-            href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              ...itemStyle,
-              border: `1px solid rgba(35,137,201,0.22)`,
-              background: "rgba(35,137,201,0.08)",
-            }}
-          >
-            <span>{pick(UI.btnWhatsApp, lang)}</span>
-            <span style={{ fontWeight: 950 }}>↗</span>
-          </a>
-
-          <Link
-            to="/contacto"
-            style={{
-              ...itemStyle,
-              border: `1px solid rgba(52,62,117,0.22)`,
-              background: "rgba(52,62,117,0.06)",
-            }}
-          >
-            <span>{pick(UI.btnContacto, lang)}</span>
-            <span style={{ fontWeight: 950 }}>→</span>
-          </Link>
-
-          <button
-            type="button"
-            onClick={toggleLang}
-            style={{
-              ...itemStyle,
-              cursor: "pointer",
-            }}
-          >
-            <span>{lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}</span>
-            <span style={{ fontWeight: 950 }}>{lang === "en" ? "ES" : "EN"}</span>
-          </button>
-        </div>
-
-        {/* spacer */}
-        <div style={{ flex: "1 1 auto" }} />
-
-        <div style={{ fontSize: 12, color: BRAND.muted, lineHeight: 1.5 }}>
-          © 2026 Tipy Town.
-        </div>
+        {/* Bottom safe area spacer (prevents Safari bottom bar overlap) */}
+        <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
       </div>
     </div>
   );
 }
-
 /* =========================================================
    HAMBURGER UI
 ========================================================= */
 // Ctrl+F: function HamburgerIcon(
 function HamburgerIcon() {
+  // Ctrl+F: HAMBURGER_ICON_3_LINES
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M4 7h16M4 12h16M4 17h16"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2.5"
+        strokeWidth="2.2"
         strokeLinecap="round"
       />
     </svg>
   );
 }
-
 // Ctrl+F: function hamburgerButtonStyle(
 function hamburgerButtonStyle(): React.CSSProperties {
+  // Ctrl+F: HAMBURGER_BUTTON_STYLE_MOBILE
   return {
-    width: 44,
     height: 44,
-    borderRadius: 14,
+    width: 44,
+    borderRadius: 12,
     border: `1px solid ${BRAND.line}`,
-    background: "white",
+    background: "#FFFFFF",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     color: BRAND.primary,
     cursor: "pointer",
-    display: "grid",
-    placeItems: "center",
-    boxShadow: "0 8px 20px rgba(15, 23, 42, 0.08)",
+    boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
   };
 }
+
 
 function SiteFooter() {
   const FOOTER_H = 56; // ALTO FIJO, NO CAMBIA
