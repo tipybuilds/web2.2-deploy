@@ -2357,74 +2357,81 @@ function SiteHeader() {
 
 
 function SiteFooter() {
-  const FOOTER_H = 56; // ALTO FIJO, NO CAMBIA
+  // Ctrl+F: SITE_FOOTER_BASE_LAYER
+  const { isMd } = useBreakpoints();
+  const { lang } = useLang();
 
   return (
     <footer
       style={{
-        position: "fixed",
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: FOOTER_H,
-        background: BRAND.panel,
-        borderTop: `1px solid ${BRAND.lineSoft}`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 18px",
-        zIndex: 100,
+        position: "relative",      // ❗ NUNCA fixed
+        zIndex: 1,                  // ❗ layer más bajo que header/drawer
+        width: "100%",
+        background: "#FFFFFF",
+        borderTop: `1px solid ${BRAND.line}`,
+        marginTop: 40,
       }}
     >
       <div
         style={{
-          fontSize: 12,
-          color: BRAND.muted,
-          fontWeight: 600,
-          whiteSpace: "nowrap",
+          maxWidth: CONTAINER_MAX,
+          margin: "0 auto",
+          padding: isMd ? "16px 14px" : "28px 18px",
+          display: "flex",
+          flexDirection: isMd ? "column" : "row",
+          alignItems: isMd ? "flex-start" : "center",
+          justifyContent: "space-between",
+          gap: 16,
         }}
       >
-        © 2026 Tipy Town.
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <a
-          href="/contacto"
+        {/* Left */}
+        <div
           style={{
-            fontSize: 12,
-            color: BRAND.primary,
-            textDecoration: "none",
+            fontSize: 14,
             fontWeight: 700,
-            lineHeight: 1,
+            color: BRAND.muted,
           }}
         >
-          Contacto
-        </a>
+          © {new Date().getFullYear()} Tipy Town
+        </div>
 
-        <a
-          href="https://www.linkedin.com"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="LinkedIn"
+        {/* Right */}
+        <div
           style={{
-            display: "inline-flex",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 16,
             alignItems: "center",
-            justifyContent: "center",
-            width: 28,
-            height: 28,
-            borderRadius: 6,
-            border: `1px solid ${BRAND.lineSoft}`,
           }}
         >
-          <span style={{ fontSize: 12, fontWeight: 800, color: BRAND.muted }}>
-            in
-          </span>
-        </a>
+          <Link
+            to="/contacto"
+            style={{
+              textDecoration: "none",
+              fontWeight: 800,
+              color: BRAND.primary,
+            }}
+          >
+            {lang === "en" ? "Contact" : "Contacto"}
+          </Link>
+
+          <a
+            href="https://www.linkedin.com/"
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              textDecoration: "none",
+              fontWeight: 800,
+              color: BRAND.primary,
+            }}
+          >
+            LinkedIn
+          </a>
+        </div>
       </div>
     </footer>
   );
 }
-
 
 /* =========================================================
    HOME
