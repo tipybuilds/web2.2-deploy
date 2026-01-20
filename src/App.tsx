@@ -4013,14 +4013,47 @@ function ImageLightbox({
   onClose: () => void;
   alt: string;
 }) {
-  const { isMobile } = useBreakpoints();
+  // Ctrl+F: function ImageLightbox(
+  const { isMd } = useBreakpoints();
+
+  // ✅ En este proyecto: isMd = mobile
+  const isMobile = isMd;
 
   if (!open) return null;
 
   const total = imgs.length;
+  const canPrev = idx > 0;
+  const canNext = idx < total - 1;
+
+  // ✅ Swipe SOLO mobile (no afecta desktop)
+  const touchStartX = React.useRef<number | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile || total <= 1) return;
+    touchStartX.current = e.touches?.[0]?.clientX ?? null;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile || total <= 1) return;
+
+    const start = touchStartX.current;
+    touchStartX.current = null;
+
+    const end = e.changedTouches?.[0]?.clientX ?? null;
+    if (start == null || end == null) return;
+
+    const dx = end - start;
+    if (Math.abs(dx) < 48) return;
+
+    // left swipe -> next
+    if (dx < 0 && canNext) setIdx(idx + 1);
+    // right swipe -> prev
+    if (dx > 0 && canPrev) setIdx(idx - 1);
+  };
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
       style={{
         position: "fixed",
         inset: 0,
@@ -4032,7 +4065,11 @@ function ImageLightbox({
       }}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={isMobile ? onTouchStart : undefined}
+        onTouchEnd={isMobile ? onTouchEnd : undefined}
         style={{
+          position: "relative",
           width: isMobile ? "100vw" : "min(96vw, 1600px)",
           height: isMobile ? "100vh" : "min(92vh, 920px)",
           background: "#0b1220",
@@ -4043,6 +4080,7 @@ function ImageLightbox({
           // 🔒 DESKTOP: 2 columnas
           // 📱 MOBILE: 1 columna
           flexDirection: isMobile ? "column" : "row",
+          touchAction: isMobile ? "pan-y" : "auto",
         }}
       >
         {/* ================= LEFT PANEL (DESKTOP ONLY) ================= */}
@@ -4070,43 +4108,83 @@ function ImageLightbox({
             src={imgs[idx]}
             alt={alt}
             style={{
-              width: isMobile ? "100%" : "auto",
-              height: isMobile ? "100%" : "100%",
+              width: "100%",
+              height: "100%",
               maxWidth: "100%",
               maxHeight: "100%",
               objectFit: "contain",
               display: "block",
+              userSelect: "none",
+              WebkitUserSelect: "none",
             }}
           />
         </div>
 
-        {/* ================= TOP CONTROLS ================= */}
-        <div
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 12,
-            right: 12,
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            zIndex: 2,
-          }}
-        >
-          <div style={{ color: "#fff", fontWeight: 700 }}>
-            {idx + 1}/{total}
+        {/* ================= CONTROLS ================= */}
+        {isMobile ? (
+          // ✅ MOBILE: SOLO X (sin anterior/siguiente)
+          <button
+            type="button"
+            aria-label="Cerrar"
+            onClick={onClose}
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              zIndex: 5,
+              height: 44,
+              width: 44,
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.25)",
+              background: "rgba(2,6,23,0.20)",
+              color: "rgba(255,255,255,0.92)",
+              fontSize: 26,
+              fontWeight: 900,
+              lineHeight: 1,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            ×
+          </button>
+        ) : (
+          // 🔒 DESKTOP: mantiene Anterior/Siguiente/Cerrar
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              right: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              zIndex: 2,
+            }}
+          >
+            <div style={{ color: "#fff", fontWeight: 700 }}>
+              {idx + 1}/{total}
+            </div>
+
+            <button
+              onClick={() => setIdx(Math.max(0, idx - 1))}
+              disabled={!canPrev}
+            >
+              ← Anterior
+            </button>
+
+            <button
+              onClick={() => setIdx(Math.min(total - 1, idx + 1))}
+              disabled={!canNext}
+            >
+              Siguiente →
+            </button>
+
+            <button onClick={onClose}>Cerrar ✕</button>
           </div>
-
-          <button onClick={() => setIdx(Math.max(0, idx - 1))}>
-            ← Anterior
-          </button>
-
-          <button onClick={() => setIdx(Math.min(total - 1, idx + 1))}>
-            Siguiente →
-          </button>
-
-          <button onClick={onClose}>Cerrar ✕</button>
-        </div>
+        )}
       </div>
     </div>
   );
