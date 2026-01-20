@@ -1501,12 +1501,10 @@ function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
-  // Cerrar menú mobile al cambiar ruta
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // Prevenir scroll cuando menú está abierto
   useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -1633,7 +1631,7 @@ function SiteHeader() {
 
             <div style={{ width: 1, height: 18, background: BRAND.line, margin: "0 6px" }} />
 
-            
+            <a
               href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
               target="_blank"
               rel="noreferrer"
