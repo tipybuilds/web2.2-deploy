@@ -1594,6 +1594,86 @@ function SiteHeader() {
   );
 }
 
+function FooterBar({
+  drawerOpen,
+}: {
+  drawerOpen: boolean;
+}) {
+  // Ctrl+F: FooterBar
+  const { isMd } = useBreakpoints();
+  const { lang } = useLang();
+
+  // En móvil, si el drawer está abierto, evitamos duplicar "Contacto"
+  const hideFooterActions = !isMd && drawerOpen;
+
+  return (
+    <footer
+      style={{
+        width: "100%",
+        borderTop: `1px solid ${BRAND.line}`,
+        background: "#FFFFFF",
+        padding: "10px 14px",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: CONTAINER_MAX,
+          margin: "0 auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div style={{ color: BRAND.muted, fontWeight: 700 }}>
+          © 2026 Tipy Town.
+        </div>
+
+        {hideFooterActions ? (
+          <div style={{ height: 1 }} />
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <Link
+              to="/contacto"
+              style={{
+                color: BRAND.primary,
+                fontWeight: 900,
+                textDecoration: "none",
+              }}
+            >
+              {lang === "en" ? "Contact" : "Contacto"}
+            </Link>
+
+            <a
+              href="https://www.linkedin.com/"
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                border: `1px solid ${BRAND.line}`,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textDecoration: "none",
+                color: BRAND.primary,
+                fontWeight: 900,
+                background: "#fff",
+              }}
+              aria-label="LinkedIn"
+              title="LinkedIn"
+            >
+              in
+            </a>
+          </div>
+        )}
+      </div>
+    </footer>
+  );
+}
+
+
 /* =========================================================
    MOBILE NAV DRAWER
 ========================================================= */
@@ -1808,40 +1888,448 @@ function drawerActionCard(): React.CSSProperties {
 }
 
 function DrawerLink({
-  to,
   label,
+  to,
   onClick,
 }: {
-  to: string;
   label: string;
+  to: string;
   onClick: () => void;
 }) {
-  // Ctrl+F: DRAWER_LINK_COMPONENT
+  // Ctrl+F: DrawerLink
   return (
     <Link
       to={to}
       onClick={onClick}
       style={{
         width: "100%",
-        textDecoration: "none",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 12,
+        gap: 10,
         padding: "18px 18px",
-        borderRadius: 22,
-        border: `1px solid ${BRAND.line}`,
+        borderRadius: 18,
         background: "#FFFFFF",
-        boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
+        border: `1px solid ${BRAND.line}`,
+        textDecoration: "none",
+        color: BRAND.ink,
+        boxShadow: "0 1px 0 rgba(15, 23, 42, 0.03)",
       }}
     >
-      <span style={{ fontSize: 22, fontWeight: 900, color: BRAND.ink }}>
+      <span style={{ fontSize: 30, fontWeight: 900, letterSpacing: -0.3 }}>
         {label}
       </span>
-      <span style={{ fontSize: 22, fontWeight: 900, color: BRAND.primary }}>
+      <span
+        aria-hidden="true"
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 14,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: BRAND.primary,
+          border: `1px solid ${BRAND.line}`,
+          background: "#fff",
+          fontSize: 22,
+          fontWeight: 900,
+        }}
+      >
         →
       </span>
     </Link>
+  );
+}
+
+function drawerActionCard({
+  label,
+  href,
+  icon,
+}: {
+  label: string;
+  href: string;
+  icon?: "wa" | "ext";
+}) {
+  // Ctrl+F: drawerActionCard
+  const Icon = () => {
+    if (icon === "wa") return <span style={{ fontWeight: 900 }}>WhatsApp</span>;
+    return <span style={{ fontWeight: 900 }}>↗</span>;
+  };
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        padding: "18px 18px",
+        borderRadius: 18,
+        background: "#EAF4FF",
+        border: "1px solid rgba(35, 137, 201, 0.35)",
+        textDecoration: "none",
+        color: BRAND.ink,
+      }}
+    >
+      <span style={{ fontSize: 28, fontWeight: 900, letterSpacing: -0.3 }}>
+        {label}
+      </span>
+      <span
+        aria-hidden="true"
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 16,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: BRAND.primary,
+          border: `1px solid rgba(35, 137, 201, 0.35)`,
+          background: "#fff",
+          fontSize: 18,
+          fontWeight: 900,
+        }}
+      >
+        <Icon />
+      </span>
+    </a>
+  );
+}
+
+function MenuGlyph({ open }: { open: boolean }) {
+  // Ctrl+F: MenuGlyph
+  const stroke = BRAND.primary;
+
+  if (open) {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M6 6L18 18M18 6L6 18"
+          fill="none"
+          stroke={stroke}
+          strokeWidth="2.6"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M4 7H20M4 12H20M4 17H20"
+        fill="none"
+        stroke={stroke}
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function SiteHeader() {
+  // Ctrl+F: SiteHeader
+  const { isMd } = useBreakpoints();
+  const { lang, setLang } = useLang();
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
+  // Helpers
+  const closeDrawer = () => setDrawerOpen(false);
+
+  // iOS: cuando el drawer está abierto, evita scroll del body (reduce “saltos” con la barra del navegador)
+  React.useEffect(() => {
+    if (!drawerOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [drawerOpen]);
+
+  const contactLabel = lang === "en" ? "Contact" : "Contacto";
+
+  // Tus secciones (ajusta rutas si las tuyas son distintas)
+  const sections = [
+    { label: lang === "en" ? "Aquaculture" : "Acuícola", to: "/acuicola" },
+    { label: lang === "en" ? "Agro" : "Agro", to: "/agro" },
+    { label: lang === "en" ? "Packaging" : "Packaging", to: "/packaging" },
+    { label: lang === "en" ? "Transport" : "Transporte", to: "/transporte" },
+    { label: lang === "en" ? "Quality" : "Calidad", to: "/calidad" },
+    { label: lang === "en" ? "About" : "Nosotros", to: "/nosotros" },
+  ];
+
+  const whatsappHref = `https://wa.me/${String(WHATSAPP_PHONE_E164 || "").replace(
+    "+",
+    ""
+  )}`;
+
+  return (
+    <>
+      {/* HEADER (barra superior del sitio) */}
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          background: "#FFFFFF",
+          borderBottom: `1px solid ${BRAND.line}`,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: CONTAINER_MAX,
+            margin: "0 auto",
+            height: HEADER_H,
+            padding: "0 14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          {/* Logo */}
+          <Link to="/" style={{ display: "flex", alignItems: "center" }}>
+            {/* reemplaza por tu logo real */}
+            <div
+              style={{
+                width: 88,
+                height: 28,
+                borderRadius: 10,
+                background: "transparent",
+              }}
+            />
+          </Link>
+
+          {/* Derecha: en móvil solo hamburguesa */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {!isMd && (
+              <button
+                onClick={() => setDrawerOpen(true)}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 14,
+                  border: `1px solid ${BRAND.line}`,
+                  background: "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+                aria-label="Open menu"
+              >
+                <MenuGlyph open={false} />
+              </button>
+            )}
+
+            {/* En desktop puedes mantener tus botones normales */}
+            {isMd && (
+              <>
+                <button
+                  onClick={() => setLang(lang === "en" ? "es" : "en")}
+                  style={{
+                    height: 40,
+                    padding: "0 14px",
+                    borderRadius: 14,
+                    border: `1px solid ${BRAND.line}`,
+                    background: "#fff",
+                    fontWeight: 900,
+                    cursor: "pointer",
+                    color: BRAND.primary,
+                  }}
+                >
+                  {lang === "en" ? "ES" : "EN"}
+                </button>
+
+                <Link
+                  to="/contacto"
+                  style={{
+                    height: 40,
+                    padding: "0 16px",
+                    borderRadius: 14,
+                    background: BRAND.primary,
+                    color: "#fff",
+                    fontWeight: 900,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    textDecoration: "none",
+                  }}
+                >
+                  {contactLabel}
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* DRAWER MOBILE */}
+      {drawerOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 200,
+            background: "rgba(11, 18, 32, 0.35)",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+          onClick={closeDrawer}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(560px, 92vw)",
+              height: "100dvh",
+              background: "#F7FAFC",
+              borderLeft: `1px solid ${BRAND.line}`,
+              boxShadow: "-10px 0 30px rgba(0,0,0,0.10)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Top bar sticky (para que iOS no te lo “coma” al hacer scroll) */}
+            <div
+              style={{
+                position: "sticky",
+                top: 0,
+                zIndex: 5,
+                background: "#F7FAFC",
+                paddingTop: "env(safe-area-inset-top)",
+                borderBottom: `1px solid ${BRAND.line}`,
+              }}
+            >
+              <div
+                style={{
+                  padding: "16px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 38,
+                      fontWeight: 1000,
+                      color: BRAND.primary,
+                      letterSpacing: -0.6,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {lang === "en" ? "Menu" : "Menú"}
+                  </div>
+                  <div style={{ color: BRAND.muted, fontWeight: 700, marginTop: 6 }}>
+                    {lang === "en" ? "Sections and actions" : "Secciones y acciones"}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <button
+                    onClick={() => setLang(lang === "en" ? "es" : "en")}
+                    style={{
+                      height: 46,
+                      width: 64,
+                      borderRadius: 16,
+                      border: `1px solid ${BRAND.line}`,
+                      background: "#fff",
+                      fontWeight: 1000,
+                      cursor: "pointer",
+                      color: BRAND.primary,
+                    }}
+                    aria-label="Toggle language"
+                  >
+                    {lang === "en" ? "ES" : "EN"}
+                  </button>
+
+                  <Link
+                    to="/contacto"
+                    onClick={closeDrawer}
+                    style={{
+                      height: 46,
+                      padding: "0 18px",
+                      borderRadius: 16,
+                      background: BRAND.primary,
+                      color: "#fff",
+                      fontWeight: 1000,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {contactLabel}
+                  </Link>
+
+                  <button
+                    onClick={closeDrawer}
+                    style={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: 16,
+                      border: `1px solid ${BRAND.line}`,
+                      background: "#fff",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                    aria-label="Close menu"
+                  >
+                    <MenuGlyph open={true} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Scroll interno del drawer */}
+            <div
+              style={{
+                padding: "18px 16px 20px",
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              <div style={{ color: BRAND.muted, fontWeight: 900, letterSpacing: 3 }}>
+                {lang === "en" ? "SECTIONS" : "SECCIONES"}
+              </div>
+
+              <div style={{ display: "grid", gap: 14, marginTop: 12 }}>
+                {sections.map((s) => (
+                  <DrawerLink key={s.to} label={s.label} to={s.to} onClick={closeDrawer} />
+                ))}
+              </div>
+
+              <div style={{ height: 22 }} />
+
+              <div style={{ color: BRAND.muted, fontWeight: 900, letterSpacing: 3 }}>
+                {lang === "en" ? "ACTIONS" : "ACCIONES"}
+              </div>
+
+              <div style={{ display: "grid", gap: 14, marginTop: 12 }}>
+                {drawerActionCard({
+                  label: "WhatsApp",
+                  href: whatsappHref,
+                  icon: "wa",
+                })}
+
+                {/* IMPORTANTE:
+                    Ya NO listamos "Contacto" aquí, porque ya está arriba fijo.
+                    Eso elimina la duplicación. */}
+              </div>
+
+              <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }} />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
