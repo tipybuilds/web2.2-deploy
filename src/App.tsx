@@ -1789,6 +1789,62 @@ function MobileNavDrawer({
     </div>
   );
 }
+
+function drawerActionCard(): React.CSSProperties {
+  // Ctrl+F: DRAWER_ACTION_CARD_STYLE
+  return {
+    width: "100%",
+    textDecoration: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    padding: "16px 16px",
+    borderRadius: 22,
+    border: `1px solid ${BRAND.line}`,
+    background: "#FFFFFF",
+    boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
+  };
+}
+
+function DrawerLink({
+  to,
+  label,
+  onClick,
+}: {
+  to: string;
+  label: string;
+  onClick: () => void;
+}) {
+  // Ctrl+F: DRAWER_LINK_COMPONENT
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      style={{
+        width: "100%",
+        textDecoration: "none",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "18px 18px",
+        borderRadius: 22,
+        border: `1px solid ${BRAND.line}`,
+        background: "#FFFFFF",
+        boxShadow: "0 8px 24px rgba(15,23,42,0.05)",
+      }}
+    >
+      <span style={{ fontSize: 22, fontWeight: 900, color: BRAND.ink }}>
+        {label}
+      </span>
+      <span style={{ fontSize: 22, fontWeight: 900, color: BRAND.primary }}>
+        →
+      </span>
+    </Link>
+  );
+}
+
 /* =========================================================
    HAMBURGER UI
 ========================================================= */
