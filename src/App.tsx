@@ -1471,29 +1471,16 @@ function findProduct(division: Division, productKey: string) {
 ========================================================= */
 // Ctrl+F: function SiteHeader()
 function SiteHeader() {
-  const { isMd } = useBreakpoints(); // isMd = <= 980px (tu breakpoint)
+  // Ctrl+F: MOBILE_HAMBURGER_HEADER_FINAL
+  const { isMd } = useBreakpoints();
   const { lang, toggleLang } = useLang();
   const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
-  // ✅ Cierra drawer al cambiar de ruta
   React.useEffect(() => {
     setMobileOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
-
-  const btnLangToggle: React.CSSProperties = {
-    padding: "10px 14px",
-    borderRadius: 999,
-    border: "1px solid #E5E7EB",
-    background: "#F3F4F6",
-    color: "#374151",
-    fontSize: 15,
-    fontWeight: 700,
-    cursor: "pointer",
-    transition: "background 160ms ease, color 160ms ease, border-color 160ms ease",
-  };
 
   return (
     <header
@@ -1502,8 +1489,7 @@ function SiteHeader() {
         top: 0,
         zIndex: 60,
         height: HEADER_H,
-        background: "#FEFEFE",
-        borderBottom: "none",
+        background: "#FFFFFF",
         display: "flex",
         alignItems: "center",
         width: "100%",
@@ -1515,7 +1501,6 @@ function SiteHeader() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 16,
         }}
       >
         {/* LOGO */}
@@ -1523,69 +1508,41 @@ function SiteHeader() {
           to="/"
           style={{
             display: "flex",
-            gap: 12,
             alignItems: "center",
+            gap: 12,
             textDecoration: "none",
-            minWidth: 0,
           }}
         >
-          <div
-            style={{
-              width: 120,
-              height: 36,
-              borderRadius: 12,
-              overflow: "hidden",
-              flexShrink: 0,
-              background: "transparent",
-              border: "none",
-              boxShadow: "none",
-              outline: "none",
-            }}
-          >
+          <div style={{ width: 120, height: 36 }}>
             <video
               src="/logo-animado.mp4"
               autoPlay
               loop
               muted
               playsInline
-              style={{
-                width: "100%",
-                height: "100%",
-                display: "block",
-                objectFit: "contain",
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                boxShadow: "none",
-              }}
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
             />
           </div>
 
-          <div style={{ lineHeight: 1.05, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 28,
-                fontWeight: 800,
-                letterSpacing: 0.4,
-                color: BRAND.primary,
-                whiteSpace: "nowrap",
-              }}
-            >
-              TIPY TOWN
-            </div>
+          <div
+            style={{
+              fontSize: 28,
+              fontWeight: 800,
+              color: BRAND.primary,
+              whiteSpace: "nowrap",
+            }}
+          >
+            TIPY TOWN
           </div>
         </Link>
 
-        {/* DESKTOP NAV (sin cambios visuales) */}
+        {/* DESKTOP NAV – NO TOCAR */}
         {!isMd ? (
           <nav
-            aria-label={lang === "en" ? "Primary navigation" : "Navegación principal"}
             style={{
               display: "flex",
               alignItems: "center",
               gap: 18,
-              flexWrap: "wrap",
-              justifyContent: "flex-end",
             }}
           >
             <TopNavLink to="/acuicola" label={pick(UI.navAcuicola, lang)} />
@@ -1594,8 +1551,6 @@ function SiteHeader() {
             <TopNavLink to="/transporte" label={pick(UI.navTransporte, lang)} />
             <TopNavLink to="/calidad" label={pick(UI.navCalidad, lang)} />
             <TopNavLink to="/nosotros" label={pick(UI.navNosotros, lang)} />
-
-            <div style={{ width: 1, height: 18, background: BRAND.line, margin: "0 6px" }} />
 
             <a
               href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
@@ -1610,53 +1565,17 @@ function SiteHeader() {
               {pick(UI.btnContacto, lang)}
             </Link>
 
-            <button
-              type="button"
-              onClick={toggleLang}
-              aria-label={lang === "en" ? "Switch to Spanish" : "Cambiar a inglés"}
-              style={btnLangToggle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#E5E7EB";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#F3F4F6";
-              }}
-            >
+            <button onClick={toggleLang} style={btnOutlineSm()}>
               {lang === "en" ? "ES" : "EN"}
             </button>
           </nav>
         ) : (
-          /* MOBILE: CTA + HAMBURGER */
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* WhatsApp compacto */}
-            <a
-              href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                ...btnOutlineSm(),
-                padding: "10px 12px",
-              }}
-            >
-              {pick(UI.btnWhatsApp, lang)}
-            </a>
-
-            {/* Contacto compacto */}
-            <Link
-              to="/contacto"
-              style={{
-                ...btnPrimarySm(),
-                padding: "10px 12px",
-              }}
-            >
-              {pick(UI.btnContacto, lang)}
-            </Link>
-
-            {/* Hamburguesa */}
+          /* MOBILE HEADER: SOLO HAMBURGUESA */
+          <>
             <button
               type="button"
-              onClick={() => setMobileOpen(true)}
               aria-label={lang === "en" ? "Open menu" : "Abrir menú"}
+              onClick={() => setMobileOpen(true)}
               style={hamburgerButtonStyle()}
             >
               <HamburgerIcon />
@@ -1668,7 +1587,7 @@ function SiteHeader() {
               lang={lang}
               toggleLang={toggleLang}
             />
-          </div>
+          </>
         )}
       </div>
     </header>
