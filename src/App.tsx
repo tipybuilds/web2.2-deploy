@@ -2000,6 +2000,24 @@ function drawerActionCard({
   );
 }
 
+function hamburgerButtonStyle(): React.CSSProperties {
+  // Ctrl+F: HAMBURGER_BUTTON_STYLE_MOBILE
+  return {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    border: `1px solid ${BRAND.line}`,
+    background: "#FFFFFF",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    color: BRAND.primary,
+    boxShadow: "0 6px 16px rgba(15, 23, 42, 0.08)",
+    padding: 0,
+  };
+}
+
 function MenuGlyph({ open }: { open: boolean }) {
   // Ctrl+F: MenuGlyph
   const stroke = BRAND.primary;
