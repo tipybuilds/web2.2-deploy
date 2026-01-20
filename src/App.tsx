@@ -1631,7 +1631,7 @@ function SiteHeader() {
 
             <div style={{ width: 1, height: 18, background: BRAND.line, margin: "0 6px" }} />
 
-            <a
+            
               href={getWhatsAppLink(buildWhatsAppPrefill(lang))}
               target="_blank"
               rel="noreferrer"
