@@ -1437,7 +1437,7 @@ en: "Mussel Rope Super Loop is our next-generation rope, developed as a high-per
             imageLabel: { es: "Foto: cabo mussel / captación y siembra", en: "Photo: Cabo Mussel / collection & seeding" },
 
             imageDir: "/images/divisions/acuicola/products/cabo-mussel",
-            imageCount: 5,
+            imageCount: 6,
 
             badges: [{ es: "Máximo rendimiento", en: "Max performance" }],
           },
